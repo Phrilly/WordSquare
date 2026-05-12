@@ -88,12 +88,24 @@
         }
         .grid-cell:active { transform: scale(0.95); }
 
+        /* WILDCARD TILE STYLING */
+        .grid-cell.is-wildcard {
+            background-color: #1a1a1a !important; 
+            color: #ffffff !important; 
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.2), inset -2px -2px 5px rgba(0, 0, 0, 0.8), 2px 3px 5px rgba(0, 0, 0, 0.5) !important;
+        }
+
         .tile-pop { animation: tilePopAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes tilePopAnim { 0% { transform: scale(0.7); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         
         .word-3 { background-color: var(--color-3) !important; color: #ffffff !important; }
         .word-4 { background-color: var(--color-4) !important; color: #ffffff !important; }
         .word-5 { background-color: var(--color-5) !important; color: #ffffff !important; }
+
+        /* Darker Word highlights for wildcards */
+        .word-3.is-wildcard { background-color: #8a5a19 !important; color: #ffffff !important; }
+        .word-4.is-wildcard { background-color: #0a6614 !important; color: #ffffff !important; } 
+        .word-5.is-wildcard { background-color: #731e54 !important; color: #ffffff !important; } 
 
         .hover-3 { background-color: rgba(217, 140, 37, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(217, 140, 37, 0.6) !important; }
         .hover-4 { background-color: rgba(16, 160, 32, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(16, 160, 32, 0.6) !important; }
@@ -126,7 +138,7 @@
         .empty-alpha { background-color: transparent !important; box-shadow: none !important; cursor: default; }
         .alpha-cancel { grid-column: span 2; font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px); background-color: #ffcccc; }
 
-        /* General UI Modals for Score/Leaderboard with Translucency */
+        /* General UI Modals */
         .overlay-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(15, 35, 60, 0.65); 
@@ -137,7 +149,6 @@
         }
         .overlay-modal.active { display: flex; }
         
-        /* Initials Input Tiles */
         .initials-wrapper { position: relative; display: inline-flex; gap: 10px; margin: 20px 0; }
         .hidden-initials-input {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -160,8 +171,14 @@
             margin-top: 10px; width: 100%; max-width: 250px;
         }
         .arcade-btn:hover { background-color: #dddddd; }
+        
+        /* Floating Show Board Button */
+        #return-to-menu-btn {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; box-shadow: 0px 10px 20px rgba(0,0,0,0.6);
+            background-color: var(--highlight); color: #1a1a1a;
+        }
 
-        /* Leaderboard Tiles */
         .leaderboard-list {
             list-style: none; padding: 0; margin: 20px 0; width: 100%; max-width: 280px;
             display: flex; flex-direction: column; gap: 8px;
@@ -197,7 +214,6 @@
         .results-area { width: 100%; max-width: var(--game-size); margin-top: 40px; font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px); line-height: 1.6; }
         .result-row { margin-bottom: 5px; }
 
-        /* Settings Switches */
         .settings-area {
             width: 100%; max-width: var(--game-size); margin-top: 30px; padding-top: 20px;
             border-top: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; gap: 15px;
@@ -285,9 +301,14 @@
             <ul class="leaderboard-list" id="leaderboard-list">
                 <!-- Scores injected here -->
             </ul>
-            <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
+                <button class="arcade-btn" onclick="hideModalsForBoardView()">VIEW FINAL BOARD</button>
+                <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
+            </div>
         </div>
     </div>
+    
+    <button id="return-to-menu-btn" class="arcade-btn" style="display:none;" onclick="showLeaderboard()">SHOW LEADERBOARD</button>
 
     <div class="results-area">
         <div class="result-row">5 letters (20pts): <span id="list-5"></span></div>
@@ -325,7 +346,7 @@
         </div>
     </div>
 
-    <div class="version-tag">Version 2.8 (Juiced Letter Pool)</div>
+    <div class="version-tag">Version 4.0 (100-Tile Math & UI Upgrades)</div>
 
     <script>
         const gridSize = 5;
@@ -337,12 +358,9 @@
         let isCurrentGameDaily = true; 
         
         let usedWildcards = new Set(); 
-        
         let gameDictionary = new Set(); 
-        
-        // Vowels: 36%, Consonants: 51.5%, Wildcards: 12.5% (approx 3 per board)
-        const pool = "EEEEEEEEEEEEEEEEAAAAAAAAAAAAIIIIIIIIIIIIOOOOOOOOOOOOUUUUUUSSSSSSSSRRRRRRRRTTTTTTTTNNNNNNNNLLLLLLLLDDDDDGGGGGCCCCCMMMMMBBBPPPHHHFFFWWWYYYVKXJQZ????????????????????";
-        
+        let gameDeck = []; 
+
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
         const nextLetterEl = document.getElementById('next-letter');
@@ -354,7 +372,6 @@
         const leaderboardModal = document.getElementById('leaderboard-modal');
         const initialsInput = document.getElementById('hidden-initials');
 
-        // Sync hidden input to visual tiles
         initialsInput.addEventListener('input', (e) => {
             const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
             e.target.value = val; 
@@ -363,7 +380,6 @@
             document.getElementById('init-tile-3').innerText = val[2] || '';
         });
 
-        // Developer Offset for testing fresh boards
         let dailyOffset = parseInt(localStorage.getItem('ws_daily_offset')) || 0;
 
         function getDailySeed() {
@@ -380,11 +396,27 @@
             initGame();
         }
 
+        let dailySeed = 0;
         function getSeededRandom() {
             let t = dailySeed += 0x6D2B79F5;
             t = Math.imul(t ^ t >>> 15, t | 1);
             t ^= t + Math.imul(t ^ t >>> 7, t | 61);
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+
+        // --- Standard 100-Tile Master Bag (Scrabble Math Optimized) ---
+        function generateBagSequence() {
+            const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
+            // 36 Vowels, 52 Consonants, 12 Wildcards = 100 Tiles Total
+            const bagString = "EEEEEEEEEEEAAAAAAAAIIIIIIIOOOOOOOUUUSSSSSRRRRRTTTTTNNNNNLLLLDDDDGGCCMMBBPP HHFFWWYYVKXJQZ????????????";
+            const initialBag = bagString.replace(/ /g, '').split('');
+            
+            let sequence = [];
+            for (let i = 0; i < 25; i++) {
+                const index = Math.floor(rng() * initialBag.length);
+                sequence.push(initialBag.splice(index, 1)[0]);
+            }
+            return sequence;
         }
 
         function setupAlphabetGrid() {
@@ -428,8 +460,23 @@
                 pendingCellIndex = -1; 
                 updateWildcardModal();
                 alphabetModal.classList.add('active');
+            } else {
+                const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
+                if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
+                    nextLetterEl.innerText = forcedLetter.toUpperCase();
+                }
             }
         });
+
+        function hideModalsForBoardView() {
+            leaderboardModal.classList.remove('active');
+            document.getElementById('return-to-menu-btn').style.display = 'block';
+        }
+
+        function showLeaderboard() {
+            document.getElementById('return-to-menu-btn').style.display = 'none';
+            leaderboardModal.classList.add('active');
+        }
 
         function initGame() {
             const existingCells = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
@@ -442,14 +489,15 @@
             isCurrentGameDaily = document.getElementById('daily-toggle').checked;
             if (isCurrentGameDaily) dailySeed = getDailySeed();
 
+            gameDeck = generateBagSequence();
+
             scoreEl.innerText = '0';
             headerLabelEl.innerText = 'Next:';
-            nextLetterEl.style.display = 'inline-flex';
-            leftHeaderEl.title = 'Click to open wildcard picker';
             
             alphabetModal.classList.remove('active');
             highscoreEntryModal.classList.remove('active');
             leaderboardModal.classList.remove('active');
+            document.getElementById('return-to-menu-btn').style.display = 'none';
             
             document.getElementById('list-5').innerText = '';
             document.getElementById('list-4').innerText = '';
@@ -465,14 +513,14 @@
                 gridEl.appendChild(cell);
             }
             
+            nextLetterEl.style.display = 'inline-flex';
+            leftHeaderEl.title = 'Click to open wildcard picker';
             setNextLetter();
         }
 
         function setNextLetter() {
             if (placedCount >= 25) return;
-            const rng = isCurrentGameDaily ? getSeededRandom() : Math.random();
-            const randomChar = pool[Math.floor(rng * pool.length)];
-            nextLetterEl.innerText = randomChar;
+            nextLetterEl.innerText = gameDeck[placedCount];
         }
 
         function handleHoverEnter(index, cellEl) {
@@ -507,14 +555,19 @@
                 alphabetModal.classList.add('active');
                 return; 
             }
-            placeLetter(index, letter, cellEl);
+            placeLetter(index, letter, cellEl, false);
         }
 
-        function placeLetter(index, letter, cellEl) {
+        function placeLetter(index, letter, cellEl, isWildcard) {
             cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
             cells[index] = letter;
             cellEl.innerText = letter;
             placedCount++;
+            
+            // Reverses the tile colour to white on black if it was a wildcard
+            if (isWildcard) {
+                cellEl.classList.add('is-wildcard');
+            }
             
             cellEl.classList.add('tile-pop');
             setTimeout(() => { cellEl.classList.remove('tile-pop'); }, 300);
@@ -562,7 +615,7 @@
                 nextLetterEl.innerText = letter;
             } else {
                 const cellEl = document.querySelector(`.grid-cell[data-index='${pendingCellIndex}']`);
-                placeLetter(pendingCellIndex, letter, cellEl);
+                placeLetter(pendingCellIndex, letter, cellEl, true);
             }
             pendingCellIndex = null;
         }
