@@ -1,2 +1,7 @@
-# Ignore the database configuration file
+# .gitignore
+
+# Ignore the secure database configuration file
 config.php
+
+# Ignore system files
+.DS_Store
