@@ -41,7 +41,7 @@
         .grid-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr); /* Forces rows to stay rigid and stops layout bounce */
+            grid-template-rows: repeat(5, 1fr); 
             width: 100%;
             max-width: 350px;
             aspect-ratio: 1 / 1;
@@ -75,6 +75,64 @@
         .word-4 { background-color: var(--color-4) !important; }
         .word-5 { background-color: var(--color-5) !important; }
 
+        /* Game Over Overlay */
+        .game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .game-over-overlay.active {
+            display: flex;
+        }
+
+        /* Alphabet Picker Modal for ? Wildcard */
+        .alphabet-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 120%; /* 6 rows instead of 5 to fit Z and Cancel */
+            background-color: var(--color-default);
+            display: none;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            z-index: 20;
+            border: 1px solid var(--grid-border);
+            box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
+        }
+        .alphabet-modal.active {
+            display: grid;
+        }
+        .alpha-cell {
+            box-sizing: border-box;
+            border: 1px solid var(--grid-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            cursor: pointer;
+            user-select: none;
+            background-color: transparent;
+        }
+        .alpha-cell:not(.empty-alpha):hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .empty-alpha {
+            cursor: default;
+        }
+        .alpha-cancel {
+            grid-column: span 2;
+            font-size: 24px;
+        }
+
         .play-again-btn {
             background-color: #ffffff;
             color: var(--bg-color);
@@ -99,7 +157,7 @@
         .results-area {
             width: 100%;
             max-width: 350px;
-            margin-top: 20px;
+            margin-top: 40px; /* Adjusted to account for modal overlap */
             font-size: 16px;
             line-height: 1.6;
         }
@@ -121,12 +179,54 @@
 <body>
 
     <div class="top-bar">
-        <div title="Developer Mode: Click to force a letter">Next: <span id="next-letter" style="cursor: pointer; color: var(--highlight);"></span></div>
+        <div title="Click to open wildcard picker">Next: <span id="next-letter" style="cursor: pointer; color: var(--highlight);"></span></div>
         <div id="score">0</div>
     </div>
 
     <div class="grid-container" id="grid">
-        <!-- Cells generated dynamically -->
+        <!-- Main Board Cells generated dynamically -->
+        
+        <div class="game-over-overlay" id="game-over">
+            <h2>Game Over</h2>
+        </div>
+
+        <!-- Wildcard Alphabet Overlay -->
+        <div class="alphabet-modal" id="alphabet-modal">
+            <div class="alpha-cell" onclick="selectWildcard('A')">A</div>
+            <div class="alpha-cell" onclick="selectWildcard('B')">B</div>
+            <div class="alpha-cell" onclick="selectWildcard('C')">C</div>
+            <div class="alpha-cell" onclick="selectWildcard('D')">D</div>
+            <div class="alpha-cell" onclick="selectWildcard('E')">E</div>
+            
+            <div class="alpha-cell" onclick="selectWildcard('F')">F</div>
+            <div class="alpha-cell" onclick="selectWildcard('G')">G</div>
+            <div class="alpha-cell" onclick="selectWildcard('H')">H</div>
+            <div class="alpha-cell" onclick="selectWildcard('I')">I</div>
+            <div class="alpha-cell" onclick="selectWildcard('J')">J</div>
+            
+            <div class="alpha-cell" onclick="selectWildcard('K')">K</div>
+            <div class="alpha-cell" onclick="selectWildcard('L')">L</div>
+            <div class="alpha-cell" onclick="selectWildcard('M')">M</div>
+            <div class="alpha-cell" onclick="selectWildcard('N')">N</div>
+            <div class="alpha-cell" onclick="selectWildcard('O')">O</div>
+            
+            <div class="alpha-cell" onclick="selectWildcard('P')">P</div>
+            <div class="alpha-cell" onclick="selectWildcard('Q')">Q</div>
+            <div class="alpha-cell" onclick="selectWildcard('R')">R</div>
+            <div class="alpha-cell" onclick="selectWildcard('S')">S</div>
+            <div class="alpha-cell" onclick="selectWildcard('T')">T</div>
+            
+            <div class="alpha-cell" onclick="selectWildcard('U')">U</div>
+            <div class="alpha-cell" onclick="selectWildcard('V')">V</div>
+            <div class="alpha-cell" onclick="selectWildcard('W')">W</div>
+            <div class="alpha-cell" onclick="selectWildcard('X')">X</div>
+            <div class="alpha-cell" onclick="selectWildcard('Y')">Y</div>
+            
+            <div class="alpha-cell empty-alpha"></div>
+            <div class="alpha-cell empty-alpha"></div>
+            <div class="alpha-cell" onclick="selectWildcard('Z')">Z</div>
+            <div class="alpha-cell alpha-cancel" onclick="selectWildcard('Cancel')">Cancel</div>
+        </div>
     </div>
 
     <div class="results-area">
@@ -137,39 +237,54 @@
 
     <button class="play-again-btn" id="play-btn" onclick="initGame()">Play Again</button>
 
-    <div class="version-tag">Version 1.3 (Real-Time Scoring)</div>
+    <div class="version-tag">Version 1.4 (Wildcard Added)</div>
 
     <script>
         const gridSize = 5;
         let cells = Array(gridSize * gridSize).fill('');
         let placedCount = 0;
+        let pendingCellIndex = null;
         
-        const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ";
+        // Added three '?' to the standard pool array
+        const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ???";
         
         const gridEl = document.getElementById('grid');
         const nextLetterEl = document.getElementById('next-letter');
         const scoreEl = document.getElementById('score');
         const playBtn = document.getElementById('play-btn');
+        const alphabetModal = document.getElementById('alphabet-modal');
+        const gameOverEl = document.getElementById('game-over');
 
-        // Developer Cheat Mode
+        // Allow clicking the top bar "?" to change it before clicking a cell
         nextLetterEl.addEventListener('click', () => {
-            const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z) to force it onto the board.");
-            if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
-                nextLetterEl.innerText = forcedLetter.toUpperCase();
+            if (nextLetterEl.innerText === '?') {
+                pendingCellIndex = -1; // -1 signals we are just changing the "Next" display
+                alphabetModal.classList.add('active');
+            } else {
+                // Secret developer cheat mode for non-wildcard letters
+                const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
+                if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
+                    nextLetterEl.innerText = forcedLetter.toUpperCase();
+                }
             }
         });
 
         function initGame() {
-            const existingCells = document.querySelectorAll('.grid-cell');
+            // Remove existing dynamic cells only
+            const existingCells = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
             existingCells.forEach(cell => cell.remove());
 
             cells = Array(gridSize * gridSize).fill('');
             placedCount = 0;
+            pendingCellIndex = null;
             
             scoreEl.innerText = '0';
             setNextLetter();
             
             playBtn.style.display = 'none';
+            gameOverEl.classList.remove('active');
+            alphabetModal.classList.remove('active');
+            
             document.getElementById('list-5').innerText = '';
             document.getElementById('list-4').innerText = '';
             document.getElementById('list-3').innerText = '';
@@ -196,18 +311,48 @@
             if (cells[index] !== '' || placedCount >= 25) return;
 
             const letter = nextLetterEl.innerText;
+            
+            // If the active letter is ?, open the picker modal instead of placing
+            if (letter === '?') {
+                pendingCellIndex = index;
+                alphabetModal.classList.add('active');
+                return; 
+            }
+
+            placeLetter(index, letter, cellEl);
+        }
+
+        function placeLetter(index, letter, cellEl) {
             cells[index] = letter;
             cellEl.innerText = letter;
             placedCount++;
 
             setNextLetter();
-            
-            // Trigger score calculation immediately on every click
             calculateRealTimeScore();
 
             if (placedCount === 25) {
+                gameOverEl.classList.add('active');
                 playBtn.style.display = 'block';
             }
+        }
+
+        function selectWildcard(letter) {
+            alphabetModal.classList.remove('active');
+            
+            if (letter === 'Cancel') {
+                pendingCellIndex = null;
+                return;
+            }
+
+            if (pendingCellIndex === -1) {
+                // User clicked top bar to change next letter
+                nextLetterEl.innerText = letter;
+            } else {
+                // User clicked board to drop a letter
+                const cellEl = document.querySelector(`.grid-cell[data-index='${pendingCellIndex}']`);
+                placeLetter(pendingCellIndex, letter, cellEl);
+            }
+            pendingCellIndex = null;
         }
 
         async function calculateRealTimeScore() {
@@ -222,10 +367,8 @@
 
                 const data = await response.json();
                 
-                // Update Score
                 scoreEl.innerText = data.score;
                 
-                // Group words by length for the UI lists
                 let words3 = [], words4 = [], words5 = [];
                 if (data.words) {
                     data.words.forEach(w => {
@@ -235,12 +378,10 @@
                     });
                 }
 
-                // Update text lists
                 document.getElementById('list-5').innerText = words5.join(', ');
                 document.getElementById('list-4').innerText = words4.join(', ');
                 document.getElementById('list-3').innerText = words3.join(', ');
 
-                // Update board colors
                 applyColorsToGrid(data.words);
 
             } catch (error) {
@@ -249,14 +390,11 @@
         }
 
         function applyColorsToGrid(validWords) {
-            const cellEls = document.querySelectorAll('.grid-cell');
-            
-            // Reset all cells to default
+            const cellEls = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
             cellEls.forEach(cell => cell.className = 'grid-cell');
 
             if (!validWords || validWords.length === 0) return;
 
-            // Group words by length to ensure higher value words overwrite lower value colors
             const wordsByLength = { 3: [], 4: [], 5: [] };
             validWords.forEach(w => wordsByLength[w.length].push(w));
 
@@ -273,21 +411,15 @@
                                 let nextRow = r + (dr * i);
                                 let nextCol = c + (dc * i);
                                 
-                                // Check boundaries
                                 if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) { 
-                                    match = false; 
-                                    break; 
+                                    match = false; break; 
                                 }
                                 
                                 let idx = nextRow * gridSize + nextCol;
-                                if (cells[idx] !== word[i]) { 
-                                    match = false; 
-                                    break; 
-                                }
+                                if (cells[idx] !== word[i]) { match = false; break; }
                                 indices.push(idx);
                             }
                             
-                            // If word is found along this path, apply the color class
                             if (match) {
                                 indices.forEach(idx => {
                                     cellEls[idx].classList.remove('word-3', 'word-4', 'word-5');
@@ -299,7 +431,6 @@
                 }
             }
 
-            // Apply in order so 5-letter overrides 4-letter colors, etc.
             wordsByLength[3].forEach(w => highlightWord(w, 'word-3'));
             wordsByLength[4].forEach(w => highlightWord(w, 'word-4'));
             wordsByLength[5].forEach(w => highlightWord(w, 'word-5'));
