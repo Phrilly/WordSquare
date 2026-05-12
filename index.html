@@ -6,18 +6,14 @@
     <title>Word Square Classic</title>
     <style>
         :root {
-            /* Dynamically sizes the game relative to screen width and height, capped at 600px */
             --game-size: min(90vw, 65vh, 600px); 
-            
             --bg-color: #1e4a7a;
             --text-color: #ffffff;
             --highlight: #a8c2ea;
-            
-            /* Word Length Colors */
-            --color-5: #b03080; /* Purple/Magenta */
-            --color-4: #10a020; /* Green */
-            --color-3: #d98c25; /* Orange */
-            --color-default: #2b4c7e; /* Standard Blue */
+            --color-5: #b03080; 
+            --color-4: #10a020; 
+            --color-3: #d98c25; 
+            --color-default: #2b4c7e; 
         }
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -31,240 +27,160 @@
             box-sizing: border-box;
             min-height: 100vh;
         }
+
+        /* Initial Loading Screen */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 10000; display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.2);
+            border-top: 5px solid var(--highlight); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: var(--game-size);
-            font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
-            margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: var(--game-size); font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px); margin-bottom: 20px;
         }
-        
-        #left-header {
-            display: flex;
-            align-items: center;
-        }
+        #left-header { display: flex; align-items: center; }
 
         #next-letter {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
-            height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
-            margin-left: 12px;
-            font-family: 'Arial', sans-serif;
-            font-weight: bold;
-            font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
-            background-color: #fdf6e3; 
-            color: #1a1a1a; 
-            border-radius: 6px;
-            box-shadow: 
-                inset 3px 3px 5px rgba(255, 255, 255, 1), 
-                inset -3px -3px 5px rgba(0, 0, 0, 0.15), 
-                2px 3px 5px rgba(0, 0, 0, 0.4);
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.1s;
+            display: inline-flex; justify-content: center; align-items: center;
+            width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+            margin-left: 12px; font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+            background-color: #fdf6e3; color: #1a1a1a; border-radius: 6px;
+            box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 1), inset -3px -3px 5px rgba(0, 0, 0, 0.15), 2px 3px 5px rgba(0, 0, 0, 0.4);
+            cursor: pointer; user-select: none; transition: transform 0.1s;
         }
-        #next-letter:active {
-            transform: scale(0.95);
-        }
+        #next-letter:active { transform: scale(0.95); }
 
         .grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr); 
-            width: 100%;
-            max-width: var(--game-size);
-            aspect-ratio: 1 / 1;
-            background-color: var(--color-default);
-            position: relative;
-            
-            gap: clamp(4px, 1vw, 8px); 
-            padding: clamp(6px, 1.5vw, 12px);
-            border-radius: 12px;
+            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
+            width: 100%; max-width: var(--game-size); aspect-ratio: 1 / 1; background-color: var(--color-default);
+            position: relative; gap: clamp(4px, 1vw, 8px); padding: clamp(6px, 1.5vw, 12px); border-radius: 12px;
             box-shadow: inset 0px 0px 20px rgba(0,0,0,0.5), 0px 10px 30px rgba(0,0,0,0.4);
         }
         
         .grid-cell {
-            box-sizing: border-box;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: clamp(24px, calc(var(--game-size) * 0.11), 52px);
-            font-family: 'Arial', sans-serif; 
-            font-weight: bold;
-            line-height: 1;
-            cursor: pointer;
-            user-select: none;
-            border-radius: 8px;
+            box-sizing: border-box; display: flex; justify-content: center; align-items: center;
+            font-size: clamp(24px, calc(var(--game-size) * 0.11), 52px); font-family: 'Arial', sans-serif; 
+            font-weight: bold; line-height: 1; cursor: pointer; user-select: none; border-radius: 8px;
             transition: background-color 0.15s, color 0.15s, box-shadow 0.15s; 
-            
-            background-color: rgba(0, 0, 0, 0.15);
-            box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.05);
+            background-color: rgba(0, 0, 0, 0.15); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05);
         }
-
         .grid-cell:not(:empty) {
-            background-color: #fdf6e3; 
-            color: #1a1a1a; 
-            border: none;
-            box-shadow: 
-                inset 3px 3px 5px rgba(255, 255, 255, 1), 
-                inset -4px -4px 6px rgba(0, 0, 0, 0.15), 
-                3px 4px 6px rgba(0, 0, 0, 0.4);
+            background-color: #fdf6e3; color: #1a1a1a; border: none;
+            box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 1), inset -4px -4px 6px rgba(0, 0, 0, 0.15), 3px 4px 6px rgba(0, 0, 0, 0.4);
         }
+        .grid-cell:active { transform: scale(0.95); }
 
-        .grid-cell:active {
-            transform: scale(0.95);
-        }
-
-        /* Tile Placement Pop Animation */
-        .tile-pop {
-            animation: tilePopAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes tilePopAnim {
-            0% { transform: scale(0.7); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
+        .tile-pop { animation: tilePopAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes tilePopAnim { 0% { transform: scale(0.7); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         
         .word-3 { background-color: var(--color-3) !important; color: #ffffff !important; }
         .word-4 { background-color: var(--color-4) !important; color: #ffffff !important; }
         .word-5 { background-color: var(--color-5) !important; color: #ffffff !important; }
 
-        /* Alphabet Picker Modal */
+        .hover-3 { background-color: rgba(217, 140, 37, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(217, 140, 37, 0.6) !important; }
+        .hover-4 { background-color: rgba(16, 160, 32, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(16, 160, 32, 0.6) !important; }
+        .hover-5 { background-color: rgba(176, 48, 128, 0.4) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(176, 48, 128, 0.8) !important; }
+
         .alphabet-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 82%;
-            /* Forcing a 5x6 aspect ratio ensures perfect squares regardless of device size */
-            aspect-ratio: 5 / 6; 
-            height: auto;
-            background-color: rgba(30, 74, 122, 0.95);
-            backdrop-filter: blur(4px);
-            display: none;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(6, 1fr);
-            z-index: 20;
-            border: 2px solid var(--highlight);
-            box-shadow: 0px 10px 40px rgba(0,0,0,0.8);
-            border-radius: 12px;
-            gap: 4px;
-            padding: 8px;
-            box-sizing: border-box;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 82%; aspect-ratio: 5 / 6; height: auto; background-color: rgba(30, 74, 122, 0.95);
+            backdrop-filter: blur(4px); display: none; grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(6, 1fr); z-index: 20; border: 2px solid var(--highlight);
+            box-shadow: 0px 10px 40px rgba(0,0,0,0.8); border-radius: 12px; gap: 4px; padding: 8px; box-sizing: border-box;
         }
-        .alphabet-modal.active {
-            display: grid;
-        }
+        .alphabet-modal.active { display: grid; }
         
         .alpha-cell {
-            box-sizing: border-box;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: clamp(20px, calc(var(--game-size) * 0.08), 40px);
-            font-family: 'Arial', sans-serif;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-            border-radius: 6px;
-            
-            background-color: #fdf6e3; 
-            color: #1a1a1a; 
-            box-shadow: 
-                inset 2px 2px 4px rgba(255, 255, 255, 1), 
-                inset -3px -3px 5px rgba(0, 0, 0, 0.15), 
-                2px 3px 5px rgba(0, 0, 0, 0.4);
+            box-sizing: border-box; display: flex; justify-content: center; align-items: center;
+            font-size: clamp(20px, calc(var(--game-size) * 0.08), 40px); font-family: 'Arial', sans-serif;
+            font-weight: bold; cursor: pointer; user-select: none; border-radius: 6px;
+            background-color: #fdf6e3; color: #1a1a1a; 
+            box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), inset -3px -3px 5px rgba(0, 0, 0, 0.15), 2px 3px 5px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s;
         }
-        .alpha-cell:not(.empty-alpha):hover {
-            filter: brightness(0.9);
-        }
-        .alpha-cell:not(.empty-alpha):active {
-            transform: scale(0.95);
-        }
-        .empty-alpha {
-            background-color: transparent !important;
-            box-shadow: none !important;
-            cursor: default;
-        }
-        .alpha-cancel {
-            grid-column: span 2;
-            font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px);
-            background-color: #ffcccc; 
-        }
-
-        .play-again-btn {
-            background-color: #ffffff;
-            color: var(--bg-color);
-            border: none;
-            padding: 15px 24px;
-            font-size: 20px;
-            font-family: inherit;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 25px;
-            transition: background-color 0.2s;
-            display: none;
-            width: 100%;
-            max-width: var(--game-size);
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
-        }
-        .play-again-btn:hover {
-            background-color: #dddddd;
-        }
-
-        .results-area {
-            width: 100%;
-            max-width: var(--game-size);
-            margin-top: 40px; 
-            font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px);
-            line-height: 1.6;
-        }
-        .result-row {
-            margin-bottom: 5px;
-        }
+        .alpha-cell:not(.empty-alpha):not(.used):hover { filter: brightness(0.9); }
+        .alpha-cell:not(.empty-alpha):not(.used):active { transform: scale(0.95); }
         
-        .version-tag {
-            width: 100%;
-            max-width: var(--game-size);
-            text-align: right;
-            margin-top: 30px;
-            font-size: 11px;
-            color: var(--highlight);
-            opacity: 0.7;
+        /* Exhausted Wildcard Tile State */
+        .alpha-cell.used {
+            opacity: 0.4; pointer-events: none;
+            background-color: rgba(0, 0, 0, 0.4) !important;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6) !important;
+            color: #888 !important; border: 1px solid rgba(255,255,255,0.1);
         }
+
+        .empty-alpha { background-color: transparent !important; box-shadow: none !important; cursor: default; }
+        .alpha-cancel { grid-column: span 2; font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px); background-color: #ffcccc; }
+
+        /* General UI Modals for Score/Leaderboard */
+        .overlay-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 50; border-radius: 12px;
+            text-align: center; padding: 20px; box-sizing: border-box;
+        }
+        .overlay-modal.active { display: flex; }
+        .arcade-input {
+            background: transparent; border: none; border-bottom: 4px solid var(--highlight);
+            color: var(--highlight); font-size: 48px; font-family: 'Courier New', Courier, monospace;
+            font-weight: bold; width: 120px; text-align: center; margin: 20px 0; outline: none;
+            text-transform: uppercase; letter-spacing: 5px;
+        }
+        .arcade-btn {
+            background-color: #ffffff; color: var(--bg-color); border: none; padding: 12px 24px;
+            font-size: 18px; font-family: inherit; cursor: pointer; font-weight: bold;
+            border-radius: 4px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3); transition: background-color 0.2s;
+            margin-top: 10px; width: 100%; max-width: 250px;
+        }
+        .arcade-btn:hover { background-color: #dddddd; }
+
+        .leaderboard-list {
+            list-style: none; padding: 0; margin: 20px 0; width: 100%; max-width: 250px;
+            text-align: left; font-size: 18px; font-family: 'Courier New', Courier, monospace;
+        }
+        .leaderboard-list li {
+            display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,0.3);
+        }
+
+        .results-area { width: 100%; max-width: var(--game-size); margin-top: 40px; font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px); line-height: 1.6; }
+        .result-row { margin-bottom: 5px; }
+
+        /* Settings Switches */
+        .settings-area {
+            width: 100%; max-width: var(--game-size); margin-top: 30px; padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; gap: 15px;
+        }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.3); transition: .4s; border-radius: 24px; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 2px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--color-4); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .version-tag { width: 100%; max-width: var(--game-size); text-align: right; margin-top: 20px; font-size: 11px; color: var(--highlight); opacity: 0.7; }
 
         .particle {
-            position: fixed;
-            z-index: 9999;
-            width: clamp(20px, calc(var(--game-size) * 0.07), 40px);
-            height: clamp(20px, calc(var(--game-size) * 0.07), 40px);
-            background-color: var(--color-5); 
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Arial', sans-serif;
-            font-weight: bold;
-            font-size: clamp(12px, calc(var(--game-size) * 0.04), 22px);
-            border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            pointer-events: none; 
-            animation: explode 2.8s ease-out forwards; 
+            position: fixed; z-index: 9999; width: clamp(20px, calc(var(--game-size) * 0.07), 40px); height: clamp(20px, calc(var(--game-size) * 0.07), 40px);
+            background-color: var(--color-5); color: #ffffff; display: flex; justify-content: center; align-items: center;
+            font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(12px, calc(var(--game-size) * 0.04), 22px);
+            border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: none; animation: explode 2.8s ease-out forwards; 
         }
-        
-        .particle.alt {
-            background-color: #fdf6e3;
-            color: var(--color-5);
-            box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), 0 4px 10px rgba(0,0,0,0.5);
-        }
-
+        .particle.alt { background-color: #fdf6e3; color: var(--color-5); box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), 0 4px 10px rgba(0,0,0,0.5); }
         @keyframes explode {
             0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
             100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.4) rotate(var(--rot)); opacity: 0; }
@@ -272,6 +188,11 @@
     </style>
 </head>
 <body>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <h2>Loading Game Engine...</h2>
+    </div>
 
     <div class="top-bar">
         <div id="left-header" title="Click to open wildcard picker">
@@ -283,40 +204,22 @@
 
     <div class="grid-container" id="grid">
         <div class="alphabet-modal" id="alphabet-modal">
-            <div class="alpha-cell" onclick="selectWildcard('A')">A</div>
-            <div class="alpha-cell" onclick="selectWildcard('B')">B</div>
-            <div class="alpha-cell" onclick="selectWildcard('C')">C</div>
-            <div class="alpha-cell" onclick="selectWildcard('D')">D</div>
-            <div class="alpha-cell" onclick="selectWildcard('E')">E</div>
-            
-            <div class="alpha-cell" onclick="selectWildcard('F')">F</div>
-            <div class="alpha-cell" onclick="selectWildcard('G')">G</div>
-            <div class="alpha-cell" onclick="selectWildcard('H')">H</div>
-            <div class="alpha-cell" onclick="selectWildcard('I')">I</div>
-            <div class="alpha-cell" onclick="selectWildcard('J')">J</div>
-            
-            <div class="alpha-cell" onclick="selectWildcard('K')">K</div>
-            <div class="alpha-cell" onclick="selectWildcard('L')">L</div>
-            <div class="alpha-cell" onclick="selectWildcard('M')">M</div>
-            <div class="alpha-cell" onclick="selectWildcard('N')">N</div>
-            <div class="alpha-cell" onclick="selectWildcard('O')">O</div>
-            
-            <div class="alpha-cell" onclick="selectWildcard('P')">P</div>
-            <div class="alpha-cell" onclick="selectWildcard('Q')">Q</div>
-            <div class="alpha-cell" onclick="selectWildcard('R')">R</div>
-            <div class="alpha-cell" onclick="selectWildcard('S')">S</div>
-            <div class="alpha-cell" onclick="selectWildcard('T')">T</div>
-            
-            <div class="alpha-cell" onclick="selectWildcard('U')">U</div>
-            <div class="alpha-cell" onclick="selectWildcard('V')">V</div>
-            <div class="alpha-cell" onclick="selectWildcard('W')">W</div>
-            <div class="alpha-cell" onclick="selectWildcard('X')">X</div>
-            <div class="alpha-cell" onclick="selectWildcard('Y')">Y</div>
-            
-            <div class="alpha-cell empty-alpha"></div>
-            <div class="alpha-cell empty-alpha"></div>
-            <div class="alpha-cell" onclick="selectWildcard('Z')">Z</div>
-            <div class="alpha-cell alpha-cancel" onclick="selectWildcard('Cancel')">Cancel</div>
+            <!-- Alphabet Generated Below -->
+        </div>
+
+        <div class="overlay-modal" id="highscore-entry-modal">
+            <h2 style="margin-top: 0; color: var(--highlight);">GAME OVER</h2>
+            <div style="font-size: 20px;">Final Score: <strong id="final-score-display">0</strong></div>
+            <input type="text" id="initials-input" class="arcade-input" maxlength="3" placeholder="___" autocomplete="off">
+            <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
+        </div>
+
+        <div class="overlay-modal" id="leaderboard-modal">
+            <h3 style="margin-top: 0; color: var(--highlight);">TODAY'S HIGH SCORES</h3>
+            <ul class="leaderboard-list" id="leaderboard-list">
+                <!-- Scores injected here -->
+            </ul>
+            <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
         </div>
     </div>
 
@@ -326,9 +229,30 @@
         <div class="result-row">3 letters (1pts): <span id="list-3"></span></div>
     </div>
 
-    <button class="play-again-btn" id="play-btn" onclick="initGame()">Play Again</button>
+    <div class="settings-area">
+        <div class="setting-row">
+            <div>
+                <strong>Daily Challenge Mode</strong><br>
+                <span style="opacity: 0.7; font-size: 12px;">Generates the exact same letter sequence all day.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="daily-toggle" checked onchange="initGame()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="setting-row">
+            <div>
+                <strong>Hover Hints</strong><br>
+                <span style="opacity: 0.7; font-size: 12px;">Colors squares to preview potential words.</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="hover-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
 
-    <div class="version-tag">Version 1.14 (Square Wildcards & Placement Animations)</div>
+    <div class="version-tag">Version 2.1 (Exhaustible Wildcards)</div>
 
     <script>
         const gridSize = 5;
@@ -336,27 +260,81 @@
         let placedCount = 0;
         let pendingCellIndex = null;
         let explodedWords = new Set(); 
+        let currentScore = 0;
         
-        // 15 Wildcards added to ensure roughly a ~10% drop rate (2-3 per board)
+        let usedWildcards = new Set(); // Tracks letters already picked from the wildcard modal
+        
+        let gameDictionary = new Set(); 
         const pool = "EEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAIIIIIIIIIIIIOOOOOOOOOOOOUUUUUUSSSSSSSSRRRRRRRTTTTTTTNNNNNNNLLLLLLDDDDGGGGCCCCMMMMBBPPHHFFWWYYVKXJQZ???????????????";
         
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
         const nextLetterEl = document.getElementById('next-letter');
         const scoreEl = document.getElementById('score');
-        const playBtn = document.getElementById('play-btn');
         const alphabetModal = document.getElementById('alphabet-modal');
         const leftHeaderEl = document.getElementById('left-header');
+        
+        const highscoreEntryModal = document.getElementById('highscore-entry-modal');
+        const leaderboardModal = document.getElementById('leaderboard-modal');
+        const initialsInput = document.getElementById('initials-input');
+
+        let dailySeed = 0;
+        function getDailySeed() {
+            const today = new Date();
+            const dateStr = today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate();
+            let s = 0;
+            for(let i = 0; i < dateStr.length; i++) s += dateStr.charCodeAt(i) * (i + 1);
+            return s * 12345;
+        }
+
+        function getSeededRandom() {
+            let t = dailySeed += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+
+        function setupAlphabetGrid() {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+            let html = '';
+            letters.forEach(l => html += `<div class="alpha-cell" onclick="selectWildcard('${l}')">${l}</div>`);
+            html += `<div class="alpha-cell empty-alpha"></div><div class="alpha-cell empty-alpha"></div>`;
+            html += `<div class="alpha-cell alpha-cancel" onclick="selectWildcard('Cancel')">Cancel</div>`;
+            alphabetModal.innerHTML = html;
+        }
+
+        function updateWildcardModal() {
+            const alphaCells = document.querySelectorAll('.alpha-cell:not(.empty-alpha):not(.alpha-cancel)');
+            alphaCells.forEach(cell => {
+                if (usedWildcards.has(cell.innerText)) {
+                    cell.classList.add('used');
+                } else {
+                    cell.classList.remove('used');
+                }
+            });
+        }
+
+        window.onload = async function bootstrapGame() {
+            setupAlphabetGrid();
+            try {
+                const res = await fetch('validate.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'get_dict' })
+                });
+                const data = await res.json();
+                if(data.words) gameDictionary = new Set(data.words);
+            } catch(e) { console.error("Failed to load dictionary", e); }
+            
+            document.getElementById('loading-screen').style.display = 'none';
+            initGame();
+        }
 
         nextLetterEl.addEventListener('click', () => {
             if (nextLetterEl.innerText === '?') {
                 pendingCellIndex = -1; 
+                updateWildcardModal();
                 alphabetModal.classList.add('active');
-            } else {
-                const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
-                if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
-                    nextLetterEl.innerText = forcedLetter.toUpperCase();
-                }
             }
         });
 
@@ -365,19 +343,20 @@
             existingCells.forEach(cell => cell.remove());
 
             cells = Array(gridSize * gridSize).fill('');
-            placedCount = 0;
-            pendingCellIndex = null;
-            explodedWords.clear();
+            placedCount = 0; pendingCellIndex = null; explodedWords.clear(); currentScore = 0;
+            usedWildcards.clear(); // Reset the exhausted wildcard pool for the new game
             
+            const isDaily = document.getElementById('daily-toggle').checked;
+            if (isDaily) dailySeed = getDailySeed();
+
             scoreEl.innerText = '0';
             headerLabelEl.innerText = 'Next:';
             nextLetterEl.style.display = 'inline-flex';
             leftHeaderEl.title = 'Click to open wildcard picker';
             
-            setNextLetter();
-            
-            playBtn.style.display = 'none';
             alphabetModal.classList.remove('active');
+            highscoreEntryModal.classList.remove('active');
+            leaderboardModal.classList.remove('active');
             
             document.getElementById('list-5').innerText = '';
             document.getElementById('list-4').innerText = '';
@@ -388,63 +367,93 @@
                 cell.className = 'grid-cell';
                 cell.dataset.index = i;
                 cell.addEventListener('click', () => handleCellClick(i, cell));
+                cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
+                cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
                 gridEl.appendChild(cell);
             }
+            
+            setNextLetter();
         }
 
         function setNextLetter() {
-            if (placedCount >= 25) {
-                return;
-            }
-            const randomChar = pool[Math.floor(Math.random() * pool.length)];
+            if (placedCount >= 25) return;
+            const isDaily = document.getElementById('daily-toggle').checked;
+            const rng = isDaily ? getSeededRandom() : Math.random();
+            const randomChar = pool[Math.floor(rng * pool.length)];
             nextLetterEl.innerText = randomChar;
+        }
+
+        function handleHoverEnter(index, cellEl) {
+            if (!document.getElementById('hover-toggle').checked) return;
+            if (cells[index] !== '' || placedCount >= 25) return;
+            const letter = nextLetterEl.innerText;
+            if (letter === '?' || letter === '-') return; 
+
+            const currentWords = findValidWordsLocal(cells);
+            const tempCells = [...cells];
+            tempCells[index] = letter;
+            const newWords = findValidWordsLocal(tempCells).filter(w => !currentWords.includes(w));
+            
+            let maxLen = 0;
+            newWords.forEach(w => { if (w.length > maxLen) maxLen = w.length; });
+            
+            if (maxLen === 3) cellEl.classList.add('hover-3');
+            else if (maxLen === 4) cellEl.classList.add('hover-4');
+            else if (maxLen === 5) cellEl.classList.add('hover-5');
+        }
+
+        function handleHoverLeave(cellEl) {
+            cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
         }
 
         function handleCellClick(index, cellEl) {
             if (cells[index] !== '' || placedCount >= 25) return;
-
             const letter = nextLetterEl.innerText;
-            
             if (letter === '?') {
                 pendingCellIndex = index;
+                updateWildcardModal();
                 alphabetModal.classList.add('active');
                 return; 
             }
-
             placeLetter(index, letter, cellEl);
         }
 
         function placeLetter(index, letter, cellEl) {
+            cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
             cells[index] = letter;
             cellEl.innerText = letter;
             placedCount++;
             
-            // Trigger the spring pop animation
             cellEl.classList.add('tile-pop');
-            setTimeout(() => {
-                cellEl.classList.remove('tile-pop');
-            }, 300);
+            setTimeout(() => { cellEl.classList.remove('tile-pop'); }, 300);
 
-            calculateRealTimeScore();
+            calculateRealTimeScoreLocal();
 
             if (placedCount === 25) {
                 headerLabelEl.innerText = 'Score:';
                 nextLetterEl.style.display = 'none';
                 leftHeaderEl.title = '';
-                playBtn.style.display = 'block';
+                
+                setTimeout(() => {
+                    document.getElementById('final-score-display').innerText = currentScore;
+                    initialsInput.value = '';
+                    highscoreEntryModal.classList.add('active');
+                    initialsInput.focus();
+                }, 2000);
             } else {
                 setNextLetter();
             }
         }
 
         function selectWildcard(letter) {
-            alphabetModal.classList.remove('active');
-            
-            if (letter === 'Cancel') {
-                pendingCellIndex = null;
-                return;
-            }
+            // Prevent selection if already exhausted
+            if (usedWildcards.has(letter) && letter !== 'Cancel') return;
 
+            alphabetModal.classList.remove('active');
+            if (letter === 'Cancel') { pendingCellIndex = null; return; }
+            
+            usedWildcards.add(letter); // Lock this letter out from future wildcard picks
+            
             if (pendingCellIndex === -1) {
                 nextLetterEl.innerText = letter;
             } else {
@@ -464,119 +473,138 @@
                 const p = document.createElement('div');
                 p.className = 'particle';
                 if (Math.random() > 0.5) p.classList.add('alt');
-                
                 p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
-                
-                p.style.left = centerX + 'px';
-                p.style.top = centerY + 'px';
+                p.style.left = centerX + 'px'; p.style.top = centerY + 'px';
                 
                 const angle = Math.random() * Math.PI * 2;
                 const distance = 120 + Math.random() * (window.innerWidth * 0.45); 
-                const tx = Math.cos(angle) * distance + 'px';
-                const ty = Math.sin(angle) * distance + 'px';
-                const rot = (Math.random() - 0.5) * 720 + 'deg';
-                
-                p.style.setProperty('--tx', tx);
-                p.style.setProperty('--ty', ty);
-                p.style.setProperty('--rot', rot);
+                p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+                p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
                 
                 document.body.appendChild(p);
-                
                 setTimeout(() => p.remove(), 2800); 
             }
         }
 
-        async function calculateRealTimeScore() {
-            try {
-                const response = await fetch('validate.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ grid: cells })
-                });
-
-                if (!response.ok) throw new Error('Server Error');
-
-                const data = await response.json();
-                
-                scoreEl.innerText = data.score;
-                
-                let words3 = [], words4 = [], words5 = [];
-                if (data.words) {
-                    data.words.forEach(w => {
-                        if (w.length === 3) words3.push(w);
-                        else if (w.length === 4) words4.push(w);
-                        else if (w.length === 5) {
-                            words5.push(w);
-                            if (!explodedWords.has(w)) {
-                                triggerExplosion();
-                                explodedWords.add(w);
-                            }
+        function findValidWordsLocal(gridArray) {
+            let found = [];
+            const dirs = [ [0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1] ];
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    for (let [dr, dc] of dirs) {
+                        let currentWord = "";
+                        for (let step = 0; step < 5; step++) {
+                            let nr = r + (dr * step); let nc = c + (dc * step);
+                            if (nr < 0 || nr >= 5 || nc < 0 || nc >= 5) break;
+                            let letter = gridArray[nr * 5 + nc];
+                            if (!letter) break; 
+                            currentWord += letter;
+                            if (currentWord.length >= 3 && gameDictionary.has(currentWord)) found.push(currentWord);
                         }
-                    });
+                    }
                 }
-
-                document.getElementById('list-5').innerText = words5.join(', ');
-                document.getElementById('list-4').innerText = words4.join(', ');
-                document.getElementById('list-3').innerText = words3.join(', ');
-
-                applyColorsToGrid(data.words);
-
-            } catch (error) {
-                console.error('Error calculating score:', error);
             }
+            return [...new Set(found)];
+        }
+
+        function calculateRealTimeScoreLocal() {
+            const validWords = findValidWordsLocal(cells);
+            currentScore = 0;
+            let words3 = [], words4 = [], words5 = [];
+            
+            validWords.forEach(w => {
+                if (w.length === 3) { currentScore += 1; words3.push(w); }
+                else if (w.length === 4) { currentScore += 5; words4.push(w); }
+                else if (w.length === 5) {
+                    currentScore += 20; words5.push(w);
+                    if (!explodedWords.has(w)) { triggerExplosion(); explodedWords.add(w); }
+                }
+            });
+
+            scoreEl.innerText = currentScore;
+            document.getElementById('list-5').innerText = words5.join(', ');
+            document.getElementById('list-4').innerText = words4.join(', ');
+            document.getElementById('list-3').innerText = words3.join(', ');
+            applyColorsToGrid(validWords);
         }
 
         function applyColorsToGrid(validWords) {
             const cellEls = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
-            // Remove previous word classes
-            cellEls.forEach(cell => {
-                cell.classList.remove('word-3', 'word-4', 'word-5');
-            });
-
+            cellEls.forEach(cell => cell.classList.remove('word-3', 'word-4', 'word-5'));
             if (!validWords || validWords.length === 0) return;
 
             const wordsByLength = { 3: [], 4: [], 5: [] };
             validWords.forEach(w => wordsByLength[w.length].push(w));
-
             const directions = [ [0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1] ];
 
             function highlightWord(word, lengthClass) {
                 for (let r = 0; r < gridSize; r++) {
                     for (let c = 0; c < gridSize; c++) {
                         for (let [dr, dc] of directions) {
-                            let match = true;
-                            let indices = [];
-                            
+                            let match = true; let indices = [];
                             for (let i = 0; i < word.length; i++) {
-                                let nextRow = r + (dr * i);
-                                let nextCol = c + (dc * i);
-                                
-                                if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) { 
-                                    match = false; break; 
-                                }
-                                
+                                let nextRow = r + (dr * i); let nextCol = c + (dc * i);
+                                if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) { match = false; break; }
                                 let idx = nextRow * gridSize + nextCol;
                                 if (cells[idx] !== word[i]) { match = false; break; }
                                 indices.push(idx);
                             }
-                            
-                            if (match) {
-                                indices.forEach(idx => {
-                                    cellEls[idx].classList.remove('word-3', 'word-4', 'word-5');
-                                    cellEls[idx].classList.add(lengthClass);
-                                });
-                            }
+                            if (match) indices.forEach(idx => {
+                                cellEls[idx].classList.remove('word-3', 'word-4', 'word-5');
+                                cellEls[idx].classList.add(lengthClass);
+                            });
                         }
                     }
                 }
             }
-
             wordsByLength[3].forEach(w => highlightWord(w, 'word-3'));
             wordsByLength[4].forEach(w => highlightWord(w, 'word-4'));
             wordsByLength[5].forEach(w => highlightWord(w, 'word-5'));
         }
 
-        initGame();
+        async function submitHighscore() {
+            let initials = initialsInput.value.trim().toUpperCase();
+            if (initials.length === 0) initials = "---";
+            
+            try {
+                await fetch('validate.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'save_score', initials: initials, score: currentScore })
+                });
+            } catch (e) { console.error("Error saving score", e); }
+            
+            highscoreEntryModal.classList.remove('active');
+            loadLeaderboard();
+        }
+
+        async function loadLeaderboard() {
+            const listEl = document.getElementById('leaderboard-list');
+            listEl.innerHTML = '<li>Loading...</li>';
+            leaderboardModal.classList.add('active');
+            
+            try {
+                const res = await fetch('validate.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'get_highscores' })
+                });
+                const data = await res.json();
+                
+                listEl.innerHTML = '';
+                if (data.highscores && data.highscores.length > 0) {
+                    data.highscores.forEach((entry, index) => {
+                        listEl.innerHTML += `<li><span>${index + 1}. ${entry.initials}</span> <span>${entry.score}</span></li>`;
+                    });
+                } else {
+                    listEl.innerHTML = '<li>No scores today!</li>';
+                }
+            } catch (e) {
+                console.error("Error loading scores", e);
+                listEl.innerHTML = '<li>Error loading leaderboard.</li>';
+            }
+        }
     </script>
 </body>
 </html>
