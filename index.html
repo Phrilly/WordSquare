@@ -60,7 +60,6 @@
             transform: scale(0.95);
         }
         
-        /* Game Over Overlay */
         .game-over-overlay {
             position: absolute;
             top: 0;
@@ -101,8 +100,6 @@
             font-style: italic;
             margin-top: 10px;
         }
-
-        /* Information Panels */
         .found-words-container {
             width: 100%;
             max-width: 350px;
@@ -148,8 +145,6 @@
             flex-direction: column;
             gap: 8px;
         }
-        
-        /* Version Tag */
         .version-tag {
             width: 100%;
             max-width: 350px;
@@ -164,12 +159,12 @@
 <body>
 
     <div class="top-bar">
-        <div>Next: <span id="next-letter"></span></div>
+        <!-- Added tooltip and pointer cursor for Developer Mode -->
+        <div title="Developer Mode: Click to force a letter">Next: <span id="next-letter" style="cursor: pointer; color: var(--highlight);"></span></div>
         <div id="score">0</div>
     </div>
 
     <div class="grid-container" id="grid">
-        <!-- Cells generated dynamically -->
         <div class="game-over-overlay" id="game-over">
             <h2 id="end-title">Game Over</h2>
             <div id="loading-indicator" class="loading-text">Calculating score...</div>
@@ -194,7 +189,7 @@
         </details>
     </div>
 
-    <div class="version-tag">Version 1.1</div>
+    <div class="version-tag">Version 1.2 (Debug Mode)</div>
 
     <script>
         const gridSize = 5;
@@ -212,6 +207,14 @@
         const foundWordsListEl = document.getElementById('found-words-list');
         const rulesDetails = document.getElementById('rules-details');
         const rulesSummary = document.getElementById('rules-summary');
+
+        // Developer Cheat Mode: Allow forcing a letter
+        nextLetterEl.addEventListener('click', () => {
+            const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z) to force it onto the board.");
+            if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
+                nextLetterEl.innerText = forcedLetter.toUpperCase();
+            }
+        });
 
         rulesDetails.addEventListener('toggle', () => {
             rulesSummary.innerHTML = rulesDetails.open ? '&#9660; Classic Rules' : '&#9658; Classic Rules';
@@ -283,7 +286,6 @@
                     body: JSON.stringify({ grid: cells })
                 });
 
-                // If server throws an error, parse our custom JSON error message
                 if (!response.ok) {
                     let errorMessage = 'Unknown server error.';
                     try {
@@ -297,6 +299,11 @@
 
                 const data = await response.json();
                 
+                // Print the raw server data to the browser console for debugging
+                console.log("----- DIAGNOSTIC SERVER PAYLOAD -----");
+                console.log(data);
+                console.log("-------------------------------------");
+
                 scoreEl.innerText = data.score;
                 document.getElementById('words-5').innerText = data.breakdown[5];
                 document.getElementById('words-4').innerText = data.breakdown[4];
