@@ -11,6 +11,7 @@
             --text-color: #ffffff;
             --overlay-bg: rgba(0, 0, 0, 0.85);
             --highlight: #a8c2ea;
+            --error-color: #ffb3b3;
         }
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -116,6 +117,10 @@
             margin-top: 5px;
             color: var(--highlight);
         }
+        .error-message {
+            color: var(--error-color);
+            font-weight: bold;
+        }
         .rules-section {
             width: 100%;
             max-width: 350px;
@@ -153,6 +158,7 @@
     </div>
 
     <div class="grid-container" id="grid">
+        <!-- Cells generated dynamically -->
         <div class="game-over-overlay" id="game-over">
             <h2 id="end-title">Game Over</h2>
             <div id="loading-indicator" class="loading-text">Calculating score...</div>
@@ -211,6 +217,7 @@
             gameOverEl.classList.remove('active');
             playBtn.style.display = 'none';
             loadingIndicator.style.display = 'none';
+            foundWordsListEl.classList.remove('error-message');
             
             foundWordsListEl.innerText = 'None yet';
             document.getElementById('words-5').innerText = '0';
@@ -255,7 +262,6 @@
             loadingIndicator.style.display = 'block';
 
             try {
-                // Route the payload to your backend
                 const response = await fetch('validate.php', {
                     method: 'POST',
                     headers: {
@@ -264,11 +270,20 @@
                     body: JSON.stringify({ grid: cells })
                 });
 
-                if (!response.ok) throw new Error('Validation failed');
+                // If server throws an error, parse our custom JSON error message
+                if (!response.ok) {
+                    let errorMessage = 'Unknown server error.';
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error) errorMessage = errorData.error;
+                    } catch (e) {
+                        errorMessage = `Server Error (${response.status}): Could not parse response.`;
+                    }
+                    throw new Error(errorMessage);
+                }
 
                 const data = await response.json();
                 
-                // Update UI with verified server data
                 scoreEl.innerText = data.score;
                 document.getElementById('words-5').innerText = data.breakdown[5];
                 document.getElementById('words-4').innerText = data.breakdown[4];
@@ -282,7 +297,8 @@
 
             } catch (error) {
                 console.error('Error calculating score:', error);
-                foundWordsListEl.innerText = 'Error connecting to server to calculate score.';
+                foundWordsListEl.classList.add('error-message');
+                foundWordsListEl.innerText = error.message;
             } finally {
                 loadingIndicator.style.display = 'none';
                 playBtn.style.display = 'block';
