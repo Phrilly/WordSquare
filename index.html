@@ -6,6 +6,9 @@
     <title>Word Square Classic</title>
     <style>
         :root {
+            /* Dynamically sizes the game relative to screen width and height, capped at 600px */
+            --game-size: min(90vw, 65vh, 600px); 
+            
             --bg-color: #1e4a7a;
             --grid-border: #ffffff;
             --text-color: #ffffff;
@@ -34,8 +37,8 @@
             display: flex;
             justify-content: space-between;
             width: 100%;
-            max-width: 350px;
-            font-size: 28px;
+            max-width: var(--game-size);
+            font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
             margin-bottom: 20px;
         }
         .grid-container {
@@ -43,7 +46,7 @@
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(5, 1fr); 
             width: 100%;
-            max-width: 350px;
+            max-width: var(--game-size);
             aspect-ratio: 1 / 1;
             border: 1px solid var(--grid-border);
             position: relative;
@@ -55,7 +58,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px;
+            font-size: clamp(18px, calc(var(--game-size) * 0.09), 48px);
             line-height: 1;
             cursor: pointer;
             user-select: none;
@@ -75,78 +78,60 @@
         .word-4 { background-color: var(--color-4) !important; }
         .word-5 { background-color: var(--color-5) !important; }
 
-        /* Game Over Overlay */
-        .game-over-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-        .game-over-overlay.active {
-            display: flex;
-        }
-
         /* Alphabet Picker Modal for ? Wildcard */
         .alphabet-modal {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 120%; /* 6 rows instead of 5 to fit Z and Cancel */
-            background-color: var(--color-default);
+            top: 7.5%;
+            left: 7.5%;
+            width: 85%;
+            height: 85%;
+            background-color: rgba(43, 76, 126, 0.98);
             display: none;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(6, 1fr);
             z-index: 20;
-            border: 1px solid var(--grid-border);
-            box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
+            border: 2px solid var(--highlight);
+            box-shadow: 0px 10px 40px rgba(0,0,0,0.7);
         }
         .alphabet-modal.active {
             display: grid;
         }
         .alpha-cell {
             box-sizing: border-box;
-            border: 1px solid var(--grid-border);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px;
+            font-size: clamp(16px, calc(var(--game-size) * 0.07), 36px);
             cursor: pointer;
             user-select: none;
             background-color: transparent;
         }
         .alpha-cell:not(.empty-alpha):hover {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(255, 255, 255, 0.25);
         }
         .empty-alpha {
             cursor: default;
         }
         .alpha-cancel {
             grid-column: span 2;
-            font-size: 24px;
+            font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px);
         }
 
         .play-again-btn {
             background-color: #ffffff;
             color: var(--bg-color);
             border: none;
-            padding: 12px 24px;
-            font-size: 18px;
+            padding: 15px 24px;
+            font-size: 20px;
             font-family: inherit;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 20px;
+            margin-top: 25px;
             transition: background-color 0.2s;
             display: none;
             width: 100%;
-            max-width: 350px;
+            max-width: var(--game-size);
             border-radius: 4px;
         }
         .play-again-btn:hover {
@@ -156,9 +141,9 @@
         /* Results Area */
         .results-area {
             width: 100%;
-            max-width: 350px;
-            margin-top: 40px; /* Adjusted to account for modal overlap */
-            font-size: 16px;
+            max-width: var(--game-size);
+            margin-top: 40px; 
+            font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px);
             line-height: 1.6;
         }
         .result-row {
@@ -167,7 +152,7 @@
         
         .version-tag {
             width: 100%;
-            max-width: 350px;
+            max-width: var(--game-size);
             text-align: right;
             margin-top: 30px;
             font-size: 11px;
@@ -179,16 +164,15 @@
 <body>
 
     <div class="top-bar">
-        <div title="Click to open wildcard picker">Next: <span id="next-letter" style="cursor: pointer; color: var(--highlight);"></span></div>
+        <div id="left-header" title="Click to open wildcard picker">
+            <span id="header-label">Next: </span>
+            <span id="next-letter" style="cursor: pointer; color: var(--highlight);"></span>
+        </div>
         <div id="score">0</div>
     </div>
 
     <div class="grid-container" id="grid">
         <!-- Main Board Cells generated dynamically -->
-        
-        <div class="game-over-overlay" id="game-over">
-            <h2>Game Over</h2>
-        </div>
 
         <!-- Wildcard Alphabet Overlay -->
         <div class="alphabet-modal" id="alphabet-modal">
@@ -237,7 +221,7 @@
 
     <button class="play-again-btn" id="play-btn" onclick="initGame()">Play Again</button>
 
-    <div class="version-tag">Version 1.4 (Wildcard Added)</div>
+    <div class="version-tag">Version 1.6 (Responsive UI & Smaller Wildcard)</div>
 
     <script>
         const gridSize = 5;
@@ -245,23 +229,21 @@
         let placedCount = 0;
         let pendingCellIndex = null;
         
-        // Added three '?' to the standard pool array
         const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ???";
         
         const gridEl = document.getElementById('grid');
+        const headerLabelEl = document.getElementById('header-label');
         const nextLetterEl = document.getElementById('next-letter');
         const scoreEl = document.getElementById('score');
         const playBtn = document.getElementById('play-btn');
         const alphabetModal = document.getElementById('alphabet-modal');
-        const gameOverEl = document.getElementById('game-over');
+        const leftHeaderEl = document.getElementById('left-header');
 
-        // Allow clicking the top bar "?" to change it before clicking a cell
         nextLetterEl.addEventListener('click', () => {
             if (nextLetterEl.innerText === '?') {
-                pendingCellIndex = -1; // -1 signals we are just changing the "Next" display
+                pendingCellIndex = -1; 
                 alphabetModal.classList.add('active');
             } else {
-                // Secret developer cheat mode for non-wildcard letters
                 const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
                 if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
                     nextLetterEl.innerText = forcedLetter.toUpperCase();
@@ -270,7 +252,6 @@
         });
 
         function initGame() {
-            // Remove existing dynamic cells only
             const existingCells = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
             existingCells.forEach(cell => cell.remove());
 
@@ -279,10 +260,13 @@
             pendingCellIndex = null;
             
             scoreEl.innerText = '0';
+            headerLabelEl.innerText = 'Next: ';
+            nextLetterEl.style.display = 'inline';
+            leftHeaderEl.title = 'Click to open wildcard picker';
+            
             setNextLetter();
             
             playBtn.style.display = 'none';
-            gameOverEl.classList.remove('active');
             alphabetModal.classList.remove('active');
             
             document.getElementById('list-5').innerText = '';
@@ -300,7 +284,6 @@
 
         function setNextLetter() {
             if (placedCount >= 25) {
-                nextLetterEl.innerText = '-';
                 return;
             }
             const randomChar = pool[Math.floor(Math.random() * pool.length)];
@@ -312,7 +295,6 @@
 
             const letter = nextLetterEl.innerText;
             
-            // If the active letter is ?, open the picker modal instead of placing
             if (letter === '?') {
                 pendingCellIndex = index;
                 alphabetModal.classList.add('active');
@@ -327,12 +309,15 @@
             cellEl.innerText = letter;
             placedCount++;
 
-            setNextLetter();
             calculateRealTimeScore();
 
             if (placedCount === 25) {
-                gameOverEl.classList.add('active');
+                headerLabelEl.innerText = 'Score: ';
+                nextLetterEl.style.display = 'none';
+                leftHeaderEl.title = '';
                 playBtn.style.display = 'block';
+            } else {
+                setNextLetter();
             }
         }
 
@@ -345,10 +330,8 @@
             }
 
             if (pendingCellIndex === -1) {
-                // User clicked top bar to change next letter
                 nextLetterEl.innerText = letter;
             } else {
-                // User clicked board to drop a letter
                 const cellEl = document.querySelector(`.grid-cell[data-index='${pendingCellIndex}']`);
                 placeLetter(pendingCellIndex, letter, cellEl);
             }
