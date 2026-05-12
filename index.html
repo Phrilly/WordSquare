@@ -316,9 +316,16 @@
                 <span class="slider"></span>
             </label>
         </div>
+        <div class="setting-row">
+            <div>
+                <strong>Dev: Cycle Daily Board</strong><br>
+                <span style="opacity: 0.7; font-size: 12px;">Generates a new daily sequence (local).</span>
+            </div>
+            <button class="arcade-btn" style="max-width: 80px; padding: 6px; font-size: 12px; margin: 0;" onclick="cycleDailyBoard()">CYCLE</button>
+        </div>
     </div>
 
-    <div class="version-tag">Version 2.5 (Strict Daily Saves)</div>
+    <div class="version-tag">Version 2.7 (Vowel Rebalance)</div>
 
     <script>
         const gridSize = 5;
@@ -327,12 +334,13 @@
         let pendingCellIndex = null;
         let explodedWords = new Set(); 
         let currentScore = 0;
-        let isCurrentGameDaily = true; // Tracks if the current run is a valid Daily Challenge
+        let isCurrentGameDaily = true; 
         
         let usedWildcards = new Set(); 
         
         let gameDictionary = new Set(); 
-        const pool = "EEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAIIIIIIIIIIIIOOOOOOOOOOOOUUUUUUSSSSSSSSRRRRRRRTTTTTTTNNNNNNNLLLLLLDDDDGGGGCCCCMMMMBBPPHHFFWWYYVKXJQZ???????????????";
+        // Vowels: ~33.3%, Consonants: ~58.3%, Wildcards: ~8.3%
+        const pool = "EEEEEEEEEEEEEEEAAAAAAAAAAAIIIIIIIIIOOOOOOOOOUUUUSSSSSSSSRRRRRRRRTTTTTTTTNNNNNNNNLLLLLLLLDDDDDGGGGGCCCCCMMMMMBBBPPPHHHFFFWWWYYYVKXJQZ????????????";
         
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
@@ -354,13 +362,21 @@
             document.getElementById('init-tile-3').innerText = val[2] || '';
         });
 
-        let dailySeed = 0;
+        // Developer Offset for testing fresh boards
+        let dailyOffset = parseInt(localStorage.getItem('ws_daily_offset')) || 0;
+
         function getDailySeed() {
             const today = new Date();
             const dateStr = today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate();
             let s = 0;
             for(let i = 0; i < dateStr.length; i++) s += dateStr.charCodeAt(i) * (i + 1);
-            return s * 12345;
+            return (s + dailyOffset) * 12345;
+        }
+
+        function cycleDailyBoard() {
+            dailyOffset++;
+            localStorage.setItem('ws_daily_offset', dailyOffset);
+            initGame();
         }
 
         function getSeededRandom() {
@@ -422,7 +438,6 @@
             placedCount = 0; pendingCellIndex = null; explodedWords.clear(); currentScore = 0;
             usedWildcards.clear(); 
             
-            // Lock in the tracker: Is this a legitimate Daily run?
             isCurrentGameDaily = document.getElementById('daily-toggle').checked;
             if (isCurrentGameDaily) dailySeed = getDailySeed();
 
@@ -514,7 +529,6 @@
                     document.getElementById('final-score-display').innerText = currentScore;
                     
                     if (isCurrentGameDaily) {
-                        // Show saving UI
                         document.getElementById('daily-save-section').style.display = 'block';
                         document.getElementById('non-daily-section').style.display = 'none';
                         
@@ -526,7 +540,6 @@
                         highscoreEntryModal.classList.add('active');
                         initialsInput.focus();
                     } else {
-                        // Show bypass UI
                         document.getElementById('daily-save-section').style.display = 'none';
                         document.getElementById('non-daily-section').style.display = 'block';
                         highscoreEntryModal.classList.add('active');
