@@ -221,7 +221,7 @@
 
     <button class="play-again-btn" id="play-btn" onclick="initGame()">Play Again</button>
 
-    <div class="version-tag">Version 1.6 (Responsive UI & Smaller Wildcard)</div>
+    <div class="version-tag">Version 1.7 (5 Wildcards)</div>
 
     <script>
         const gridSize = 5;
@@ -229,7 +229,8 @@
         let placedCount = 0;
         let pendingCellIndex = null;
         
-        const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ???";
+        // Increased to 5 wildcards (?)
+        const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ?????";
         
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
