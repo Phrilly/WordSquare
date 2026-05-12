@@ -99,7 +99,7 @@
             cursor: pointer;
             user-select: none;
             border-radius: 8px;
-            transition: all 0.15s ease-in-out; 
+            transition: background-color 0.15s, color 0.15s, box-shadow 0.15s; 
             
             background-color: rgba(0, 0, 0, 0.15);
             box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4);
@@ -119,6 +119,17 @@
         .grid-cell:active {
             transform: scale(0.95);
         }
+
+        /* Tile Placement Pop Animation */
+        .tile-pop {
+            animation: tilePopAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes tilePopAnim {
+            0% { transform: scale(0.7); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
         
         .word-3 { background-color: var(--color-3) !important; color: #ffffff !important; }
         .word-4 { background-color: var(--color-4) !important; color: #ffffff !important; }
@@ -127,10 +138,13 @@
         /* Alphabet Picker Modal */
         .alphabet-modal {
             position: absolute;
-            top: 5%;
-            left: 5%;
-            width: 90%;
-            height: 90%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 82%;
+            /* Forcing a 5x6 aspect ratio ensures perfect squares regardless of device size */
+            aspect-ratio: 5 / 6; 
+            height: auto;
             background-color: rgba(30, 74, 122, 0.95);
             backdrop-filter: blur(4px);
             display: none;
@@ -226,7 +240,6 @@
             opacity: 0.7;
         }
 
-        /* Particle Explosion Styling */
         .particle {
             position: fixed;
             z-index: 9999;
@@ -242,11 +255,10 @@
             font-size: clamp(12px, calc(var(--game-size) * 0.04), 22px);
             border-radius: 4px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            pointer-events: none; /* Let clicks pass through */
-            animation: explode 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            pointer-events: none; 
+            animation: explode 2.8s ease-out forwards; 
         }
         
-        /* Alternate off-white particle */
         .particle.alt {
             background-color: #fdf6e3;
             color: var(--color-5);
@@ -255,7 +267,7 @@
 
         @keyframes explode {
             0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.2) rotate(var(--rot)); opacity: 0; }
+            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.4) rotate(var(--rot)); opacity: 0; }
         }
     </style>
 </head>
@@ -270,9 +282,6 @@
     </div>
 
     <div class="grid-container" id="grid">
-        <!-- Main Board Cells generated dynamically -->
-
-        <!-- Wildcard Alphabet Overlay -->
         <div class="alphabet-modal" id="alphabet-modal">
             <div class="alpha-cell" onclick="selectWildcard('A')">A</div>
             <div class="alpha-cell" onclick="selectWildcard('B')">B</div>
@@ -319,16 +328,17 @@
 
     <button class="play-again-btn" id="play-btn" onclick="initGame()">Play Again</button>
 
-    <div class="version-tag">Version 1.10 (Particle Explosions)</div>
+    <div class="version-tag">Version 1.14 (Square Wildcards & Placement Animations)</div>
 
     <script>
         const gridSize = 5;
         let cells = Array(gridSize * gridSize).fill('');
         let placedCount = 0;
         let pendingCellIndex = null;
-        let explodedWords = new Set(); // Tracks 5-letter words so they only explode once
+        let explodedWords = new Set(); 
         
-        const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ?????";
+        // 15 Wildcards added to ensure roughly a ~10% drop rate (2-3 per board)
+        const pool = "EEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAIIIIIIIIIIIIOOOOOOOOOOOOUUUUUUSSSSSSSSRRRRRRRTTTTTTTNNNNNNNLLLLLLDDDDGGGGCCCCMMMMBBPPHHFFWWYYVKXJQZ???????????????";
         
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
@@ -408,6 +418,12 @@
             cells[index] = letter;
             cellEl.innerText = letter;
             placedCount++;
+            
+            // Trigger the spring pop animation
+            cellEl.classList.add('tile-pop');
+            setTimeout(() => {
+                cellEl.classList.remove('tile-pop');
+            }, 300);
 
             calculateRealTimeScore();
 
@@ -455,7 +471,7 @@
                 p.style.top = centerY + 'px';
                 
                 const angle = Math.random() * Math.PI * 2;
-                const distance = 100 + Math.random() * (window.innerWidth * 0.4); 
+                const distance = 120 + Math.random() * (window.innerWidth * 0.45); 
                 const tx = Math.cos(angle) * distance + 'px';
                 const ty = Math.sin(angle) * distance + 'px';
                 const rot = (Math.random() - 0.5) * 720 + 'deg';
@@ -466,7 +482,7 @@
                 
                 document.body.appendChild(p);
                 
-                setTimeout(() => p.remove(), 1200);
+                setTimeout(() => p.remove(), 2800); 
             }
         }
 
@@ -491,7 +507,6 @@
                         else if (w.length === 4) words4.push(w);
                         else if (w.length === 5) {
                             words5.push(w);
-                            // Check if this is a newly formed 5-letter word
                             if (!explodedWords.has(w)) {
                                 triggerExplosion();
                                 explodedWords.add(w);
@@ -513,7 +528,10 @@
 
         function applyColorsToGrid(validWords) {
             const cellEls = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
-            cellEls.forEach(cell => cell.className = 'grid-cell');
+            // Remove previous word classes
+            cellEls.forEach(cell => {
+                cell.classList.remove('word-3', 'word-4', 'word-5');
+            });
 
             if (!validWords || validWords.length === 0) return;
 
