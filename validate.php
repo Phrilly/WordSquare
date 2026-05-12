@@ -47,7 +47,14 @@ if (isset($input['action'])) {
         if (!empty($initials) && $score >= 0) {
             $stmt = $pdo->prepare("INSERT INTO highscores (initials, score) VALUES (?, ?)");
             $stmt->execute([$initials, $score]);
-            echo json_encode(['success' => true]);
+            $newId = $pdo->lastInsertId();
+            
+            // Instantly check if this new score is the #1 highest score for today
+            $stmtTop = $pdo->query("SELECT id FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 1");
+            $topRow = $stmtTop->fetch(PDO::FETCH_ASSOC);
+            $isTopScore = ($topRow && $topRow['id'] == $newId);
+
+            echo json_encode(['success' => true, 'is_top_score' => $isTopScore]);
         } else {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid data.']);
@@ -57,7 +64,6 @@ if (isset($input['action'])) {
 
     // Action: Get Today's Highscores
     if ($input['action'] === 'get_highscores') {
-        // Fetch top 10 scores for the current date
         $stmt = $pdo->query("SELECT initials, score FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 10");
         $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(['highscores' => $scores]);
@@ -65,7 +71,7 @@ if (isset($input['action'])) {
     }
 }
 
-// Fallback logic for basic grid scoring (kept for safety/legacy)
+// Fallback logic for basic grid scoring 
 if (!isset($input['grid']) || count($input['grid']) !== 25) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid grid data submitted.']);
