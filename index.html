@@ -126,7 +126,7 @@
         .empty-alpha { background-color: transparent !important; box-shadow: none !important; cursor: default; }
         .alpha-cancel { grid-column: span 2; font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px); background-color: #ffcccc; }
 
-        /* General UI Modals for Score/Leaderboard */
+        /* General UI Modals for Score/Leaderboard with Translucency */
         .overlay-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(15, 35, 60, 0.65); 
@@ -264,14 +264,20 @@
             <h2 style="margin-top: 0; color: var(--highlight);">GAME OVER</h2>
             <div style="font-size: 20px; margin-bottom: 10px;">Final Score: <strong id="final-score-display">0</strong></div>
             
-            <div class="initials-wrapper">
-                <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
-                <div class="initial-tile" id="init-tile-1"></div>
-                <div class="initial-tile" id="init-tile-2"></div>
-                <div class="initial-tile" id="init-tile-3"></div>
+            <div id="daily-save-section">
+                <div class="initials-wrapper">
+                    <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
+                    <div class="initial-tile" id="init-tile-1"></div>
+                    <div class="initial-tile" id="init-tile-2"></div>
+                    <div class="initial-tile" id="init-tile-3"></div>
+                </div>
+                <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
             </div>
-            
-            <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
+
+            <div id="non-daily-section" style="display: none; margin-top: 15px;">
+                <p style="color: #ffcccc; font-size: 14px; margin-bottom: 20px; max-width: 250px;">Daily Challenge Mode was disabled.<br>Score will not be saved.</p>
+                <button class="arcade-btn" onclick="skipToLeaderboard()">VIEW LEADERBOARD</button>
+            </div>
         </div>
 
         <div class="overlay-modal" id="leaderboard-modal">
@@ -312,7 +318,7 @@
         </div>
     </div>
 
-    <div class="version-tag">Version 2.3 (Tile Leaderboard & Contrast Score)</div>
+    <div class="version-tag">Version 2.5 (Strict Daily Saves)</div>
 
     <script>
         const gridSize = 5;
@@ -321,6 +327,7 @@
         let pendingCellIndex = null;
         let explodedWords = new Set(); 
         let currentScore = 0;
+        let isCurrentGameDaily = true; // Tracks if the current run is a valid Daily Challenge
         
         let usedWildcards = new Set(); 
         
@@ -415,8 +422,9 @@
             placedCount = 0; pendingCellIndex = null; explodedWords.clear(); currentScore = 0;
             usedWildcards.clear(); 
             
-            const isDaily = document.getElementById('daily-toggle').checked;
-            if (isDaily) dailySeed = getDailySeed();
+            // Lock in the tracker: Is this a legitimate Daily run?
+            isCurrentGameDaily = document.getElementById('daily-toggle').checked;
+            if (isCurrentGameDaily) dailySeed = getDailySeed();
 
             scoreEl.innerText = '0';
             headerLabelEl.innerText = 'Next:';
@@ -446,8 +454,7 @@
 
         function setNextLetter() {
             if (placedCount >= 25) return;
-            const isDaily = document.getElementById('daily-toggle').checked;
-            const rng = isDaily ? getSeededRandom() : Math.random();
+            const rng = isCurrentGameDaily ? getSeededRandom() : Math.random();
             const randomChar = pool[Math.floor(rng * pool.length)];
             nextLetterEl.innerText = randomChar;
         }
@@ -505,13 +512,25 @@
                 
                 setTimeout(() => {
                     document.getElementById('final-score-display').innerText = currentScore;
-                    initialsInput.value = '';
-                    document.getElementById('init-tile-1').innerText = '';
-                    document.getElementById('init-tile-2').innerText = '';
-                    document.getElementById('init-tile-3').innerText = '';
                     
-                    highscoreEntryModal.classList.add('active');
-                    initialsInput.focus();
+                    if (isCurrentGameDaily) {
+                        // Show saving UI
+                        document.getElementById('daily-save-section').style.display = 'block';
+                        document.getElementById('non-daily-section').style.display = 'none';
+                        
+                        initialsInput.value = '';
+                        document.getElementById('init-tile-1').innerText = '';
+                        document.getElementById('init-tile-2').innerText = '';
+                        document.getElementById('init-tile-3').innerText = '';
+                        
+                        highscoreEntryModal.classList.add('active');
+                        initialsInput.focus();
+                    } else {
+                        // Show bypass UI
+                        document.getElementById('daily-save-section').style.display = 'none';
+                        document.getElementById('non-daily-section').style.display = 'block';
+                        highscoreEntryModal.classList.add('active');
+                    }
                 }, 2000);
             } else {
                 setNextLetter();
@@ -592,20 +611,42 @@
             currentScore = 0;
             let words3 = [], words4 = [], words5 = [];
             
+            let grouped = {};
             validWords.forEach(w => {
-                if (w.length === 3) { currentScore += 1; words3.push(w); }
-                else if (w.length === 4) { currentScore += 5; words4.push(w); }
-                else if (w.length === 5) {
-                    currentScore += 20; words5.push(w);
-                    if (!explodedWords.has(w)) { triggerExplosion(false); explodedWords.add(w); }
+                let rev = w.split('').reverse().join('');
+                let key = w < rev ? w : rev;
+                if (!grouped[key]) grouped[key] = new Set();
+                grouped[key].add(w);
+            });
+
+            let rawScoringWords = [];
+
+            Object.keys(grouped).forEach(key => {
+                let wArr = [...grouped[key]];
+                wArr.sort();
+                let displayStr = wArr.join('/');
+                let len = key.length; 
+                
+                rawScoringWords.push(...wArr); 
+
+                if (len === 3) { currentScore += 1; words3.push(displayStr); }
+                else if (len === 4) { currentScore += 5; words4.push(displayStr); }
+                else if (len === 5) {
+                    currentScore += 20; words5.push(displayStr);
+                    if (!explodedWords.has(key)) { triggerExplosion(false); explodedWords.add(key); }
                 }
             });
+            
+            words3.sort();
+            words4.sort();
+            words5.sort();
 
             scoreEl.innerText = currentScore;
             document.getElementById('list-5').innerText = words5.join(', ');
             document.getElementById('list-4').innerText = words4.join(', ');
             document.getElementById('list-3').innerText = words3.join(', ');
-            applyColorsToGrid(validWords);
+            
+            applyColorsToGrid(rawScoringWords);
         }
 
         function applyColorsToGrid(validWords) {
@@ -670,6 +711,14 @@
                 lbTitle.style.color = "var(--highlight)";
             }
             
+            loadLeaderboard();
+        }
+
+        function skipToLeaderboard() {
+            highscoreEntryModal.classList.remove('active');
+            const lbTitle = document.getElementById('leaderboard-title');
+            lbTitle.innerText = "TODAY'S HIGH SCORES";
+            lbTitle.style.color = "var(--highlight)";
             loadLeaderboard();
         }
 
