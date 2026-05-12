@@ -325,7 +325,7 @@
         </div>
     </div>
 
-    <div class="version-tag">Version 2.7 (Vowel Rebalance)</div>
+    <div class="version-tag">Version 2.8 (Juiced Letter Pool)</div>
 
     <script>
         const gridSize = 5;
@@ -339,8 +339,9 @@
         let usedWildcards = new Set(); 
         
         let gameDictionary = new Set(); 
-        // Vowels: ~33.3%, Consonants: ~58.3%, Wildcards: ~8.3%
-        const pool = "EEEEEEEEEEEEEEEAAAAAAAAAAAIIIIIIIIIOOOOOOOOOUUUUSSSSSSSSRRRRRRRRTTTTTTTTNNNNNNNNLLLLLLLLDDDDDGGGGGCCCCCMMMMMBBBPPPHHHFFFWWWYYYVKXJQZ????????????";
+        
+        // Vowels: 36%, Consonants: 51.5%, Wildcards: 12.5% (approx 3 per board)
+        const pool = "EEEEEEEEEEEEEEEEAAAAAAAAAAAAIIIIIIIIIIIIOOOOOOOOOOOOUUUUUUSSSSSSSSRRRRRRRRTTTTTTTTNNNNNNNNLLLLLLLLDDDDDGGGGGCCCCCMMMMMBBBPPPHHHFFFWWWYYYVKXJQZ????????????????????";
         
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
