@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Square Classic</title>
+    <style>
+        :root {
+            --bg-color: #2b4c7e;
+            --grid-border: #ffffff;
+            --text-color: #ffffff;
+            --overlay-bg: rgba(0, 0, 0, 0.85);
+            --highlight: #a8c2ea;
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 350px;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            width: 100%;
+            max-width: 350px;
+            aspect-ratio: 1 / 1;
+            border: 1px solid var(--grid-border);
+            position: relative;
+        }
+        .grid-cell {
+            border: 1px solid var(--grid-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            cursor: pointer;
+            user-select: none;
+            background-color: transparent;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .grid-cell:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .grid-cell:active {
+            transform: scale(0.95);
+        }
+        
+        /* Game Over Overlay */
+        .game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--overlay-bg);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .game-over-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .play-again-btn {
+            background-color: #ffffff;
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-family: inherit;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        .play-again-btn:hover {
+            background-color: #dddddd;
+        }
+        .loading-text {
+            display: none;
+            color: var(--highlight);
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        /* Information Panels */
+        .found-words-container {
+            width: 100%;
+            max-width: 350px;
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 50px;
+        }
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+            color: var(--highlight);
+        }
+        .rules-section {
+            width: 100%;
+            max-width: 350px;
+            margin-top: 20px;
+            border-top: 1px solid var(--grid-border);
+            padding-top: 10px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        details summary {
+            cursor: pointer;
+            margin-bottom: 5px;
+            outline: none;
+            list-style: none; 
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        .rules-description {
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        .score-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div>Next: <span id="next-letter"></span></div>
+        <div id="score">0</div>
+    </div>
+
+    <div class="grid-container" id="grid">
+        <div class="game-over-overlay" id="game-over">
+            <h2 id="end-title">Game Over</h2>
+            <div id="loading-indicator" class="loading-text">Calculating score...</div>
+            <button class="play-again-btn" id="play-btn" onclick="initGame()" style="display: none;">Play Again</button>
+        </div>
+    </div>
+
+    <div class="found-words-container">
+        <strong>Words Found:</strong>
+        <div class="word-list" id="found-words-list">None yet</div>
+    </div>
+
+    <div class="rules-section">
+        <details open id="rules-details">
+            <summary id="rules-summary">&#9660; Classic Rules</summary>
+            <div class="rules-description">Click to place letters in the grid to make words in any direction. Score points for unique words containing three letters or more.</div>
+            <div class="score-breakdown">
+                <div>5 letters (20pts): <span id="words-5">0</span></div>
+                <div>4 letters (5pts): <span id="words-4">0</span></div>
+                <div>3 letters (1pts): <span id="words-3">0</span></div>
+            </div>
+        </details>
+    </div>
+
+    <script>
+        const gridSize = 5;
+        let cells = Array(gridSize * gridSize).fill('');
+        let placedCount = 0;
+        
+        const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ";
+        
+        const gridEl = document.getElementById('grid');
+        const nextLetterEl = document.getElementById('next-letter');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('game-over');
+        const playBtn = document.getElementById('play-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const foundWordsListEl = document.getElementById('found-words-list');
+        const rulesDetails = document.getElementById('rules-details');
+        const rulesSummary = document.getElementById('rules-summary');
+
+        rulesDetails.addEventListener('toggle', () => {
+            rulesSummary.innerHTML = rulesDetails.open ? '&#9660; Classic Rules' : '&#9658; Classic Rules';
+        });
+
+        function initGame() {
+            const existingCells = document.querySelectorAll('.grid-cell');
+            existingCells.forEach(cell => cell.remove());
+
+            cells = Array(gridSize * gridSize).fill('');
+            placedCount = 0;
+            
+            scoreEl.innerText = '0';
+            setNextLetter();
+            
+            gameOverEl.classList.remove('active');
+            playBtn.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+            
+            foundWordsListEl.innerText = 'None yet';
+            document.getElementById('words-5').innerText = '0';
+            document.getElementById('words-4').innerText = '0';
+            document.getElementById('words-3').innerText = '0';
+
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleCellClick(i, cell));
+                gridEl.appendChild(cell);
+            }
+        }
+
+        function setNextLetter() {
+            if (placedCount >= 25) {
+                nextLetterEl.innerText = '-';
+                return;
+            }
+            const randomChar = pool[Math.floor(Math.random() * pool.length)];
+            nextLetterEl.innerText = randomChar;
+        }
+
+        function handleCellClick(index, cellEl) {
+            if (cells[index] !== '' || placedCount >= 25) return;
+
+            const letter = nextLetterEl.innerText;
+            cells[index] = letter;
+            cellEl.innerText = letter;
+            placedCount++;
+
+            setNextLetter();
+
+            if (placedCount === 25) {
+                finalizeGame();
+            }
+        }
+
+        async function finalizeGame() {
+            gameOverEl.classList.add('active');
+            loadingIndicator.style.display = 'block';
+
+            try {
+                // Route the payload to your backend
+                const response = await fetch('validate.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ grid: cells })
+                });
+
+                if (!response.ok) throw new Error('Validation failed');
+
+                const data = await response.json();
+                
+                // Update UI with verified server data
+                scoreEl.innerText = data.score;
+                document.getElementById('words-5').innerText = data.breakdown[5];
+                document.getElementById('words-4').innerText = data.breakdown[4];
+                document.getElementById('words-3').innerText = data.breakdown[3];
+                
+                if (data.words && data.words.length > 0) {
+                    foundWordsListEl.innerText = data.words.join(', ');
+                } else {
+                    foundWordsListEl.innerText = 'No valid words found.';
+                }
+
+            } catch (error) {
+                console.error('Error calculating score:', error);
+                foundWordsListEl.innerText = 'Error connecting to server to calculate score.';
+            } finally {
+                loadingIndicator.style.display = 'none';
+                playBtn.style.display = 'block';
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
