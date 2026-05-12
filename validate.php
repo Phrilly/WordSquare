@@ -1,19 +1,26 @@
 <?php
 // validate.php
 header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Hide raw HTML errors to ensure clean JSON output
 
-// Database Configuration
-$host = 'localhost';
-$dbname = 'word_square';
-$user = 'root'; // Update with your DB user
-$pass = '';     // Update with your DB password
+// 1. Check if config.php exists on the server
+if (!file_exists('config.php')) {
+    http_response_code(500);
+    echo json_encode(['error' => 'config.php is missing. Please create it manually in the Hostinger File Manager.']);
+    exit;
+}
 
+// Pull in the secure credentials
+require_once 'config.php';
+
+// 2. Check the database connection
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed']);
+    echo json_encode(['error' => 'Database connection failed. Check your password in config.php. Details: ' . $e->getMessage()]);
     exit;
 }
 
@@ -22,7 +29,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 if (!isset($input['grid']) || count($input['grid']) !== 25) {
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid grid data submitted']);
+    echo json_encode(['error' => 'Invalid grid data submitted.']);
     exit;
 }
 
@@ -45,7 +52,7 @@ function getLetterAt($r, $c, $cells, $gridSize) {
 
 $potentialWords = [];
 
-// Step 1: Scan the grid for all possible letter combinations
+// Scan the grid for all possible letter combinations
 for ($r = 0; $r < $gridSize; $r++) {
     for ($c = 0; $c < $gridSize; $c++) {
         foreach ($directions as $dir) {
@@ -67,7 +74,7 @@ for ($r = 0; $r < $gridSize; $r++) {
     }
 }
 
-// Step 2: Remove duplicates to only query unique possibilities
+// Remove duplicates to only query unique possibilities
 $uniquePotentialWords = array_unique($potentialWords);
 
 if (empty($uniquePotentialWords)) {
@@ -75,14 +82,20 @@ if (empty($uniquePotentialWords)) {
     exit;
 }
 
-// Step 3: Validate against the SQL dictionary
-$placeholders = str_repeat('?,', count($uniquePotentialWords) - 1) . '?';
-$sql = "SELECT word FROM dictionary WHERE word IN ($placeholders)";
-$stmt = $pdo->prepare($sql);
-$stmt->execute(array_values($uniquePotentialWords));
-$validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+// 3. Validate against the SQL dictionary and catch query errors
+try {
+    $placeholders = str_repeat('?,', count($uniquePotentialWords) - 1) . '?';
+    $sql = "SELECT word FROM dictionary WHERE word IN ($placeholders)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(array_values($uniquePotentialWords));
+    $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database query failed. Did you run the SQL code in phpMyAdmin? Details: ' . $e->getMessage()]);
+    exit;
+}
 
-// Step 4: Tally the final score
+// Tally the final score
 $score = 0;
 $breakdown = [3 => 0, 4 => 0, 5 => 0];
 
