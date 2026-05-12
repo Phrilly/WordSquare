@@ -10,10 +10,8 @@
             --game-size: min(90vw, 65vh, 600px); 
             
             --bg-color: #1e4a7a;
-            --grid-border: #ffffff;
             --text-color: #ffffff;
             --highlight: #a8c2ea;
-            --error-color: #ffb3b3;
             
             /* Word Length Colors */
             --color-5: #b03080; /* Purple/Magenta */
@@ -48,74 +46,115 @@
             width: 100%;
             max-width: var(--game-size);
             aspect-ratio: 1 / 1;
-            border: 1px solid var(--grid-border);
-            position: relative;
             background-color: var(--color-default);
+            position: relative;
+            
+            /* Board Styling */
+            gap: clamp(4px, 1vw, 8px); 
+            padding: clamp(6px, 1.5vw, 12px);
+            border-radius: 12px;
+            box-shadow: inset 0px 0px 20px rgba(0,0,0,0.5), 0px 10px 30px rgba(0,0,0,0.4);
         }
+        
         .grid-cell {
             box-sizing: border-box;
-            border: 1px solid var(--grid-border);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: clamp(18px, calc(var(--game-size) * 0.09), 48px);
+            font-size: clamp(24px, calc(var(--game-size) * 0.11), 52px);
+            font-family: 'Arial', sans-serif; /* Clean Scrabble-style font */
+            font-weight: bold;
             line-height: 1;
             cursor: pointer;
             user-select: none;
-            background-color: transparent;
-            transition: background-color 0.3s, transform 0.1s;
-            overflow: hidden;
+            border-radius: 8px;
+            transition: all 0.15s ease-in-out; /* Smooth pop-up animation */
+            
+            /* Default Empty State - Looks like a recessed board slot */
+            background-color: rgba(0, 0, 0, 0.15);
+            box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        .grid-cell:hover {
-            opacity: 0.8;
+
+        .grid-cell:not(:empty) {
+            /* Active Tile State - Snaps into an off-white 3D tile when a letter is placed */
+            background-color: #fdf6e3; 
+            color: #1a1a1a; 
+            border: none;
+            box-shadow: 
+                inset 3px 3px 5px rgba(255, 255, 255, 1), 
+                inset -4px -4px 6px rgba(0, 0, 0, 0.15), 
+                3px 4px 6px rgba(0, 0, 0, 0.4);
         }
+
         .grid-cell:active {
             transform: scale(0.95);
         }
         
-        /* Dynamic Word Colors */
-        .word-3 { background-color: var(--color-3) !important; }
-        .word-4 { background-color: var(--color-4) !important; }
-        .word-5 { background-color: var(--color-5) !important; }
+        /* Dynamic Word Colors - overrides the off-white tile background while keeping the 3D shadow */
+        .word-3 { background-color: var(--color-3) !important; color: #ffffff !important; }
+        .word-4 { background-color: var(--color-4) !important; color: #ffffff !important; }
+        .word-5 { background-color: var(--color-5) !important; color: #ffffff !important; }
 
-        /* Alphabet Picker Modal for ? Wildcard */
+        /* Alphabet Picker Modal */
         .alphabet-modal {
             position: absolute;
-            top: 7.5%;
-            left: 7.5%;
-            width: 85%;
-            height: 85%;
-            background-color: rgba(43, 76, 126, 0.98);
+            top: 5%;
+            left: 5%;
+            width: 90%;
+            height: 90%;
+            background-color: rgba(30, 74, 122, 0.95);
+            backdrop-filter: blur(4px);
             display: none;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(6, 1fr);
             z-index: 20;
             border: 2px solid var(--highlight);
-            box-shadow: 0px 10px 40px rgba(0,0,0,0.7);
+            box-shadow: 0px 10px 40px rgba(0,0,0,0.8);
+            border-radius: 12px;
+            gap: 4px;
+            padding: 8px;
+            box-sizing: border-box;
         }
         .alphabet-modal.active {
             display: grid;
         }
+        
         .alpha-cell {
             box-sizing: border-box;
-            border: 1px solid rgba(255, 255, 255, 0.3);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: clamp(16px, calc(var(--game-size) * 0.07), 36px);
+            font-size: clamp(20px, calc(var(--game-size) * 0.08), 40px);
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
             cursor: pointer;
             user-select: none;
-            background-color: transparent;
+            border-radius: 6px;
+            
+            /* Standard Tile Styling */
+            background-color: #fdf6e3; 
+            color: #1a1a1a; 
+            box-shadow: 
+                inset 2px 2px 4px rgba(255, 255, 255, 1), 
+                inset -3px -3px 5px rgba(0, 0, 0, 0.15), 
+                2px 3px 5px rgba(0, 0, 0, 0.4);
         }
         .alpha-cell:not(.empty-alpha):hover {
-            background-color: rgba(255, 255, 255, 0.25);
+            filter: brightness(0.9);
+        }
+        .alpha-cell:not(.empty-alpha):active {
+            transform: scale(0.95);
         }
         .empty-alpha {
+            background-color: transparent !important;
+            box-shadow: none !important;
             cursor: default;
         }
         .alpha-cancel {
             grid-column: span 2;
             font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px);
+            background-color: #ffcccc; /* Slight red tint to cancel button tile */
         }
 
         .play-again-btn {
@@ -132,7 +171,8 @@
             display: none;
             width: 100%;
             max-width: var(--game-size);
-            border-radius: 4px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
         }
         .play-again-btn:hover {
             background-color: #dddddd;
@@ -221,7 +261,7 @@
 
     <button class="play-again-btn" id="play-btn" onclick="initGame()">Play Again</button>
 
-    <div class="version-tag">Version 1.7 (5 Wildcards)</div>
+    <div class="version-tag">Version 1.8 (Scrabble Tiles)</div>
 
     <script>
         const gridSize = 5;
@@ -229,7 +269,6 @@
         let placedCount = 0;
         let pendingCellIndex = null;
         
-        // Increased to 5 wildcards (?)
         const pool = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIIOOOOOOOONNNNNNVRRRRRRTTTTTTLLLLSSSSUUUUDDDDGGGBBCCMMPPFFHHVVWWYYKJXQZ?????";
         
         const gridEl = document.getElementById('grid');
