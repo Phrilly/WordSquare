@@ -49,7 +49,6 @@ if (isset($input['action'])) {
             $stmt->execute([$initials, $score]);
             $newId = $pdo->lastInsertId();
             
-            // Instantly check if this new score is the #1 highest score for today
             $stmtTop = $pdo->query("SELECT id FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 1");
             $topRow = $stmtTop->fetch(PDO::FETCH_ASSOC);
             $isTopScore = ($topRow && $topRow['id'] == $newId);
@@ -104,6 +103,7 @@ for ($r = 0; $r < $gridSize; $r++) {
     }
 }
 
+// 1. Deduplicate absolute matching strings
 $uniquePotentialWords = array_unique($potentialWords);
 if (empty($uniquePotentialWords)) {
     echo json_encode(['score' => 0, 'words' => [], 'breakdown' => [3=>0, 4=>0, 5=>0]]);
@@ -115,15 +115,32 @@ $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)
 $stmt->execute(array_values($uniquePotentialWords));
 $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+// 2. Group reversible words (e.g. LIVER and REVIL)
+$grouped = [];
+foreach ($validWords as $w) {
+    $rev = strrev($w);
+    $key = strcmp($w, $rev) < 0 ? $w : $rev;
+    if (!isset($grouped[$key])) $grouped[$key] = [];
+    if (!in_array($w, $grouped[$key])) {
+        $grouped[$key][] = $w;
+    }
+}
+
 $score = 0;
+$displayWords = [];
 $breakdown = [3 => 0, 4 => 0, 5 => 0];
-foreach ($validWords as $word) {
-    $len = strlen($word);
+
+// 3. Score groups once
+foreach ($grouped as $key => $group) {
+    $len = strlen($key);
     $breakdown[$len]++;
     if ($len === 5) $score += 20;
     elseif ($len === 4) $score += 5;
     elseif ($len === 3) $score += 1;
+    
+    sort($group);
+    $displayWords[] = implode('/', $group);
 }
 
-echo json_encode(['score' => $score, 'words' => $validWords, 'breakdown' => $breakdown]);
+echo json_encode(['score' => $score, 'words' => $displayWords, 'breakdown' => $breakdown]);
 ?>
