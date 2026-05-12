@@ -47,6 +47,7 @@
         }
         #left-header { display: flex; align-items: center; }
 
+        /* Next Letter Tile */
         #next-letter {
             display: inline-flex; justify-content: center; align-items: center;
             width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
@@ -56,6 +57,16 @@
             cursor: pointer; user-select: none; transition: transform 0.1s;
         }
         #next-letter:active { transform: scale(0.95); }
+
+        /* Ongoing Score Blue Tile */
+        #score {
+            display: inline-flex; justify-content: center; align-items: center;
+            min-width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+            padding: 0 15px; font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
+            background-color: #2b4c7e; color: #ffffff; border-radius: 6px;
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.3), inset -3px -3px 5px rgba(0, 0, 0, 0.3), 2px 3px 5px rgba(0, 0, 0, 0.4);
+            user-select: none;
+        }
 
         .grid-container {
             display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
@@ -107,32 +118,41 @@
         }
         .alpha-cell:not(.empty-alpha):not(.used):hover { filter: brightness(0.9); }
         .alpha-cell:not(.empty-alpha):not(.used):active { transform: scale(0.95); }
-        
-        /* Exhausted Wildcard Tile State */
         .alpha-cell.used {
-            opacity: 0.4; pointer-events: none;
-            background-color: rgba(0, 0, 0, 0.4) !important;
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6) !important;
-            color: #888 !important; border: 1px solid rgba(255,255,255,0.1);
+            opacity: 0.4; pointer-events: none; background-color: rgba(0, 0, 0, 0.4) !important;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6) !important; color: #888 !important; border: 1px solid rgba(255,255,255,0.1);
         }
 
         .empty-alpha { background-color: transparent !important; box-shadow: none !important; cursor: default; }
         .alpha-cancel { grid-column: span 2; font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px); background-color: #ffcccc; }
 
-        /* General UI Modals for Score/Leaderboard */
+        /* General UI Modals for Score/Leaderboard with Translucency */
         .overlay-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); display: none; flex-direction: column;
+            background-color: rgba(15, 35, 60, 0.65); /* Translucent */
+            backdrop-filter: blur(5px); /* Glass effect */
+            display: none; flex-direction: column;
             justify-content: center; align-items: center; z-index: 50; border-radius: 12px;
             text-align: center; padding: 20px; box-sizing: border-box;
         }
         .overlay-modal.active { display: flex; }
-        .arcade-input {
-            background: transparent; border: none; border-bottom: 4px solid var(--highlight);
-            color: var(--highlight); font-size: 48px; font-family: 'Courier New', Courier, monospace;
-            font-weight: bold; width: 120px; text-align: center; margin: 20px 0; outline: none;
-            text-transform: uppercase; letter-spacing: 5px;
+        
+        /* Initials Tiles */
+        .initials-wrapper { position: relative; display: inline-flex; gap: 10px; margin: 20px 0; }
+        .hidden-initials-input {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; z-index: 10; cursor: pointer; font-size: 16px;
         }
+        .initial-tile {
+            width: clamp(40px, calc(var(--game-size) * 0.15), 70px);
+            height: clamp(40px, calc(var(--game-size) * 0.15), 70px);
+            display: flex; justify-content: center; align-items: center;
+            font-size: clamp(24px, calc(var(--game-size) * 0.1), 48px);
+            font-family: 'Arial', sans-serif; font-weight: bold;
+            background-color: #fdf6e3; color: #1a1a1a; border-radius: 6px;
+            box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 1), inset -3px -3px 5px rgba(0, 0, 0, 0.15), 2px 3px 5px rgba(0, 0, 0, 0.4);
+        }
+
         .arcade-btn {
             background-color: #ffffff; color: var(--bg-color); border: none; padding: 12px 24px;
             font-size: 18px; font-family: inherit; cursor: pointer; font-weight: bold;
@@ -181,10 +201,19 @@
             border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: none; animation: explode 2.8s ease-out forwards; 
         }
         .particle.alt { background-color: #fdf6e3; color: var(--color-5); box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), 0 4px 10px rgba(0,0,0,0.5); }
+        
         @keyframes explode {
             0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
             100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.4) rotate(var(--rot)); opacity: 0; }
         }
+        
+        /* Longer, further explosion for high score */
+        .particle.mega-burst { animation: explodeMega 6s ease-out forwards; }
+        @keyframes explodeMega {
+            0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.8) rotate(var(--rot)); opacity: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -209,13 +238,20 @@
 
         <div class="overlay-modal" id="highscore-entry-modal">
             <h2 style="margin-top: 0; color: var(--highlight);">GAME OVER</h2>
-            <div style="font-size: 20px;">Final Score: <strong id="final-score-display">0</strong></div>
-            <input type="text" id="initials-input" class="arcade-input" maxlength="3" placeholder="___" autocomplete="off">
+            <div style="font-size: 20px; margin-bottom: 10px;">Final Score: <strong id="final-score-display">0</strong></div>
+            
+            <div class="initials-wrapper">
+                <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
+                <div class="initial-tile" id="init-tile-1"></div>
+                <div class="initial-tile" id="init-tile-2"></div>
+                <div class="initial-tile" id="init-tile-3"></div>
+            </div>
+            
             <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
         </div>
 
         <div class="overlay-modal" id="leaderboard-modal">
-            <h3 style="margin-top: 0; color: var(--highlight);">TODAY'S HIGH SCORES</h3>
+            <h3 id="leaderboard-title" style="margin-top: 0; color: var(--highlight);">TODAY'S HIGH SCORES</h3>
             <ul class="leaderboard-list" id="leaderboard-list">
                 <!-- Scores injected here -->
             </ul>
@@ -252,7 +288,7 @@
         </div>
     </div>
 
-    <div class="version-tag">Version 2.1 (Exhaustible Wildcards)</div>
+    <div class="version-tag">Version 2.2 (Tile UI & Mega Explosions)</div>
 
     <script>
         const gridSize = 5;
@@ -262,7 +298,7 @@
         let explodedWords = new Set(); 
         let currentScore = 0;
         
-        let usedWildcards = new Set(); // Tracks letters already picked from the wildcard modal
+        let usedWildcards = new Set(); 
         
         let gameDictionary = new Set(); 
         const pool = "EEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAIIIIIIIIIIIIOOOOOOOOOOOOUUUUUUSSSSSSSSRRRRRRRTTTTTTTNNNNNNNLLLLLLDDDDGGGGCCCCMMMMBBPPHHFFWWYYVKXJQZ???????????????";
@@ -276,7 +312,16 @@
         
         const highscoreEntryModal = document.getElementById('highscore-entry-modal');
         const leaderboardModal = document.getElementById('leaderboard-modal');
-        const initialsInput = document.getElementById('initials-input');
+        const initialsInput = document.getElementById('hidden-initials');
+
+        // Sync hidden input to visual tiles
+        initialsInput.addEventListener('input', (e) => {
+            const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+            e.target.value = val; // Force uppercase/letters only
+            document.getElementById('init-tile-1').innerText = val[0] || '';
+            document.getElementById('init-tile-2').innerText = val[1] || '';
+            document.getElementById('init-tile-3').innerText = val[2] || '';
+        });
 
         let dailySeed = 0;
         function getDailySeed() {
@@ -344,7 +389,7 @@
 
             cells = Array(gridSize * gridSize).fill('');
             placedCount = 0; pendingCellIndex = null; explodedWords.clear(); currentScore = 0;
-            usedWildcards.clear(); // Reset the exhausted wildcard pool for the new game
+            usedWildcards.clear(); 
             
             const isDaily = document.getElementById('daily-toggle').checked;
             if (isDaily) dailySeed = getDailySeed();
@@ -436,7 +481,12 @@
                 
                 setTimeout(() => {
                     document.getElementById('final-score-display').innerText = currentScore;
+                    // Reset initials visual tiles
                     initialsInput.value = '';
+                    document.getElementById('init-tile-1').innerText = '';
+                    document.getElementById('init-tile-2').innerText = '';
+                    document.getElementById('init-tile-3').innerText = '';
+                    
                     highscoreEntryModal.classList.add('active');
                     initialsInput.focus();
                 }, 2000);
@@ -446,13 +496,11 @@
         }
 
         function selectWildcard(letter) {
-            // Prevent selection if already exhausted
             if (usedWildcards.has(letter) && letter !== 'Cancel') return;
-
             alphabetModal.classList.remove('active');
             if (letter === 'Cancel') { pendingCellIndex = null; return; }
             
-            usedWildcards.add(letter); // Lock this letter out from future wildcard picks
+            usedWildcards.add(letter); 
             
             if (pendingCellIndex === -1) {
                 nextLetterEl.innerText = letter;
@@ -463,27 +511,36 @@
             pendingCellIndex = null;
         }
 
-        function triggerExplosion() {
+        function triggerExplosion(isMega = false) {
             const gridRect = gridEl.getBoundingClientRect();
             const centerX = gridRect.left + (gridRect.width / 2);
             const centerY = gridRect.top + (gridRect.height / 2);
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             
-            for(let i = 0; i < 40; i++) {
+            const particleCount = isMega ? 150 : 40;
+            const durationMs = isMega ? 6000 : 2800;
+            
+            for(let i = 0; i < particleCount; i++) {
                 const p = document.createElement('div');
                 p.className = 'particle';
+                if (isMega) p.classList.add('mega-burst');
                 if (Math.random() > 0.5) p.classList.add('alt');
+                
                 p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
                 p.style.left = centerX + 'px'; p.style.top = centerY + 'px';
                 
                 const angle = Math.random() * Math.PI * 2;
-                const distance = 120 + Math.random() * (window.innerWidth * 0.45); 
+                // Mega explosion travels significantly further
+                const baseDist = isMega ? 250 : 120;
+                const distMod = isMega ? 0.8 : 0.45;
+                const distance = baseDist + Math.random() * (window.innerWidth * distMod); 
+                
                 p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
                 p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
                 p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
                 
                 document.body.appendChild(p);
-                setTimeout(() => p.remove(), 2800); 
+                setTimeout(() => p.remove(), durationMs); 
             }
         }
 
@@ -518,7 +575,7 @@
                 else if (w.length === 4) { currentScore += 5; words4.push(w); }
                 else if (w.length === 5) {
                     currentScore += 20; words5.push(w);
-                    if (!explodedWords.has(w)) { triggerExplosion(); explodedWords.add(w); }
+                    if (!explodedWords.has(w)) { triggerExplosion(false); explodedWords.add(w); }
                 }
             });
 
@@ -567,15 +624,31 @@
             let initials = initialsInput.value.trim().toUpperCase();
             if (initials.length === 0) initials = "---";
             
+            let isNewTopScore = false;
+            
             try {
-                await fetch('validate.php', {
+                const res = await fetch('validate.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ action: 'save_score', initials: initials, score: currentScore })
                 });
+                const data = await res.json();
+                isNewTopScore = data.is_top_score;
             } catch (e) { console.error("Error saving score", e); }
             
             highscoreEntryModal.classList.remove('active');
+            
+            // Adjust leaderboard UI based on if they got the #1 spot
+            const lbTitle = document.getElementById('leaderboard-title');
+            if (isNewTopScore) {
+                lbTitle.innerText = "🏆 NEW DAILY HIGH SCORE! 🏆";
+                lbTitle.style.color = "#FFD700"; // Gold
+                triggerExplosion(true); // Mega Explosion!
+            } else {
+                lbTitle.innerText = "TODAY'S HIGH SCORES";
+                lbTitle.style.color = "var(--highlight)";
+            }
+            
             loadLeaderboard();
         }
 
