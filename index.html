@@ -28,7 +28,6 @@
             min-height: 100vh;
         }
 
-        /* Initial Loading Screen */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--bg-color); z-index: 10000; display: flex;
@@ -47,7 +46,6 @@
         }
         #left-header { display: flex; align-items: center; }
 
-        /* Next Letter Tile */
         #next-letter {
             display: inline-flex; justify-content: center; align-items: center;
             width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
@@ -58,7 +56,6 @@
         }
         #next-letter:active { transform: scale(0.95); }
 
-        /* Ongoing Score Blue Tile */
         #score {
             display: inline-flex; justify-content: center; align-items: center;
             min-width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
@@ -88,7 +85,6 @@
         }
         .grid-cell:active { transform: scale(0.95); }
 
-        /* WILDCARD TILE STYLING */
         .grid-cell.is-wildcard {
             background-color: #1a1a1a !important; 
             color: #ffffff !important; 
@@ -102,7 +98,6 @@
         .word-4 { background-color: var(--color-4) !important; color: #ffffff !important; }
         .word-5 { background-color: var(--color-5) !important; color: #ffffff !important; }
 
-        /* Darker Word highlights for wildcards */
         .word-3.is-wildcard { background-color: #8a5a19 !important; color: #ffffff !important; }
         .word-4.is-wildcard { background-color: #0a6614 !important; color: #ffffff !important; } 
         .word-5.is-wildcard { background-color: #731e54 !important; color: #ffffff !important; } 
@@ -110,6 +105,19 @@
         .hover-3 { background-color: rgba(217, 140, 37, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(217, 140, 37, 0.6) !important; }
         .hover-4 { background-color: rgba(16, 160, 32, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(16, 160, 32, 0.6) !important; }
         .hover-5 { background-color: rgba(176, 48, 128, 0.4) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(176, 48, 128, 0.8) !important; }
+
+        /* Color Badges for the Results Lists */
+        .word-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            margin: 3px 3px;
+            border-radius: 6px;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px);
+            color: #ffffff;
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.3), inset -2px -2px 4px rgba(0,0,0,0.3), 1px 2px 4px rgba(0,0,0,0.4);
+        }
 
         .alphabet-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -138,7 +146,6 @@
         .empty-alpha { background-color: transparent !important; box-shadow: none !important; cursor: default; }
         .alpha-cancel { grid-column: span 2; font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px); background-color: #ffcccc; }
 
-        /* General UI Modals */
         .overlay-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(15, 35, 60, 0.65); 
@@ -172,7 +179,6 @@
         }
         .arcade-btn:hover { background-color: #dddddd; }
         
-        /* Floating Show Board Button */
         #return-to-menu-btn {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             z-index: 1000; box-shadow: 0px 10px 20px rgba(0,0,0,0.6);
@@ -212,7 +218,7 @@
         }
 
         .results-area { width: 100%; max-width: var(--game-size); margin-top: 40px; font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px); line-height: 1.6; }
-        .result-row { margin-bottom: 5px; }
+        .result-row { margin-bottom: 15px; }
 
         .settings-area {
             width: 100%; max-width: var(--game-size); margin-top: 30px; padding-top: 20px;
@@ -302,18 +308,38 @@
                 <!-- Scores injected here -->
             </ul>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
-                <button class="arcade-btn" onclick="hideModalsForBoardView()">VIEW FINAL BOARD</button>
+                <button class="arcade-btn" id="view-winning-btn" style="display:none; background-color: #FFD700; color: #1a1a1a;" onclick="showBestBoard()">VIEW #1 BOARD</button>
+                <button class="arcade-btn" onclick="hideModalsForBoardView()">VIEW MY BOARD</button>
                 <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
             </div>
         </div>
+
+        <div class="overlay-modal" id="best-board-modal">
+            <h2 style="margin-top: 0; color: #FFD700;">🏆 #1 BOARD 🏆</h2>
+            <div style="font-size: 20px; margin-bottom: 20px;">Score: <strong id="best-board-score"></strong> by <strong id="best-board-initials" style="color:var(--highlight)"></strong></div>
+            <div class="grid-container" id="best-grid" style="margin-bottom: 20px; pointer-events: none;">
+                <!-- 25 cells injected via JS -->
+            </div>
+            <button class="arcade-btn" onclick="showLeaderboardFromBest()">BACK TO LEADERBOARD</button>
+        </div>
+
     </div>
     
     <button id="return-to-menu-btn" class="arcade-btn" style="display:none;" onclick="showLeaderboard()">SHOW LEADERBOARD</button>
 
     <div class="results-area">
-        <div class="result-row">5 letters (20pts): <span id="list-5"></span></div>
-        <div class="result-row">4 letters (5pts): <span id="list-4"></span></div>
-        <div class="result-row">3 letters (1pts): <span id="list-3"></span></div>
+        <div class="result-row">
+            <div style="margin-bottom: 8px;">5 letters (20pts):</div>
+            <div id="list-5" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+        <div class="result-row">
+            <div style="margin-bottom: 8px;">4 letters (5pts):</div>
+            <div id="list-4" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+        <div class="result-row">
+            <div style="margin-bottom: 8px;">3 letters (1pts):</div>
+            <div id="list-3" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
     </div>
 
     <div class="settings-area">
@@ -346,7 +372,7 @@
         </div>
     </div>
 
-    <div class="version-tag">Version 4.0 (100-Tile Math & UI Upgrades)</div>
+    <div class="version-tag">Version 5.0 (Winner Board Viewer & Styling)</div>
 
     <script>
         const gridSize = 5;
@@ -360,6 +386,7 @@
         let usedWildcards = new Set(); 
         let gameDictionary = new Set(); 
         let gameDeck = []; 
+        let bestDailyData = null; // Stores the top scorer's data to review
 
         const gridEl = document.getElementById('grid');
         const headerLabelEl = document.getElementById('header-label');
@@ -404,10 +431,9 @@
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
 
-        // --- Standard 100-Tile Master Bag (Scrabble Math Optimized) ---
+        // --- Standard 100-Tile Master Bag ---
         function generateBagSequence() {
             const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
-            // 36 Vowels, 52 Consonants, 12 Wildcards = 100 Tiles Total
             const bagString = "EEEEEEEEEEEAAAAAAAAIIIIIIIOOOOOOOUUUSSSSSRRRRRTTTTTNNNNNLLLLDDDDGGCCMMBBPP HHFFWWYYVKXJQZ????????????";
             const initialBag = bagString.replace(/ /g, '').split('');
             
@@ -478,6 +504,60 @@
             leaderboardModal.classList.add('active');
         }
 
+        function showLeaderboardFromBest() {
+            document.getElementById('best-board-modal').classList.remove('active');
+            document.getElementById('leaderboard-modal').classList.add('active');
+        }
+
+        function showBestBoard() {
+            if (!bestDailyData || !bestDailyData.grid || bestDailyData.grid.length !== 25) return;
+            
+            document.getElementById('leaderboard-modal').classList.remove('active');
+            document.getElementById('return-to-menu-btn').style.display = 'none'; 
+            
+            document.getElementById('best-board-score').innerText = bestDailyData.score;
+            document.getElementById('best-board-initials').innerText = bestDailyData.initials;
+            
+            const bg = document.getElementById('best-grid');
+            bg.innerHTML = '';
+            
+            let chars = bestDailyData.grid.split('');
+            let normalizedChars = chars.map(c => c.toUpperCase());
+            
+            // Render the winning board
+            for(let i=0; i<25; i++) {
+                let c = document.createElement('div');
+                c.className = 'grid-cell';
+                
+                // If it was saved as lowercase, it was a wildcard
+                if (chars[i] && chars[i] !== chars[i].toUpperCase()) {
+                    c.classList.add('is-wildcard');
+                }
+                c.innerText = normalizedChars[i];
+                bg.appendChild(c);
+            }
+            
+            // Calculate and apply color highlights on the winning board
+            const bValid = findValidWordsLocal(normalizedChars);
+            
+            let rawScoringWords = [];
+            let grouped = {};
+            bValid.forEach(w => {
+                let rev = w.split('').reverse().join('');
+                let key = w < rev ? w : rev;
+                if (!grouped[key]) grouped[key] = new Set();
+                grouped[key].add(w);
+            });
+            Object.keys(grouped).forEach(key => {
+                let wArr = [...grouped[key]];
+                rawScoringWords.push(...wArr); 
+            });
+
+            applyColorsToSpecificGrid(rawScoringWords, normalizedChars, bg);
+            
+            document.getElementById('best-board-modal').classList.add('active');
+        }
+
         function initGame() {
             const existingCells = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
             existingCells.forEach(cell => cell.remove());
@@ -497,11 +577,12 @@
             alphabetModal.classList.remove('active');
             highscoreEntryModal.classList.remove('active');
             leaderboardModal.classList.remove('active');
+            document.getElementById('best-board-modal').classList.remove('active');
             document.getElementById('return-to-menu-btn').style.display = 'none';
             
-            document.getElementById('list-5').innerText = '';
-            document.getElementById('list-4').innerText = '';
-            document.getElementById('list-3').innerText = '';
+            document.getElementById('list-5').innerHTML = '';
+            document.getElementById('list-4').innerHTML = '';
+            document.getElementById('list-3').innerHTML = '';
 
             for (let i = 0; i < 25; i++) {
                 const cell = document.createElement('div');
@@ -564,7 +645,6 @@
             cellEl.innerText = letter;
             placedCount++;
             
-            // Reverses the tile colour to white on black if it was a wildcard
             if (isWildcard) {
                 cellEl.classList.add('is-wildcard');
             }
@@ -709,15 +789,17 @@
             words5.sort();
 
             scoreEl.innerText = currentScore;
-            document.getElementById('list-5').innerText = words5.join(', ');
-            document.getElementById('list-4').innerText = words4.join(', ');
-            document.getElementById('list-3').innerText = words3.join(', ');
             
-            applyColorsToGrid(rawScoringWords);
+            // Build the colorful badges
+            document.getElementById('list-5').innerHTML = words5.map(w => `<span class="word-badge word-5">${w}</span>`).join('');
+            document.getElementById('list-4').innerHTML = words4.map(w => `<span class="word-badge word-4">${w}</span>`).join('');
+            document.getElementById('list-3').innerHTML = words3.map(w => `<span class="word-badge word-3">${w}</span>`).join('');
+            
+            applyColorsToSpecificGrid(rawScoringWords, cells, gridEl);
         }
 
-        function applyColorsToGrid(validWords) {
-            const cellEls = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
+        function applyColorsToSpecificGrid(validWords, cellsArray, containerElement) {
+            const cellEls = containerElement.querySelectorAll('.grid-cell:not(.alpha-cell)');
             cellEls.forEach(cell => cell.classList.remove('word-3', 'word-4', 'word-5'));
             if (!validWords || validWords.length === 0) return;
 
@@ -734,7 +816,7 @@
                                 let nextRow = r + (dr * i); let nextCol = c + (dc * i);
                                 if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) { match = false; break; }
                                 let idx = nextRow * gridSize + nextCol;
-                                if (cells[idx] !== word[i]) { match = false; break; }
+                                if (cellsArray[idx] !== word[i]) { match = false; break; }
                                 indices.push(idx);
                             }
                             if (match) indices.forEach(idx => {
@@ -756,11 +838,23 @@
             
             let isNewTopScore = false;
             
+            // Build a string that records lowercase letters for wildcards
+            let gridString = "";
+            for(let i=0; i<25; i++) {
+                let el = document.querySelector(`.grid-cell[data-index='${i}']`);
+                let char = cells[i];
+                if(el && el.classList.contains('is-wildcard')) {
+                    gridString += char.toLowerCase();
+                } else {
+                    gridString += char;
+                }
+            }
+            
             try {
                 const res = await fetch('validate.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'save_score', initials: initials, score: currentScore })
+                    body: JSON.stringify({ action: 'save_score', initials: initials, score: currentScore, grid: gridString })
                 });
                 const data = await res.json();
                 isNewTopScore = data.is_top_score;
@@ -804,6 +898,16 @@
                 
                 listEl.innerHTML = '';
                 if (data.highscores && data.highscores.length > 0) {
+                    
+                    bestDailyData = data.highscores[0]; // Capture the #1 spot
+                    
+                    const viewWinningBtn = document.getElementById('view-winning-btn');
+                    if (bestDailyData && bestDailyData.grid && bestDailyData.grid.length === 25) {
+                        viewWinningBtn.style.display = 'block';
+                    } else {
+                        viewWinningBtn.style.display = 'none';
+                    }
+
                     data.highscores.forEach((entry, index) => {
                         let initials = (entry.initials || '---').padEnd(3, '-').substring(0, 3);
                         let initialsHtml = '';
@@ -824,6 +928,7 @@
                         `;
                     });
                 } else {
+                    document.getElementById('view-winning-btn').style.display = 'none';
                     listEl.innerHTML = '<li style="border:none; justify-content:center;">No scores today!</li>';
                 }
             } catch (e) {
