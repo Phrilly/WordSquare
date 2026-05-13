@@ -43,10 +43,11 @@ if (isset($input['action'])) {
     if ($input['action'] === 'save_score') {
         $initials = strtoupper(substr(trim($input['initials']), 0, 3));
         $score = (int)$input['score'];
+        $grid = isset($input['grid']) ? substr(trim($input['grid']), 0, 25) : '';
         
         if (!empty($initials) && $score >= 0) {
-            $stmt = $pdo->prepare("INSERT INTO highscores (initials, score) VALUES (?, ?)");
-            $stmt->execute([$initials, $score]);
+            $stmt = $pdo->prepare("INSERT INTO highscores (initials, score, grid) VALUES (?, ?, ?)");
+            $stmt->execute([$initials, $score, $grid]);
             $newId = $pdo->lastInsertId();
             
             $stmtTop = $pdo->query("SELECT id FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 1");
@@ -63,7 +64,7 @@ if (isset($input['action'])) {
 
     // Action: Get Today's Highscores
     if ($input['action'] === 'get_highscores') {
-        $stmt = $pdo->query("SELECT initials, score FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 10");
+        $stmt = $pdo->query("SELECT initials, score, grid FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 10");
         $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(['highscores' => $scores]);
         exit;
@@ -103,7 +104,6 @@ for ($r = 0; $r < $gridSize; $r++) {
     }
 }
 
-// 1. Deduplicate absolute matching strings
 $uniquePotentialWords = array_unique($potentialWords);
 if (empty($uniquePotentialWords)) {
     echo json_encode(['score' => 0, 'words' => [], 'breakdown' => [3=>0, 4=>0, 5=>0]]);
@@ -115,7 +115,6 @@ $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)
 $stmt->execute(array_values($uniquePotentialWords));
 $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-// 2. Group reversible words (e.g. LIVER and REVIL)
 $grouped = [];
 foreach ($validWords as $w) {
     $rev = strrev($w);
@@ -130,7 +129,6 @@ $score = 0;
 $displayWords = [];
 $breakdown = [3 => 0, 4 => 0, 5 => 0];
 
-// 3. Score groups once
 foreach ($grouped as $key => $group) {
     $len = strlen($key);
     $breakdown[$len]++;
