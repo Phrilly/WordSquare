@@ -1,1187 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Square Classic</title>
-    <style>
-        :root {
-            --game-size: min(90vw, 65vh, 600px); 
-            --bg-color: #1e4a7a;
-            --text-color: #ffffff;
-            --highlight: #a8c2ea;
-            --color-5: #b03080; 
-            --color-4: #10a020; 
-            --color-3: #d98c25; 
-            --color-default: #2b4c7e; 
-        }
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-            box-sizing: border-box;
-            min-height: 100vh;
-        }
-
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-color); z-index: 10000; display: flex;
-            flex-direction: column; justify-content: center; align-items: center;
-        }
-        .spinner {
-            width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.2);
-            border-top: 5px solid var(--highlight); border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%; max-width: var(--game-size); font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px); margin-bottom: 20px;
-            transition: opacity 0.2s ease-in-out;
-        }
-        #left-header { display: flex; align-items: center; }
-
-        #next-letter {
-            display: inline-flex; justify-content: center; align-items: center;
-            width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
-            margin-left: 12px; font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
-            background-color: #fdf6e3; color: #1a1a1a; border-radius: 6px;
-            box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 1), inset -3px -3px 5px rgba(0, 0, 0, 0.15), 2px 3px 5px rgba(0, 0, 0, 0.4);
-            cursor: pointer; user-select: none; transition: transform 0.1s;
-        }
-        #next-letter:active { transform: scale(0.95); }
-
-        #score {
-            display: inline-flex; justify-content: center; align-items: center;
-            min-width: clamp(30px, calc(var(--game-size) * 0.12), 60px); height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
-            padding: 0 15px; font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
-            background-color: #2b4c7e; color: #ffffff; border-radius: 6px;
-            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.3), inset -3px -3px 5px rgba(0, 0, 0, 0.3), 2px 3px 5px rgba(0, 0, 0, 0.4);
-            user-select: none;
-        }
-
-        .grid-container {
-            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
-            width: 100%; max-width: var(--game-size); aspect-ratio: 1 / 1; background-color: var(--color-default);
-            position: relative; gap: clamp(4px, 1vw, 8px); padding: clamp(6px, 1.5vw, 12px); border-radius: 12px;
-            box-shadow: inset 0px 0px 20px rgba(0,0,0,0.5), 0px 10px 30px rgba(0,0,0,0.4);
-            transition: opacity 0.2s ease-in-out;
-        }
-        
-        .grid-cell {
-            box-sizing: border-box; display: flex; justify-content: center; align-items: center;
-            font-size: clamp(24px, calc(var(--game-size) * 0.11), 52px); font-family: 'Arial', sans-serif; 
-            font-weight: bold; line-height: 1; cursor: pointer; user-select: none; border-radius: 8px;
-            transition: background-color 0.15s, color 0.15s, box-shadow 0.15s; 
-            background-color: rgba(0, 0, 0, 0.15); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05);
-        }
-        .grid-cell:not(:empty) {
-            background-color: #fdf6e3; color: #1a1a1a; border: none;
-            box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 1), inset -4px -4px 6px rgba(0, 0, 0, 0.15), 3px 4px 6px rgba(0, 0, 0, 0.4);
-        }
-        .grid-cell:active { transform: scale(0.95); }
-
-        .grid-cell.is-wildcard {
-            background-color: #1a1a1a !important; 
-            color: #ffffff !important; 
-            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.2), inset -2px -2px 5px rgba(0, 0, 0, 0.8), 2px 3px 5px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        .tile-pop { animation: tilePopAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes tilePopAnim { 0% { transform: scale(0.7); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        
-        .word-3 { background-color: var(--color-3) !important; color: #ffffff !important; }
-        .word-4 { background-color: var(--color-4) !important; color: #ffffff !important; }
-        .word-5 { background-color: var(--color-5) !important; color: #ffffff !important; }
-
-        .word-3.is-wildcard { background-color: #8a5a19 !important; color: #ffffff !important; }
-        .word-4.is-wildcard { background-color: #0a6614 !important; color: #ffffff !important; } 
-        .word-5.is-wildcard { background-color: #731e54 !important; color: #ffffff !important; } 
-
-        .hover-3 { background-color: rgba(217, 140, 37, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(217, 140, 37, 0.6) !important; }
-        .hover-4 { background-color: rgba(16, 160, 32, 0.3) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(16, 160, 32, 0.6) !important; }
-        .hover-5 { background-color: rgba(176, 48, 128, 0.4) !important; box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(176, 48, 128, 0.8) !important; }
-
-        .word-badge {
-            display: inline-block; padding: 4px 10px; margin: 3px 3px; border-radius: 6px;
-            font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px);
-            color: #ffffff; box-shadow: inset 2px 2px 4px rgba(255,255,255,0.3), inset -2px -2px 4px rgba(0,0,0,0.3), 1px 2px 4px rgba(0,0,0,0.4);
-        }
-
-        .alphabet-modal {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 82%; aspect-ratio: 5 / 6; height: auto; background-color: rgba(30, 74, 122, 0.95);
-            backdrop-filter: blur(4px); display: none; grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(6, 1fr); z-index: 20; border: 2px solid var(--highlight);
-            box-shadow: 0px 10px 40px rgba(0,0,0,0.8); border-radius: 12px; gap: 4px; padding: 8px; box-sizing: border-box;
-        }
-        .alphabet-modal.active { display: grid; }
-        
-        .alpha-cell {
-            box-sizing: border-box; display: flex; justify-content: center; align-items: center;
-            font-size: clamp(20px, calc(var(--game-size) * 0.08), 40px); font-family: 'Arial', sans-serif;
-            font-weight: bold; cursor: pointer; user-select: none; border-radius: 6px;
-            background-color: #fdf6e3; color: #1a1a1a; 
-            box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), inset -3px -3px 5px rgba(0, 0, 0, 0.15), 2px 3px 5px rgba(0, 0, 0, 0.4);
-            transition: all 0.2s;
-        }
-        .alpha-cell:not(.empty-alpha):not(.used):hover { filter: brightness(0.9); }
-        .alpha-cell:not(.empty-alpha):not(.used):active { transform: scale(0.95); }
-        .alpha-cell.used {
-            opacity: 0.4; pointer-events: none; background-color: rgba(0, 0, 0, 0.4) !important;
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6) !important; color: #888 !important; border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .empty-alpha { background-color: transparent !important; box-shadow: none !important; cursor: default; }
-        .alpha-cancel { grid-column: span 2; font-size: clamp(14px, calc(var(--game-size) * 0.05), 24px); background-color: #ffcccc; }
-
-        /* General UI Modals */
-        .overlay-modal {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            /* Darkened the background heavily so the player's underlying game is blocked out entirely */
-            background-color: rgba(15, 35, 60, 0.95); 
-            backdrop-filter: blur(6px); 
-            display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 50; border-radius: 12px;
-            text-align: center; padding: 20px; box-sizing: border-box;
-        }
-        .overlay-modal.active { display: flex; }
-        
-        .initials-wrapper { position: relative; display: inline-flex; gap: 10px; margin: 15px 0; }
-        .hidden-initials-input {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; z-index: 10; cursor: pointer; font-size: 16px;
-        }
-        .initial-tile {
-            width: clamp(40px, calc(var(--game-size) * 0.15), 70px);
-            height: clamp(40px, calc(var(--game-size) * 0.15), 70px);
-            display: flex; justify-content: center; align-items: center;
-            font-size: clamp(24px, calc(var(--game-size) * 0.1), 48px);
-            font-family: 'Arial', sans-serif; font-weight: bold;
-            background-color: #fdf6e3; color: #1a1a1a; border-radius: 6px;
-            box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 1), inset -3px -3px 5px rgba(0, 0, 0, 0.15), 2px 3px 5px rgba(0, 0, 0, 0.4);
-        }
-
-        .arcade-btn {
-            background-color: #ffffff; color: var(--bg-color); border: none; padding: 12px 24px;
-            font-size: 18px; font-family: inherit; cursor: pointer; font-weight: bold;
-            border-radius: 4px; box-shadow: 0px 6px 0px rgba(0,0,0,0.4); transition: all 0.1s;
-            margin-top: 10px; width: 100%; max-width: 250px;
-            transform: translateY(0);
-        }
-        .arcade-btn:hover { background-color: #e0e0e0; }
-        .arcade-btn:active {
-            box-shadow: 0px 2px 0px rgba(0,0,0,0.4);
-            transform: translateY(4px);
-        }
-        
-        #return-to-menu-btn {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; box-shadow: 0px 6px 0px rgba(0,0,0,0.6);
-            background-color: var(--highlight); color: #1a1a1a;
-        }
-        #return-to-menu-btn:active {
-            box-shadow: 0px 2px 0px rgba(0,0,0,0.6);
-            transform: translateX(-50%) translateY(4px);
-        }
-
-        .leaderboard-list {
-            list-style: none; padding: 0; margin: 20px 0; width: 100%; max-width: 280px;
-            display: flex; flex-direction: column; gap: 8px;
-        }
-        .lb-row-container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .lb-rank { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--highlight); width: 30px; text-align: right; margin-right: 15px; font-size: 18px; }
-        .lb-initials-group { display: flex; gap: 4px; }
-        .lb-initial-tile {
-            width: clamp(24px, calc(var(--game-size) * 0.08), 34px); height: clamp(24px, calc(var(--game-size) * 0.08), 34px);
-            display: flex; justify-content: center; align-items: center; font-size: clamp(16px, calc(var(--game-size) * 0.06), 22px);
-            font-family: 'Arial', sans-serif; font-weight: bold; background-color: #fdf6e3; color: #1a1a1a; border-radius: 4px;
-            box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 1), inset -2px -2px 3px rgba(0, 0, 0, 0.15), 1px 2px 3px rgba(0, 0, 0, 0.4);
-        }
-        .lb-score-tile {
-            min-width: clamp(40px, calc(var(--game-size) * 0.12), 50px); height: clamp(24px, calc(var(--game-size) * 0.08), 34px);
-            padding: 0 8px; display: flex; justify-content: center; align-items: center; font-size: clamp(16px, calc(var(--game-size) * 0.05), 20px);
-            font-family: 'Arial', sans-serif; font-weight: bold; background-color: #2b4c7e; color: #ffffff; border-radius: 4px;
-            box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.3), inset -2px -2px 3px rgba(0, 0, 0, 0.3), 1px 2px 3px rgba(0, 0, 0, 0.4); margin-left: 15px;
-        }
-
-        .results-area { width: 100%; max-width: var(--game-size); margin-top: 40px; font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px); line-height: 1.6; }
-        .result-row { margin-bottom: 15px; }
-
-        .settings-area {
-            width: 100%; max-width: var(--game-size); margin-top: 30px; padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; gap: 15px;
-        }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        
-        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0,0,0,0.3); transition: .4s; border-radius: 24px; border: 1px solid rgba(255,255,255,0.2);
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 2px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--color-4); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .version-tag { width: 100%; max-width: var(--game-size); text-align: right; margin-top: 20px; font-size: 11px; color: var(--highlight); opacity: 0.7; }
-
-        .particle {
-            position: fixed; z-index: 9999; width: clamp(20px, calc(var(--game-size) * 0.07), 40px); height: clamp(20px, calc(var(--game-size) * 0.07), 40px);
-            background-color: var(--color-5); color: #ffffff; display: flex; justify-content: center; align-items: center;
-            font-family: 'Arial', sans-serif; font-weight: bold; font-size: clamp(12px, calc(var(--game-size) * 0.04), 22px);
-            border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: none; animation: explode 2.8s ease-out forwards; 
-        }
-        .particle.alt { background-color: #fdf6e3; color: var(--color-5); box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), 0 4px 10px rgba(0,0,0,0.5); }
-        
-        @keyframes explode {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.4) rotate(var(--rot)); opacity: 0; }
-        }
-        
-        .particle.mega-burst { animation: explodeMega 6s ease-out forwards; }
-        @keyframes explodeMega {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.8) rotate(var(--rot)); opacity: 0; }
-        }
-
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Square Classic</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <h2>Loading Game Engine...</h2>
+  </div>
 
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <h2>Loading Game Engine...</h2>
+  <div class="top-bar">
+    <div id="left-header" title="Click to open wildcard picker">
+      <span id="header-label">Next:</span>
+      <span id="next-letter"></span>
+    </div>
+    <div id="score">0</div>
+  </div>
+
+  <div class="grid-container" id="grid">
+    <div class="alphabet-modal" id="alphabet-modal"></div>
+
+    <div class="overlay-modal" id="highscore-entry-modal">
+      <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
+      <div style="font-size:20px; margin-bottom:25px;">
+        Final Score: <strong id="final-score-display" style="color:var(--highlight)">0</strong>
+      </div>
+
+      <div id="daily-save-section">
+        <div class="initials-wrapper">
+          <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
+          <div class="initial-tile" id="init-tile-1"></div>
+          <div class="initial-tile" id="init-tile-2"></div>
+          <div class="initial-tile" id="init-tile-3"></div>
+        </div>
+        <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
+      </div>
+
+      <div id="non-daily-section" style="display:none; margin-top:15px;">
+        <p style="color:#ffcccc; font-size:14px; margin-bottom:20px; max-width:250px;">
+          Daily Challenge Mode was disabled.<br>Score will not be saved.
+        </p>
+        <button class="arcade-btn" onclick="skipToLeaderboard()">VIEW LEADERBOARD</button>
+      </div>
     </div>
 
-    <div class="top-bar">
-        <div id="left-header" title="Click to open wildcard picker">
-            <span id="header-label">Next:</span>
-            <span id="next-letter"></span>
-        </div>
-        <div id="score">0</div>
+    <div class="overlay-modal" id="leaderboard-modal">
+      <h3 id="leaderboard-title" style="margin-top:0; color:var(--highlight);">TODAY'S HIGH SCORES</h3>
+      <ul class="leaderboard-list" id="leaderboard-list"></ul>
+      <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:250px;">
+        <button class="arcade-btn" id="view-winning-btn" style="display:none; background-color:#FFD700; color:#1a1a1a;" onclick="showBestBoard()">VIEW #1 BOARD</button>
+        <button class="arcade-btn" id="view-ai-btn" style="display:none; background-color:#a8c2ea; color:#1a1a1a;" onclick="showAIBoard()">VIEW AI'S BOARD</button>
+        <button class="arcade-btn" onclick="hideModalsForBoardView()">VIEW MY BOARD</button>
+        <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
+      </div>
     </div>
 
-    <div class="grid-container" id="grid">
-        
-        <div class="alphabet-modal" id="alphabet-modal">
-            </div>
-
-        <div class="overlay-modal" id="highscore-entry-modal">
-            <h2 style="margin-top: 0; color: var(--highlight);">GAME OVER</h2>
-            <div style="font-size: 20px; margin-bottom: 25px;">Final Score: <strong id="final-score-display" style="color:var(--highlight)">0</strong></div>
-            
-            <div id="daily-save-section">
-                <div class="initials-wrapper">
-                    <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
-                    <div class="initial-tile" id="init-tile-1"></div>
-                    <div class="initial-tile" id="init-tile-2"></div>
-                    <div class="initial-tile" id="init-tile-3"></div>
-                </div>
-                <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
-            </div>
-
-            <div id="non-daily-section" style="display: none; margin-top: 15px;">
-                <p style="color: #ffcccc; font-size: 14px; margin-bottom: 20px; max-width: 250px;">Daily Challenge Mode was disabled.<br>Score will not be saved.</p>
-                <button class="arcade-btn" onclick="skipToLeaderboard()">VIEW LEADERBOARD</button>
-            </div>
-        </div>
-
-        <div class="overlay-modal" id="leaderboard-modal">
-            <h3 id="leaderboard-title" style="margin-top: 0; color: var(--highlight);">TODAY'S HIGH SCORES</h3>
-            <ul class="leaderboard-list" id="leaderboard-list">
-                </ul>
-            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
-                <button class="arcade-btn" id="view-winning-btn" style="display:none; background-color: #FFD700; color: #1a1a1a;" onclick="showBestBoard()">VIEW #1 BOARD</button>
-                <button class="arcade-btn" id="view-ai-btn" style="display:none; background-color: #a8c2ea; color: #1a1a1a;" onclick="showAIBoard()">VIEW AI'S BOARD</button>
-                <button class="arcade-btn" onclick="hideModalsForBoardView()">VIEW MY BOARD</button>
-                <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
-            </div>
-        </div>
-
-        <div class="overlay-modal" id="best-board-modal">
-            <h2 id="board-viewer-title" style="margin-top: 0; color: #FFD700;">🏆 #1 BOARD 🏆</h2>
-            <div style="font-size: 20px; margin-bottom: 20px;">Score: <strong id="best-board-score"></strong> by <strong id="best-board-initials" style="color:var(--highlight)"></strong></div>
-            <div class="grid-container" id="best-grid" style="margin-bottom: 20px; pointer-events: none; opacity: 1;">
-                </div>
-            <button class="arcade-btn" onclick="showLeaderboardFromBest()">BACK TO LEADERBOARD</button>
-        </div>
-
+    <div class="overlay-modal" id="best-board-modal">
+      <h2 id="board-viewer-title" style="margin-top:0; color:#FFD700;">#1 BOARD</h2>
+      <div style="font-size:20px; margin-bottom:20px;">
+        Score <strong id="best-board-score"></strong> by
+        <strong id="best-board-initials" style="color:var(--highlight)"></strong>
+      </div>
+      <div class="grid-container" id="best-grid" style="margin-bottom:20px; pointer-events:none; opacity:1;"></div>
+      <button class="arcade-btn" onclick="showLeaderboardFromBest()">BACK TO LEADERBOARD</button>
     </div>
-    
-    <button id="return-to-menu-btn" class="arcade-btn" style="display:none;" onclick="showLeaderboard()">SHOW LEADERBOARD</button>
+  </div>
 
-    <div class="results-area">
-        <div class="result-row">
-            <div style="margin-bottom: 8px;">5 letters (20pts):</div>
-            <div id="list-5" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-        </div>
-        <div class="result-row">
-            <div style="margin-bottom: 8px;">4 letters (5pts):</div>
-            <div id="list-4" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-        </div>
-        <div class="result-row">
-            <div style="margin-bottom: 8px;">3 letters (1pts):</div>
-            <div id="list-3" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-        </div>
+  <button id="return-to-menu-btn" class="arcade-btn" style="display:none;" onclick="showLeaderboard()">SHOW LEADERBOARD</button>
+
+  <div class="results-area">
+    <div class="result-row">
+      <div style="margin-bottom:8px;">5 letters (20pts):</div>
+      <div id="list-5" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+    <div class="result-row">
+      <div style="margin-bottom:8px;">4 letters (5pts):</div>
+      <div id="list-4" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+    <div class="result-row">
+      <div style="margin-bottom:8px;">3 letters (1pt):</div>
+      <div id="list-3" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+  </div>
+
+  <div class="settings-area">
+    <div class="setting-row">
+      <div>
+        <strong>Daily Challenge Mode</strong><br>
+        <span style="opacity:0.7; font-size:12px;">Generates the exact same letter sequence all day.</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="daily-toggle" checked onchange="initGame()">
+        <span class="slider"></span>
+      </label>
     </div>
 
-    <div class="settings-area">
-        <div class="setting-row">
-            <div>
-                <strong>Daily Challenge Mode</strong><br>
-                <span style="opacity: 0.7; font-size: 12px;">Generates the exact same letter sequence all day.</span>
-            </div>
-            <label class="switch">
-                <input type="checkbox" id="daily-toggle" checked onchange="initGame()">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div class="setting-row">
-            <div>
-                <strong>Hover Hints</strong><br>
-                <span style="opacity: 0.7; font-size: 12px;">Colors squares to preview potential words.</span>
-            </div>
-            <label class="switch">
-                <input type="checkbox" id="hover-toggle" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div class="setting-row">
-            <div>
-                <strong>Dev: Cycle Daily Board</strong><br>
-                <span style="opacity: 0.7; font-size: 12px;">Generates a new daily sequence (local).</span>
-            </div>
-            <div style="display: flex; gap: 5px;">
-                <button class="arcade-btn" style="padding: 6px; font-size: 12px; margin: 0; box-shadow: 0px 4px 0px rgba(0,0,0,0.4);" onclick="cycleDailyBoard()">CYCLE</button>
-                <button class="arcade-btn" style="padding: 6px; font-size: 12px; margin: 0; background-color: #ffcccc; color: #1a1a1a; box-shadow: 0px 4px 0px rgba(0,0,0,0.4);" onclick="resetDailyOffset()">RESET</button>
-            </div>
-        </div>
+    <div class="setting-row">
+      <div>
+        <strong>Hover Hints</strong><br>
+        <span style="opacity:0.7; font-size:12px;">Colors squares to preview potential words.</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="hover-toggle" checked>
+        <span class="slider"></span>
+      </label>
     </div>
 
-    <div class="version-tag">Version 6.3 (Bounded Bag + Bell Curve AI)</div>
+    <div class="setting-row">
+      <div>
+        <strong>Dev Cycle Daily Board</strong><br>
+        <span style="opacity:0.7; font-size:12px;">Generates a new daily sequence local.</span>
+      </div>
+      <div style="display:flex; gap:5px;">
+        <button class="arcade-btn mini-btn" onclick="cycleDailyBoard()">CYCLE</button>
+        <button class="arcade-btn mini-btn mini-btn-warn" onclick="resetDailyOffset()">RESET</button>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        const gridSize = 5;
-        let cells = Array(gridSize * gridSize).fill('');
-        let wildcardState = Array(gridSize * gridSize).fill(false);
-        
-        let placedCount = 0;
-        let pendingCellIndex = null;
-        let explodedWords = new Set(); 
-        let currentScore = 0;
-        let isCurrentGameDaily = true; 
-        
-        let usedWildcards = new Set(); 
-        let gameDictionary = new Set(); 
-        let gameDeck = []; 
-        let bestDailyData = null; 
-        
-        let aiBestScore = 0;
-        let aiBestGrid = [];
+  <div class="version-tag">Version 6.3 Bounded Bag Bell Curve AI</div>
 
-        const gridEl = document.getElementById('grid');
-        const headerLabelEl = document.getElementById('header-label');
-        const nextLetterEl = document.getElementById('next-letter');
-        const scoreEl = document.getElementById('score');
-        const alphabetModal = document.getElementById('alphabet-modal');
-        const leftHeaderEl = document.getElementById('left-header');
-        
-        const highscoreEntryModal = document.getElementById('highscore-entry-modal');
-        const leaderboardModal = document.getElementById('leaderboard-modal');
-        const initialsInput = document.getElementById('hidden-initials');
-        const topBarEl = document.querySelector('.top-bar');
-
-        initialsInput.addEventListener('input', (e) => {
-            const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-            e.target.value = val; 
-            document.getElementById('init-tile-1').innerText = val[0] || '';
-            document.getElementById('init-tile-2').innerText = val[1] || '';
-            document.getElementById('init-tile-3').innerText = val[2] || '';
-        });
-
-        let dailyOffset = parseInt(localStorage.getItem('ws_daily_offset')) || 0;
-
-        function getDailySeed() {
-            const today = new Date();
-            const dateStr = today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate();
-            let s = 0;
-            for(let i = 0; i < dateStr.length; i++) s += dateStr.charCodeAt(i) * (i + 1);
-            return (s + dailyOffset) * 12345;
-        }
-
-        function cycleDailyBoard() {
-            dailyOffset++;
-            localStorage.setItem('ws_daily_offset', dailyOffset);
-            initGame();
-        }
-
-        function resetDailyOffset() {
-            dailyOffset = 0;
-            localStorage.removeItem('ws_daily_offset');
-            initGame();
-        }
-
-        let dailySeed = 0;
-        function getSeededRandom() {
-            let t = dailySeed += 0x6D2B79F5;
-            t = Math.imul(t ^ t >>> 15, t | 1);
-            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        }
-
-        function generateBagSequence() {
-            const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
-            
-            const today = new Date();
-            // - const isNewLogicActive = today.getTime() >= new Date('2026-05-18T00:00:00').getTime();
-            const isNewLogicActive = true;
-
-            if (!isNewLogicActive) {
-                // Legacy Logic (Runs only for today)
-                const bagString = "EEEEEEEEEEEAAAAAAAAIIIIIIIOOOOOOOUUUSSSSSRRRRRTTTTTNNNNNLLLLDDDDGGCCMMBBPP HHFFWWYYVKXJQZ????????????";
-                const initialBag = bagString.replace(/ /g, '').split('');
-                let sequence = [];
-                for (let i = 0; i < 25; i++) {
-                    const index = Math.floor(rng() * initialBag.length);
-                    sequence.push(initialBag.splice(index, 1)[0]);
-                }
-                return sequence;
-            }
-
-            // --- V6.3: THE BOUNDED BAG ---
-            // A highly curated 100-tile master bag explicitly built for 5x5 omnidirectional play
-            const masterBagString = "AAAAAAAEEEEEEEEEEIIIIIOOOOOUUUSSSSRRRRRRRRTTTTTTTTNNNNNNNLLLLLLDDDDDBBCCCCFFGGGHHHJKMMMMPPPQVVWWXYYZ";
-            const initialBag = masterBagString.split('');
-            const vowels = ['A', 'E', 'I', 'O', 'U'];
-            let sequence = [];
-            let isValid = false;
-
-            // 1. Audit Loop: Keep drawing until we hit the sweet spot
-            while (!isValid) {
-                sequence = [];
-                let tempBag = [...initialBag];
-                let vowelCount = 0;
-                let sCount = 0;
-
-                for (let i = 0; i < 25; i++) {
-                    const index = Math.floor(rng() * tempBag.length);
-                    const selected = tempBag.splice(index, 1)[0];
-                    sequence.push(selected);
-                    
-                    if (vowels.includes(selected)) vowelCount++;
-                    if (selected === 'S') sCount++;
-                }
-
-                // Hard Limits: Prevent vowel floods and S-inflation
-                if (vowelCount >= 6 && vowelCount <= 9 && sCount <= 2) {
-                    isValid = true;
-                }
-            }
-
-            // --- V6.3: THE WILDCARD BELL CURVE ---
-            // 40% chance for 2, 25% for 1 or 3, 5% for 0 or 4
-            const wcRoll = rng() * 100;
-            let wcCount = 0;
-            
-            if (wcRoll < 5) wcCount = 0;
-            else if (wcRoll < 30) wcCount = 1;
-            else if (wcRoll < 70) wcCount = 2;
-            else if (wcRoll < 95) wcCount = 3;
-            else wcCount = 4;
-
-            let safeIndices = [];
-            for(let i = 0; i < 25; i++) {
-                // Protect 'S' and 'Q' from being overwritten by wildcards
-                if (sequence[i] !== 'S' && sequence[i] !== 'Q') {
-                    safeIndices.push(i);
-                }
-            }
-
-            for(let i = 0; i < wcCount && safeIndices.length > 0; i++) {
-                const randSafeIdx = Math.floor(rng() * safeIndices.length);
-                const replaceIdx = safeIndices.splice(randSafeIdx, 1)[0];
-                sequence[replaceIdx] = '?';
-            }
-
-            return sequence;
-        }
-
-        async function checkYesterdaysWinner() {
-            try {
-                const res = await fetch('validate.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'get_yesterdays_winner' })
-                });
-                const data = await res.json();
-                
-                if (data.winner_initials) {
-                    const overlay = document.createElement('div');
-                    overlay.style.position = 'fixed';
-                    overlay.style.top = '0'; overlay.style.left = '0';
-                    overlay.style.width = '100vw'; overlay.style.height = '100vh';
-                    overlay.style.backgroundColor = 'rgba(15, 35, 60, 0.9)';
-                    overlay.style.zIndex = '9998';
-                    overlay.style.display = 'flex';
-                    overlay.style.flexDirection = 'column';
-                    overlay.style.justifyContent = 'center';
-                    overlay.style.alignItems = 'center';
-                    
-                    const title = document.createElement('h1');
-                    title.innerText = "YESTERDAY'S CHAMPION";
-                    title.style.color = 'var(--highlight)';
-                    title.style.marginBottom = '20px';
-                    
-                    const initialsBox = document.createElement('div');
-                    initialsBox.innerText = data.winner_initials;
-                    initialsBox.style.fontSize = '80px';
-                    initialsBox.style.fontWeight = 'bold';
-                    initialsBox.style.color = '#FFD700';
-                    initialsBox.style.textShadow = '0 0 20px #ffaa00';
-                    
-                    overlay.appendChild(title);
-                    overlay.appendChild(initialsBox);
-                    document.body.appendChild(overlay);
-
-                    triggerExplosion(true);
-
-                    setTimeout(() => {
-                        overlay.style.transition = 'opacity 1s';
-                        overlay.style.opacity = '0';
-                        setTimeout(() => overlay.remove(), 1000);
-                    }, 4000);
-                }
-            } catch (e) { console.error("Could not fetch yesterday's winner", e); }
-        }
-
-        function setupAlphabetGrid() {
-            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
-            let html = '';
-            letters.forEach(l => html += `<div class="alpha-cell" onclick="selectWildcard('${l}')">${l}</div>`);
-            html += `<div class="alpha-cell empty-alpha"></div><div class="alpha-cell empty-alpha"></div>`;
-            html += `<div class="alpha-cell alpha-cancel" onclick="selectWildcard('Cancel')">Cancel</div>`;
-            alphabetModal.innerHTML = html;
-        }
-
-        function updateWildcardModal() {
-            const alphaCells = document.querySelectorAll('.alpha-cell:not(.empty-alpha):not(.alpha-cancel)');
-            alphaCells.forEach(cell => {
-                if (usedWildcards.has(cell.innerText)) {
-                    cell.classList.add('used');
-                } else {
-                    cell.classList.remove('used');
-                }
-            });
-        }
-
-        window.onload = async function bootstrapGame() {
-            setupAlphabetGrid();
-            try {
-                const res = await fetch('validate.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'get_dict' })
-                });
-                const data = await res.json();
-                if(data.words) gameDictionary = new Set(data.words);
-            } catch(e) { console.error("Failed to load dictionary", e); }
-            
-            document.getElementById('loading-screen').style.display = 'none';
-            checkYesterdaysWinner();
-            initGame();
-        }
-
-        nextLetterEl.addEventListener('click', () => {
-            if (nextLetterEl.innerText === '?') {
-                pendingCellIndex = -1; 
-                updateWildcardModal();
-                alphabetModal.classList.add('active');
-            } else {
-                const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
-                if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
-                    nextLetterEl.innerText = forcedLetter.toUpperCase();
-                }
-            }
-        });
-
-        function hideModalsForBoardView() {
-            leaderboardModal.classList.remove('active');
-            document.getElementById('return-to-menu-btn').style.display = 'block';
-            topBarEl.style.opacity = '1'; 
-        }
-
-        function showLeaderboard() {
-            document.getElementById('return-to-menu-btn').style.display = 'none';
-            leaderboardModal.classList.add('active');
-            topBarEl.style.opacity = '0'; // Hide player score background
-        }
-
-        function showLeaderboardFromBest() {
-            document.getElementById('best-board-modal').classList.remove('active');
-            document.getElementById('leaderboard-modal').classList.add('active');
-            topBarEl.style.opacity = '0'; 
-        }
-
-        function showBestBoard() {
-            if (!bestDailyData || !bestDailyData.grid || bestDailyData.grid.length !== 25) return;
-            
-            document.getElementById('leaderboard-modal').classList.remove('active');
-            document.getElementById('return-to-menu-btn').style.display = 'none'; 
-            topBarEl.style.opacity = '0'; 
-            
-            document.getElementById('board-viewer-title').innerText = "🏆 #1 BOARD 🏆";
-            document.getElementById('board-viewer-title').style.color = "#FFD700";
-            
-            document.getElementById('best-board-score').innerText = bestDailyData.score;
-            document.getElementById('best-board-initials').innerText = bestDailyData.initials;
-            
-            const bg = document.getElementById('best-grid');
-            bg.innerHTML = '';
-            
-            let chars = bestDailyData.grid.split('');
-            let normalizedChars = chars.map(c => c.toUpperCase());
-            
-            for(let i=0; i<25; i++) {
-                let c = document.createElement('div');
-                c.className = 'grid-cell';
-                if (chars[i] && chars[i] !== chars[i].toUpperCase()) {
-                    c.classList.add('is-wildcard');
-                }
-                c.innerText = normalizedChars[i];
-                bg.appendChild(c);
-            }
-            
-            const bValid = findValidWordsLocalArray(normalizedChars);
-            let rawScoringWords = [];
-            let grouped = {};
-            bValid.forEach(w => {
-                let rev = w.split('').reverse().join('');
-                let key = w < rev ? w : rev;
-                if (!grouped[key]) grouped[key] = new Set();
-                grouped[key].add(w);
-            });
-            Object.keys(grouped).forEach(key => {
-                rawScoringWords.push(...[...grouped[key]]); 
-            });
-
-            applyColorsToSpecificGrid(rawScoringWords, normalizedChars, bg);
-            document.getElementById('best-board-modal').classList.add('active');
-        }
-
-        function showAIBoard() {
-            if (!aiBestGrid || aiBestGrid.length !== 25) return;
-
-            document.getElementById('leaderboard-modal').classList.remove('active');
-            document.getElementById('return-to-menu-btn').style.display = 'none'; 
-            topBarEl.style.opacity = '0'; 
-            
-            document.getElementById('board-viewer-title').innerText = "🤖 AI OPTIMAL 🤖";
-            document.getElementById('board-viewer-title').style.color = "var(--highlight)";
-            
-            document.getElementById('best-board-score').innerText = aiBestScore;
-            document.getElementById('best-board-initials').innerText = "THE AI";
-            
-            const bg = document.getElementById('best-grid');
-            bg.innerHTML = '';
-            
-            let chars = aiBestGrid.map(t => t.char);
-            
-            for(let i=0; i<25; i++) {
-                let c = document.createElement('div');
-                c.className = 'grid-cell';
-                if (aiBestGrid[i].isWild) c.classList.add('is-wildcard');
-                c.innerText = chars[i];
-                bg.appendChild(c);
-            }
-            
-            const bValid = findValidWordsLocalArray(chars);
-            let rawScoringWords = [];
-            let grouped = {};
-            bValid.forEach(w => {
-                let rev = w.split('').reverse().join('');
-                let key = w < rev ? w : rev;
-                if (!grouped[key]) grouped[key] = new Set();
-                grouped[key].add(w);
-            });
-            Object.keys(grouped).forEach(key => {
-                rawScoringWords.push(...[...grouped[key]]); 
-            });
-
-            applyColorsToSpecificGrid(rawScoringWords, chars, bg);
-            document.getElementById('best-board-modal').classList.add('active');
-        }
-
-        function initGame() {
-            const existingCells = document.querySelectorAll('.grid-cell:not(.alpha-cell)');
-            existingCells.forEach(cell => cell.remove());
-
-            cells = Array(gridSize * gridSize).fill('');
-            wildcardState = Array(gridSize * gridSize).fill(false);
-            
-            placedCount = 0; pendingCellIndex = null; explodedWords.clear(); currentScore = 0;
-            usedWildcards.clear(); 
-            
-            isCurrentGameDaily = document.getElementById('daily-toggle').checked;
-            if (isCurrentGameDaily) dailySeed = getDailySeed();
-
-            gameDeck = generateBagSequence();
-
-            scoreEl.innerText = '0';
-            headerLabelEl.innerText = 'Next:';
-            
-            alphabetModal.classList.remove('active');
-            highscoreEntryModal.classList.remove('active');
-            leaderboardModal.classList.remove('active');
-            document.getElementById('best-board-modal').classList.remove('active');
-            document.getElementById('return-to-menu-btn').style.display = 'none';
-            
-            topBarEl.style.opacity = '1'; 
-            
-            document.getElementById('list-5').innerHTML = '';
-            document.getElementById('list-4').innerHTML = '';
-            document.getElementById('list-3').innerHTML = '';
-
-            for (let i = 0; i < 25; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell';
-                cell.dataset.index = i;
-                cell.addEventListener('click', () => handleCellClick(i, cell));
-                cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
-                cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
-                gridEl.appendChild(cell);
-            }
-            
-            nextLetterEl.style.display = 'inline-flex';
-            leftHeaderEl.title = 'Click to open wildcard picker';
-            setNextLetter();
-        }
-
-        function setNextLetter() {
-            if (placedCount >= 25) return;
-            nextLetterEl.innerText = gameDeck[placedCount];
-        }
-
-        function handleHoverEnter(index, cellEl) {
-            if (!document.getElementById('hover-toggle').checked) return;
-            if (cells[index] !== '' || placedCount >= 25) return;
-            const letter = nextLetterEl.innerText;
-            if (letter === '?' || letter === '-') return; 
-
-            const currentWords = findValidWordsLocalArray(cells);
-            const tempCells = [...cells];
-            tempCells[index] = letter;
-            const newWords = findValidWordsLocalArray(tempCells).filter(w => !currentWords.includes(w));
-            
-            let maxLen = 0;
-            newWords.forEach(w => { if (w.length > maxLen) maxLen = w.length; });
-            
-            if (maxLen === 3) cellEl.classList.add('hover-3');
-            else if (maxLen === 4) cellEl.classList.add('hover-4');
-            else if (maxLen === 5) cellEl.classList.add('hover-5');
-        }
-
-        function handleHoverLeave(cellEl) {
-            cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
-        }
-
-        function handleCellClick(index, cellEl) {
-            if (cells[index] !== '' || placedCount >= 25) return;
-            const letter = nextLetterEl.innerText;
-            if (letter === '?') {
-                pendingCellIndex = index;
-                updateWildcardModal();
-                alphabetModal.classList.add('active');
-                return; 
-            }
-            placeLetter(index, letter, cellEl, false);
-        }
-
-        function placeLetter(index, letter, cellEl, isWildcard) {
-            cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
-            cells[index] = letter;
-            wildcardState[index] = isWildcard;
-            
-            cellEl.innerText = letter;
-            placedCount++;
-            
-            if (isWildcard) {
-                cellEl.classList.add('is-wildcard');
-            }
-            
-            cellEl.classList.add('tile-pop');
-            setTimeout(() => { cellEl.classList.remove('tile-pop'); }, 300);
-
-            calculateRealTimeScoreLocal();
-
-            if (placedCount === 25) {
-                headerLabelEl.innerText = 'Score:';
-                nextLetterEl.style.display = 'none';
-                leftHeaderEl.title = '';
-                
-                // Game Over is now INSTANT! The AI optimizer runs in the background later.
-                topBarEl.style.opacity = '0';
-                document.getElementById('final-score-display').innerText = currentScore;
-                
-                if (isCurrentGameDaily) {
-                    document.getElementById('daily-save-section').style.display = 'block';
-                    document.getElementById('non-daily-section').style.display = 'none';
-                    
-                    initialsInput.value = '';
-                    document.getElementById('init-tile-1').innerText = '';
-                    document.getElementById('init-tile-2').innerText = '';
-                    document.getElementById('init-tile-3').innerText = '';
-                    
-                    highscoreEntryModal.classList.add('active');
-                    initialsInput.focus();
-                } else {
-                    document.getElementById('daily-save-section').style.display = 'none';
-                    document.getElementById('non-daily-section').style.display = 'block';
-                    highscoreEntryModal.classList.add('active');
-                }
-            } else {
-                setNextLetter();
-            }
-        }
-
-        function selectWildcard(letter) {
-            if (usedWildcards.has(letter) && letter !== 'Cancel') return;
-            alphabetModal.classList.remove('active');
-            if (letter === 'Cancel') { pendingCellIndex = null; return; }
-            
-            usedWildcards.add(letter); 
-            
-            if (pendingCellIndex === -1) {
-                nextLetterEl.innerText = letter;
-            } else {
-                const cellEl = document.querySelector(`.grid-cell[data-index='${pendingCellIndex}']`);
-                placeLetter(pendingCellIndex, letter, cellEl, true);
-            }
-            pendingCellIndex = null;
-        }
-
-        function triggerExplosion(isMega = false) {
-            const gridRect = gridEl.getBoundingClientRect();
-            const centerX = gridRect.left + (gridRect.width / 2);
-            const centerY = gridRect.top + (gridRect.height / 2);
-            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            
-            const particleCount = isMega ? 150 : 40;
-            const durationMs = isMega ? 6000 : 2800;
-            
-            for(let i = 0; i < particleCount; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                if (isMega) p.classList.add('mega-burst');
-                if (Math.random() > 0.5) p.classList.add('alt');
-                
-                p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
-                p.style.left = centerX + 'px'; p.style.top = centerY + 'px';
-                
-                const angle = Math.random() * Math.PI * 2;
-                const baseDist = isMega ? 250 : 120;
-                const distMod = isMega ? 0.8 : 0.45;
-                const distance = baseDist + Math.random() * (window.innerWidth * distMod); 
-                
-                p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
-                p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
-                p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
-                
-                document.body.appendChild(p);
-                setTimeout(() => p.remove(), durationMs); 
-            }
-        }
-
-        function findValidWordsLocalArray(gridArray) {
-            let found = [];
-            const dirs = [ [0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1] ];
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    for (let [dr, dc] of dirs) {
-                        let currentWord = "";
-                        for (let step = 0; step < 5; step++) {
-                            let nr = r + (dr * step); let nc = c + (dc * step);
-                            if (nr < 0 || nr >= 5 || nc < 0 || nc >= 5) break;
-                            let letter = gridArray[nr * 5 + nc];
-                            if (!letter) break; 
-                            currentWord += letter;
-                            if (currentWord.length >= 3 && gameDictionary.has(currentWord)) found.push(currentWord);
-                        }
-                    }
-                }
-            }
-            return [...new Set(found)];
-        }
-
-        function calculateRealTimeScoreLocal() {
-            const validWords = findValidWordsLocalArray(cells);
-            currentScore = 0;
-            let words3 = [], words4 = [], words5 = [];
-            
-            let grouped = {};
-            validWords.forEach(w => {
-                let rev = w.split('').reverse().join('');
-                let key = w < rev ? w : rev;
-                if (!grouped[key]) grouped[key] = new Set();
-                grouped[key].add(w);
-            });
-
-            let rawScoringWords = [];
-
-            Object.keys(grouped).forEach(key => {
-                let wArr = [...grouped[key]];
-                wArr.sort();
-                let displayStr = wArr.join('/');
-                let len = key.length; 
-                
-                rawScoringWords.push(...wArr); 
-
-                if (len === 3) { currentScore += 1; words3.push(displayStr); }
-                else if (len === 4) { currentScore += 5; words4.push(displayStr); }
-                else if (len === 5) {
-                    currentScore += 20; words5.push(displayStr);
-                    if (!explodedWords.has(key)) { triggerExplosion(false); explodedWords.add(key); }
-                }
-            });
-            
-            words3.sort();
-            words4.sort();
-            words5.sort();
-
-            scoreEl.innerText = currentScore;
-            
-            document.getElementById('list-5').innerHTML = words5.map(w => `<span class="word-badge word-5">${w}</span>`).join('');
-            document.getElementById('list-4').innerHTML = words4.map(w => `<span class="word-badge word-4">${w}</span>`).join('');
-            document.getElementById('list-3').innerHTML = words3.map(w => `<span class="word-badge word-3">${w}</span>`).join('');
-            
-            applyColorsToSpecificGrid(rawScoringWords, cells, gridEl);
-        }
-
-        function getScoreForPureGrid(charArray) {
-            let found = findValidWordsLocalArray(charArray);
-            let score = 0;
-            let grouped = {};
-            for (let i=0; i<found.length; i++) {
-                let w = found[i];
-                let rev = w.split('').reverse().join('');
-                let key = w < rev ? w : rev;
-                if (!grouped[key]) {
-                    grouped[key] = true;
-                    let len = key.length;
-                    if (len === 3) score += 1;
-                    else if (len === 4) score += 5;
-                    else if (len === 5) score += 20;
-                }
-            }
-            return score;
-        }
-
-        // --- V6.3: TARGETED AI BACKGROUND OPTIMIZER ---
-        // Runs specifically on the #1 Leaderboard Grid, completely uncoupled from the player's grid
-        function runAIOptimizerOnBestGrid(bestGridString) {
-            let rawChars = bestGridString.split('');
-            let upperChars = rawChars.map(c => c.toUpperCase());
-            
-            let bestIndices = Array.from({length: 25}, (_, i) => i);
-            let bestScore = getScoreForPureGrid(upperChars); 
-            let currentTestIndices = [...bestIndices];
-            let currentTestScore = bestScore;
-            
-            const endTime = performance.now() + 1500; 
-            
-            function computeChunk() {
-                const chunkEnd = performance.now() + 12; 
-                while(performance.now() < chunkEnd) {
-                    let candidateIndices = [...currentTestIndices];
-                    let swaps = Math.floor(Math.random() * 3) + 1;
-                    for(let i=0; i<swaps; i++) {
-                        let a = Math.floor(Math.random() * 25);
-                        let b = Math.floor(Math.random() * 25);
-                        let temp = candidateIndices[a];
-                        candidateIndices[a] = candidateIndices[b];
-                        candidateIndices[b] = temp;
-                    }
-                    
-                    let mappedChars = candidateIndices.map(idx => upperChars[idx]);
-                    let score = getScoreForPureGrid(mappedChars);
-                    
-                    if (score >= currentTestScore) {
-                        currentTestIndices = candidateIndices;
-                        currentTestScore = score;
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestIndices = [...candidateIndices];
-                        }
-                    } else if (Math.random() < 0.05) {
-                        currentTestIndices = candidateIndices;
-                        currentTestScore = score;
-                    }
-                }
-                
-                if (performance.now() < endTime) {
-                    requestAnimationFrame(computeChunk);
-                } else {
-                    aiBestScore = bestScore;
-                    aiBestGrid = bestIndices.map(idx => {
-                        let char = rawChars[idx];
-                        let isWild = char !== char.toUpperCase();
-                        return { char: char.toUpperCase(), isWild: isWild };
-                    });
-                    
-                    // Reveal the button now that the AI is finished thinking
-                    document.getElementById('view-ai-btn').style.display = 'block';
-                }
-            }
-            requestAnimationFrame(computeChunk);
-        }
-
-        function applyColorsToSpecificGrid(validWords, cellsArray, containerElement) {
-            const cellEls = containerElement.querySelectorAll('.grid-cell:not(.alpha-cell)');
-            cellEls.forEach(cell => cell.classList.remove('word-3', 'word-4', 'word-5'));
-            if (!validWords || validWords.length === 0) return;
-
-            const wordsByLength = { 3: [], 4: [], 5: [] };
-            validWords.forEach(w => wordsByLength[w.length].push(w));
-            const directions = [ [0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1] ];
-
-            function highlightWord(word, lengthClass) {
-                for (let r = 0; r < gridSize; r++) {
-                    for (let c = 0; c < gridSize; c++) {
-                        for (let [dr, dc] of directions) {
-                            let match = true; let indices = [];
-                            for (let i = 0; i < word.length; i++) {
-                                let nextRow = r + (dr * i); let nextCol = c + (dc * i);
-                                if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) { match = false; break; }
-                                let idx = nextRow * gridSize + nextCol;
-                                if (cellsArray[idx] !== word[i]) { match = false; break; }
-                                indices.push(idx);
-                            }
-                            if (match) indices.forEach(idx => {
-                                cellEls[idx].classList.remove('word-3', 'word-4', 'word-5');
-                                cellEls[idx].classList.add(lengthClass);
-                            });
-                        }
-                    }
-                }
-            }
-            wordsByLength[3].forEach(w => highlightWord(w, 'word-3'));
-            wordsByLength[4].forEach(w => highlightWord(w, 'word-4'));
-            wordsByLength[5].forEach(w => highlightWord(w, 'word-5'));
-        }
-
-        async function submitHighscore() {
-            let initials = initialsInput.value.trim().toUpperCase();
-            if (initials.length === 0) initials = "---";
-            
-            let isNewTopScore = false;
-            let gridString = "";
-            for(let i=0; i<25; i++) {
-                let char = cells[i];
-                if(wildcardState[i]) gridString += char.toLowerCase();
-                else gridString += char;
-            }
-            
-            try {
-                const res = await fetch('validate.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'save_score', initials: initials, score: currentScore, grid: gridString })
-                });
-                const data = await res.json();
-                isNewTopScore = data.is_top_score;
-            } catch (e) { console.error("Error saving score", e); }
-            
-            highscoreEntryModal.classList.remove('active');
-            
-            const lbTitle = document.getElementById('leaderboard-title');
-            if (isNewTopScore) {
-                lbTitle.innerText = "🏆 NEW DAILY HIGH SCORE! 🏆";
-                lbTitle.style.color = "#FFD700"; 
-                triggerExplosion(true); 
-            } else {
-                lbTitle.innerText = "TODAY'S HIGH SCORES";
-                lbTitle.style.color = "var(--highlight)";
-            }
-            
-            loadLeaderboard();
-        }
-
-        function skipToLeaderboard() {
-            highscoreEntryModal.classList.remove('active');
-            const lbTitle = document.getElementById('leaderboard-title');
-            lbTitle.innerText = "TODAY'S HIGH SCORES";
-            lbTitle.style.color = "var(--highlight)";
-            loadLeaderboard();
-        }
-
-        async function loadLeaderboard() {
-            const listEl = document.getElementById('leaderboard-list');
-            listEl.innerHTML = '<li style="border:none; justify-content:center;">Loading...</li>';
-            leaderboardModal.classList.add('active');
-            topBarEl.style.opacity = '0';
-            
-            try {
-                const res = await fetch('validate.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'get_highscores' })
-                });
-                const data = await res.json();
-                
-                listEl.innerHTML = '';
-                document.getElementById('view-ai-btn').style.display = 'none'; // Hide AI button until it crunches
-                
-                if (data.highscores && data.highscores.length > 0) {
-                    
-                    bestDailyData = data.highscores[0]; 
-                    
-                    const viewWinningBtn = document.getElementById('view-winning-btn');
-                    if (bestDailyData && bestDailyData.grid && bestDailyData.grid.length === 25) {
-                        viewWinningBtn.style.display = 'block';
-                        
-                        // Kick off the AI specifically targeting the champion's board
-                        runAIOptimizerOnBestGrid(bestDailyData.grid);
-                    } else {
-                        viewWinningBtn.style.display = 'none';
-                    }
-
-                    data.highscores.forEach((entry, index) => {
-                        let initials = (entry.initials || '---').padEnd(3, '-').substring(0, 3);
-                        let initialsHtml = '';
-                        for(let i=0; i<3; i++) {
-                            initialsHtml += `<div class="lb-initial-tile">${initials[i]}</div>`;
-                        }
-                        
-                        listEl.innerHTML += `
-                            <li style="border-bottom: none; padding: 0;">
-                                <div class="lb-row-container">
-                                    <div style="display: flex; align-items: center;">
-                                        <div class="lb-rank">${index + 1}.</div>
-                                        <div class="lb-initials-group">${initialsHtml}</div>
-                                    </div>
-                                    <div class="lb-score-tile">${entry.score}</div>
-                                </div>
-                            </li>
-                        `;
-                    });
-                } else {
-                    document.getElementById('view-winning-btn').style.display = 'none';
-                    listEl.innerHTML = '<li style="border:none; justify-content:center;">No scores today!</li>';
-                }
-            } catch (e) {
-                console.error("Error loading scores", e);
-                listEl.innerHTML = '<li style="border:none; justify-content:center;">Error loading leaderboard.</li>';
-            }
-        }
-    </script>
+  <script src="game.js"></script>
 </body>
 </html>
