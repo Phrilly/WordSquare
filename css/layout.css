@@ -63,9 +63,11 @@
 .overlay-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  max-width: 250px;
+  max-width: 220px;
+  margin-top: 10px;
+  flex-shrink: 0;
 }
 
 .results-area {
