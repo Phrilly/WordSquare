@@ -3,9 +3,9 @@ header('Content-Type: application/json');
 
 // --- DATABASE CONNECTION SETTINGS ---
 // Update these to match your specific DB credentials in Hostinger
-$db_host = '127.0.0.1'; // Or your specific DB host IP
-$db_user = 'root';      // Replace with your DB username
-$db_pass = '';          // Replace with your DB password
+$db_host = '127.0.0.1'; 
+$db_user = 'root';      
+$db_pass = '';          
 $db_name = 'u271511030_word_square';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
@@ -14,7 +14,6 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Read incoming JSON payload from frontend
 $request_body = file_get_contents('php://input');
 $data = json_decode($request_body, true);
 
@@ -41,11 +40,13 @@ if ($data['action'] === 'save_score') {
     $initials = substr(strtoupper(preg_replace('/[^A-Z]/', '', $data['initials'] ?? '---')), 0, 3);
     $score = (int)($data['score'] ?? 0);
     $grid = substr($data['grid'] ?? '', 0, 25);
-    $today = date('Y-m-d'); // Assumes highscores table has a 'date_column' to track daily entries
+    $today = date('Y-m-d'); 
 
     // Determine if this is the new #1 score for today
     $is_top_score = false;
-    $top_stmt = $conn->prepare("SELECT score FROM highscores WHERE DATE(date_column) = ? ORDER BY score DESC LIMIT 1");
+    
+    // CRITICAL DATABASE FIX: Swapped placeholder with `date` (with backticks to protect reserved keywords).
+    $top_stmt = $conn->prepare("SELECT score FROM highscores WHERE DATE(`date`) = ? ORDER BY score DESC LIMIT 1");
     $top_stmt->bind_param("s", $today);
     $top_stmt->execute();
     $top_result = $top_stmt->get_result();
@@ -61,7 +62,7 @@ if ($data['action'] === 'save_score') {
     $top_stmt->close();
 
     // Insert the new score
-    $insert_stmt = $conn->prepare("INSERT INTO highscores (initials, score, grid, date_column) VALUES (?, ?, ?, NOW())");
+    $insert_stmt = $conn->prepare("INSERT INTO highscores (initials, score, grid, `date`) VALUES (?, ?, ?, NOW())");
     $insert_stmt->bind_param("sis", $initials, $score, $grid);
     $insert_stmt->execute();
     $insert_stmt->close();
@@ -75,7 +76,7 @@ if ($data['action'] === 'get_highscores') {
     $highscores = [];
     $today = date('Y-m-d');
     
-    $stmt = $conn->prepare("SELECT initials, score, grid FROM highscores WHERE DATE(date_column) = ? ORDER BY score DESC LIMIT 10");
+    $stmt = $conn->prepare("SELECT initials, score, grid FROM highscores WHERE DATE(`date`) = ? ORDER BY score DESC LIMIT 10");
     $stmt->bind_param("s", $today);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -93,11 +94,11 @@ if ($data['action'] === 'get_highscores') {
     exit;
 }
 
-// ACTION 4: Retrieve Yesterday's Winner (For the new Explosion Feature)
+// ACTION 4: Retrieve Yesterday's Winner 
 if ($data['action'] === 'get_yesterdays_winner') {
     $yesterday = date('Y-m-d', strtotime('-1 day')); 
 
-    $stmt = $conn->prepare("SELECT initials FROM highscores WHERE DATE(date_column) = ? ORDER BY score DESC LIMIT 1");
+    $stmt = $conn->prepare("SELECT initials FROM highscores WHERE DATE(`date`) = ? ORDER BY score DESC LIMIT 1");
     $stmt->bind_param("s", $yesterday);
     $stmt->execute();
     $result = $stmt->get_result();
