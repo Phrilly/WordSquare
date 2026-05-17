@@ -1,0 +1,82 @@
+.particle {
+  position: fixed;
+  z-index: 9999;
+  width: clamp(20px, calc(var(--game-size) * 0.07), 40px);
+  height: clamp(20px, calc(var(--game-size) * 0.07), 40px);
+  background-color: var(--color-5);
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(12px, calc(var(--game-size) * 0.04), 22px);
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  pointer-events: none;
+  animation: explode 2.8s ease-out forwards;
+}
+
+.particle.alt {
+  background-color: #fdf6e3;
+  color: var(--color-5);
+  box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.particle.mega-burst {
+  animation: explodeMega 6s ease-out forwards;
+}
+
+@keyframes explode {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.4) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+@keyframes explodeMega {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.8) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+@keyframes goldPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255,215,0,0), 0 0 18px rgba(255,215,0,0.18);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 10px rgba(255,215,0,0.45), 0 0 26px rgba(255,215,0,0.35);
+  }
+}
+
+@keyframes titleShimmer {
+  0% {
+    text-shadow: 0 0 6px rgba(255,215,0,0.35), 0 0 14px rgba(255,215,0,0.15);
+  }
+  50% {
+    text-shadow: 0 0 12px rgba(255,215,0,0.85), 0 0 24px rgba(255,170,0,0.55);
+  }
+  100% {
+    text-shadow: 0 0 6px rgba(255,215,0,0.35), 0 0 14px rgba(255,215,0,0.15);
+  }
+}
+
+@keyframes bluePulse {
+  0%, 100% {
+    text-shadow: 0 0 6px rgba(168,194,234,0.35), 0 0 14px rgba(168,194,234,0.15);
+  }
+  50% {
+    text-shadow: 0 0 14px rgba(168,194,234,0.85), 0 0 28px rgba(120,180,255,0.55);
+  }
+}
