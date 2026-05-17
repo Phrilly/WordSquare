@@ -443,7 +443,7 @@
             const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
             
             const today = new Date();
-            const isNewLogicActive = today.getTime() >= new Date('2026-05-18T00:00:00').getTime();
+            // - const isNewLogicActive = today.getTime() >= new Date('2026-05-18T00:00:00').getTime();
             const isNewLogicActive = true;
 
             if (!isNewLogicActive) {
