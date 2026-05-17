@@ -1,144 +1,117 @@
 <?php
-// validate.php
 header('Content-Type: application/json');
-error_reporting(E_ALL);
-ini_set('display_errors', 0); 
 
-if (!file_exists('config.php')) {
-    http_response_code(500);
-    echo json_encode(['error' => 'config.php is missing.']);
+// --- DATABASE CONNECTION SETTINGS ---
+// Update these to match your specific DB credentials in Hostinger
+$db_host = '127.0.0.1'; // Or your specific DB host IP
+$db_user = 'root';      // Replace with your DB username
+$db_pass = '';          // Replace with your DB password
+$db_name = 'u271511030_word_square';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) {
+    echo json_encode(['error' => 'Database connection failed']);
     exit;
 }
 
-require_once 'config.php';
+// Read incoming JSON payload from frontend
+$request_body = file_get_contents('php://input');
+$data = json_decode($request_body, true);
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed.']);
+if (!isset($data['action'])) {
+    echo json_encode(['error' => 'No action specified']);
     exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-
-if (isset($input['action'])) {
-    
-    // Action: Dump dictionary to browser memory
-    if ($input['action'] === 'get_dict') {
-        try {
-            $stmt = $pdo->query("SELECT word FROM dictionary");
-            $words = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            echo json_encode(['words' => $words]);
-            exit;
-        } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Database query failed.']);
-            exit;
+// ACTION 1: Fetch Dictionary Words
+if ($data['action'] === 'get_dict') {
+    $words = [];
+    $result = $conn->query("SELECT word FROM dictionary");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $words[] = strtoupper($row['word']);
         }
     }
-    
-    // Action: Save Highscore
-    if ($input['action'] === 'save_score') {
-        $initials = strtoupper(substr(trim($input['initials']), 0, 3));
-        $score = (int)$input['score'];
-        $grid = isset($input['grid']) ? substr(trim($input['grid']), 0, 25) : '';
-        
-        if (!empty($initials) && $score >= 0) {
-            $stmt = $pdo->prepare("INSERT INTO highscores (initials, score, grid) VALUES (?, ?, ?)");
-            $stmt->execute([$initials, $score, $grid]);
-            $newId = $pdo->lastInsertId();
-            
-            $stmtTop = $pdo->query("SELECT id FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 1");
-            $topRow = $stmtTop->fetch(PDO::FETCH_ASSOC);
-            $isTopScore = ($topRow && $topRow['id'] == $newId);
-
-            echo json_encode(['success' => true, 'is_top_score' => $isTopScore]);
-        } else {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid data.']);
-        }
-        exit;
-    }
-
-    // Action: Get Today's Highscores
-    if ($input['action'] === 'get_highscores') {
-        $stmt = $pdo->query("SELECT initials, score, grid FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 10");
-        $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['highscores' => $scores]);
-        exit;
-    }
-}
-
-// Fallback logic for basic grid scoring 
-if (!isset($input['grid']) || count($input['grid']) !== 25) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid grid data submitted.']);
+    echo json_encode(['words' => $words]);
     exit;
 }
 
-$cells = $input['grid'];
-$gridSize = 5;
-$directions = [ [0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1] ];
+// ACTION 2: Save High Score
+if ($data['action'] === 'save_score') {
+    $initials = substr(strtoupper(preg_replace('/[^A-Z]/', '', $data['initials'] ?? '---')), 0, 3);
+    $score = (int)($data['score'] ?? 0);
+    $grid = substr($data['grid'] ?? '', 0, 25);
+    $today = date('Y-m-d'); // Assumes highscores table has a 'date_column' to track daily entries
 
-function getLetterAt($r, $c, $cells, $gridSize) {
-    if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) return $cells[$r * $gridSize + $c];
-    return null;
-}
-
-$potentialWords = [];
-for ($r = 0; $r < $gridSize; $r++) {
-    for ($c = 0; $c < $gridSize; $c++) {
-        foreach ($directions as $dir) {
-            $currentWord = "";
-            for ($step = 0; $step < 5; $step++) {
-                $nextRow = $r + ($dir[0] * $step);
-                $nextCol = $c + ($dir[1] * $step);
-                $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
-                if (!$letter) break; 
-                $currentWord .= $letter;
-                if (strlen($currentWord) >= 3) $potentialWords[] = $currentWord;
-            }
+    // Determine if this is the new #1 score for today
+    $is_top_score = false;
+    $top_stmt = $conn->prepare("SELECT score FROM highscores WHERE DATE(date_column) = ? ORDER BY score DESC LIMIT 1");
+    $top_stmt->bind_param("s", $today);
+    $top_stmt->execute();
+    $top_result = $top_stmt->get_result();
+    
+    if ($top_result->num_rows === 0) {
+        $is_top_score = true; // First score of the day is automatically the top
+    } else {
+        $top_row = $top_result->fetch_assoc();
+        if ($score > (int)$top_row['score']) {
+            $is_top_score = true;
         }
     }
-}
+    $top_stmt->close();
 
-$uniquePotentialWords = array_unique($potentialWords);
-if (empty($uniquePotentialWords)) {
-    echo json_encode(['score' => 0, 'words' => [], 'breakdown' => [3=>0, 4=>0, 5=>0]]);
+    // Insert the new score
+    $insert_stmt = $conn->prepare("INSERT INTO highscores (initials, score, grid, date_column) VALUES (?, ?, ?, NOW())");
+    $insert_stmt->bind_param("sis", $initials, $score, $grid);
+    $insert_stmt->execute();
+    $insert_stmt->close();
+
+    echo json_encode(['status' => 'success', 'is_top_score' => $is_top_score]);
     exit;
 }
 
-$placeholders = str_repeat('?,', count($uniquePotentialWords) - 1) . '?';
-$stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
-$stmt->execute(array_values($uniquePotentialWords));
-$validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-$grouped = [];
-foreach ($validWords as $w) {
-    $rev = strrev($w);
-    $key = strcmp($w, $rev) < 0 ? $w : $rev;
-    if (!isset($grouped[$key])) $grouped[$key] = [];
-    if (!in_array($w, $grouped[$key])) {
-        $grouped[$key][] = $w;
-    }
-}
-
-$score = 0;
-$displayWords = [];
-$breakdown = [3 => 0, 4 => 0, 5 => 0];
-
-foreach ($grouped as $key => $group) {
-    $len = strlen($key);
-    $breakdown[$len]++;
-    if ($len === 5) $score += 20;
-    elseif ($len === 4) $score += 5;
-    elseif ($len === 3) $score += 1;
+// ACTION 3: Retrieve Today's Leaderboard
+if ($data['action'] === 'get_highscores') {
+    $highscores = [];
+    $today = date('Y-m-d');
     
-    sort($group);
-    $displayWords[] = implode('/', $group);
+    $stmt = $conn->prepare("SELECT initials, score, grid FROM highscores WHERE DATE(date_column) = ? ORDER BY score DESC LIMIT 10");
+    $stmt->bind_param("s", $today);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $highscores[] = [
+            'initials' => $row['initials'],
+            'score' => (int)$row['score'],
+            'grid' => $row['grid']
+        ];
+    }
+    $stmt->close();
+
+    echo json_encode(['highscores' => $highscores]);
+    exit;
 }
 
-echo json_encode(['score' => $score, 'words' => $displayWords, 'breakdown' => $breakdown]);
+// ACTION 4: Retrieve Yesterday's Winner (For the new Explosion Feature)
+if ($data['action'] === 'get_yesterdays_winner') {
+    $yesterday = date('Y-m-d', strtotime('-1 day')); 
+
+    $stmt = $conn->prepare("SELECT initials FROM highscores WHERE DATE(date_column) = ? ORDER BY score DESC LIMIT 1");
+    $stmt->bind_param("s", $yesterday);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        echo json_encode(['winner_initials' => $row['initials']]);
+    } else {
+        echo json_encode(['winner_initials' => null]);
+    }
+    $stmt->close();
+    exit;
+}
+
+// Catch-all for unrecognized actions
+echo json_encode(['error' => 'Invalid action']);
+$conn->close();
 ?>
