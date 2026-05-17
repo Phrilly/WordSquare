@@ -1,11 +1,13 @@
 function triggerMiniWinnerBurst() {
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  // TEST ANIMATION: If the code updates successfully, you will see emojis instead of letters.
+  const emojis = ["🏆", "⭐", "✨", "💥", "🎉"];
+  
   for (let i = 0; i < 30; i++) {
     const p = document.createElement('div');
     p.className = 'particle' + (Math.random() > 0.5 ? ' alt' : '');
-    p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
+    p.innerText = emojis[Math.floor(Math.random() * emojis.length)];
     p.style.left = centerX + 'px';
     p.style.top = centerY + 'px';
     const angle = Math.random() * Math.PI * 2;
@@ -13,66 +15,50 @@ function triggerMiniWinnerBurst() {
     p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
     p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
     p.style.setProperty('--rot', (Math.random() - 0.5) * 360 + 'deg');
-    
-    // Adjusted particle animation to 1.5s to match the new 2-second window
-    p.style.animation = 'explode 1.5s ease-out forwards';
+    p.style.animation = 'explode 0.8s ease-out forwards';
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1500);
+    setTimeout(() => p.remove(), 800);
   }
 }
 
-function checkYesterdaysWinner() {
-  fetch('validate.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'get_yesterdays_winner' })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.winner_initials) return;
+function showWinnerOverlay(initials) {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.backgroundColor = 'rgba(15, 35, 60, 0.9)';
+  overlay.style.zIndex = '9998';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.justifyContent = 'center';
+  overlay.style.alignItems = 'center';
 
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100vw';
-      overlay.style.height = '100vh';
-      overlay.style.backgroundColor = 'rgba(15, 35, 60, 0.9)';
-      overlay.style.zIndex = '9998';
-      overlay.style.display = 'flex';
-      overlay.style.flexDirection = 'column';
-      overlay.style.justifyContent = 'center';
-      overlay.style.alignItems = 'center';
+  const title = document.createElement('h1');
+  title.innerText = "YESTERDAY'S CHAMPION";
+  title.style.color = 'var(--highlight)';
+  title.style.marginBottom = '12px';
+  title.style.fontSize = '36px';
 
-      const title = document.createElement('h1');
-      title.innerText = "YESTERDAY'S CHAMPION";
-      title.style.color = 'var(--highlight)';
-      title.style.marginBottom = '12px';
-      title.style.fontSize = '36px';
+  const initialsBox = document.createElement('div');
+  initialsBox.innerText = initials;
+  initialsBox.style.fontSize = '72px';
+  initialsBox.style.fontWeight = 'bold';
+  initialsBox.style.color = '#FFD700';
+  initialsBox.style.textShadow = '0 0 16px #ffaa00';
 
-      const initialsBox = document.createElement('div');
-      initialsBox.innerText = data.winner_initials;
-      initialsBox.style.fontSize = '72px';
-      initialsBox.style.fontWeight = 'bold';
-      initialsBox.style.color = '#FFD700';
-      initialsBox.style.textShadow = '0 0 16px #ffaa00';
+  overlay.appendChild(title);
+  overlay.appendChild(initialsBox);
+  document.body.appendChild(overlay);
 
-      overlay.appendChild(title);
-      overlay.appendChild(initialsBox);
-      document.body.appendChild(overlay);
+  triggerMiniWinnerBurst();
 
-      triggerMiniWinnerBurst();
-
-      // Exactly 2 seconds total: 1.5 seconds of display, 0.5 seconds of smooth fade out
-      setTimeout(() => {
-        overlay.style.transition = 'opacity 0.5s';
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 500);
-      }, 1500);
-    })
-    .catch(e => {
-      console.error("Could not fetch yesterday's winner", e);
-    });
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.3s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+  }, 1200);
 }
 
 initialsInput.addEventListener('input', (e) => {
@@ -99,19 +85,35 @@ nextLetterEl.addEventListener('click', () => {
 window.onload = async function bootstrapGame() {
   setupAlphabetGrid();
 
-  try {
-    const res = await fetch('validate.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_dict' })
-    });
-    const data = await res.json();
-    if (data.words) gameDictionary = new Set(data.words);
-  } catch (e) {
+  const dictPromise = fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_dict' })
+  }).then(res => res.json()).catch(e => {
     console.error("Failed to load dictionary", e);
+    return { words: [] };
+  });
+
+  const winnerPromise = fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_yesterdays_winner' })
+  }).then(res => res.json()).catch(e => {
+    console.error("Could not fetch yesterday's winner", e);
+    return { winner_initials: null };
+  });
+
+  const [dictData, winnerData] = await Promise.all([dictPromise, winnerPromise]);
+
+  if (dictData.words) {
+    gameDictionary = new Set(dictData.words);
   }
 
   document.getElementById('loading-screen').style.display = 'none';
-  checkYesterdaysWinner();
+
+  if (winnerData.winner_initials) {
+    showWinnerOverlay(winnerData.winner_initials);
+  }
+
   initGame();
 };
