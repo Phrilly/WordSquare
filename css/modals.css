@@ -1,23 +1,34 @@
 .overlay-modal {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background-color: rgba(22, 47, 78, 0.92);
   backdrop-filter: blur(6px);
   display: none;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   z-index: 50;
   border-radius: 12px;
   text-align: center;
-  padding: 20px;
+  padding: 20px 20px 28px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .overlay-modal.active {
   display: flex;
+}
+
+#leaderboard-modal {
+  justify-content: flex-start;
+  padding-top: 28px;
+  padding-bottom: 36px;
+}
+
+#best-board-modal {
+  justify-content: flex-start;
+  padding-top: 24px;
+  padding-bottom: 30px;
 }
 
 .initials-wrapper {
