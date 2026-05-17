@@ -1,3 +1,24 @@
+function triggerMiniWinnerBurst() {
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle' + (Math.random() > 0.5 ? ' alt' : '');
+    p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
+    p.style.left = centerX + 'px';
+    p.style.top = centerY + 'px';
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 60 + Math.random() * 140;
+    p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+    p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+    p.style.setProperty('--rot', (Math.random() - 0.5) * 360 + 'deg');
+    p.style.animation = 'explode 0.8s ease-out forwards';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
 function checkYesterdaysWinner() {
   fetch('validate.php', {
     method: 'POST',
@@ -24,26 +45,27 @@ function checkYesterdaysWinner() {
       const title = document.createElement('h1');
       title.innerText = "YESTERDAY'S CHAMPION";
       title.style.color = 'var(--highlight)';
-      title.style.marginBottom = '20px';
+      title.style.marginBottom = '12px';
+      title.style.fontSize = '36px';
 
       const initialsBox = document.createElement('div');
       initialsBox.innerText = data.winner_initials;
-      initialsBox.style.fontSize = '80px';
+      initialsBox.style.fontSize = '72px';
       initialsBox.style.fontWeight = 'bold';
       initialsBox.style.color = '#FFD700';
-      initialsBox.style.textShadow = '0 0 20px #ffaa00';
+      initialsBox.style.textShadow = '0 0 16px #ffaa00';
 
       overlay.appendChild(title);
       overlay.appendChild(initialsBox);
       document.body.appendChild(overlay);
 
-      triggerExplosion(true);
+      triggerMiniWinnerBurst();
 
       setTimeout(() => {
-        overlay.style.transition = 'opacity 0.5s';
+        overlay.style.transition = 'opacity 0.3s';
         overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 500);
-      }, 2000);
+        setTimeout(() => overlay.remove(), 300);
+      }, 1200);
     })
     .catch(e => {
       console.error("Could not fetch yesterday's winner", e);
