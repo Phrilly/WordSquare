@@ -14,7 +14,7 @@
   border-radius: 4px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.5);
   pointer-events: none;
-  animation: explode 2.8s ease-out forwards;
+  animation: explode 0.8s ease-out forwards;
 }
 
 .particle.alt {
@@ -24,7 +24,7 @@
 }
 
 .particle.mega-burst {
-  animation: explodeMega 6s ease-out forwards;
+  animation: explodeMega 0.8s ease-out forwards;
 }
 
 @keyframes explode {
