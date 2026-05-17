@@ -2,7 +2,7 @@
 // validate.php
 header('Content-Type: application/json');
 error_reporting(E_ALL);
-ini_set('display_errors', 0); 
+ini_set('display_errors', 0);
 
 if (!file_exists('config.php')) {
     http_response_code(500);
@@ -24,7 +24,7 @@ try {
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (isset($input['action'])) {
-    
+
     // Action: Dump dictionary to browser memory
     if ($input['action'] === 'get_dict') {
         try {
@@ -38,18 +38,18 @@ if (isset($input['action'])) {
             exit;
         }
     }
-    
+
     // Action: Save Highscore
     if ($input['action'] === 'save_score') {
         $initials = strtoupper(substr(trim($input['initials'] ?? '---'), 0, 3));
-        $score = (int)$input['score'];
+        $score = (int)($input['score'] ?? 0);
         $grid = isset($input['grid']) ? substr(trim($input['grid']), 0, 25) : '';
-        
+
         if (!empty($initials) && $score >= 0) {
             $stmt = $pdo->prepare("INSERT INTO highscores (initials, score, grid) VALUES (?, ?, ?)");
             $stmt->execute([$initials, $score, $grid]);
             $newId = $pdo->lastInsertId();
-            
+
             $stmtTop = $pdo->query("SELECT id FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 1");
             $topRow = $stmtTop->fetch(PDO::FETCH_ASSOC);
             $isTopScore = ($topRow && $topRow['id'] == $newId);
@@ -70,7 +70,7 @@ if (isset($input['action'])) {
         exit;
     }
 
-    // Action: Get Yesterday's Winner (Integrated into native PDO/created_at architecture)
+    // Action: Get Yesterday's Winner
     if ($input['action'] === 'get_yesterdays_winner') {
         try {
             $stmt = $pdo->query("SELECT initials FROM highscores WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) ORDER BY score DESC, created_at ASC LIMIT 1");
@@ -78,13 +78,13 @@ if (isset($input['action'])) {
             echo json_encode(['winner_initials' => $row ? $row['initials'] : null]);
             exit;
         } catch (PDOException $e) {
-            echo json_encode(['winner_initials' => null]);
+            echo json_encode(['winner_initials'] = null);
             exit;
         }
     }
 }
 
-// Fallback logic for basic grid scoring 
+// Fallback logic for basic grid scoring
 if (!isset($input['grid']) || count($input['grid']) !== 25) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid grid data submitted.']);
@@ -93,10 +93,12 @@ if (!isset($input['grid']) || count($input['grid']) !== 25) {
 
 $cells = $input['grid'];
 $gridSize = 5;
-$directions = [ [0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1] ];
+$directions = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1]];
 
 function getLetterAt($r, $c, $cells, $gridSize) {
-    if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) return $cells[$r * $gridSize + $c];
+    if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) {
+        return $cells[$r * $gridSize + $c];
+    }
     return null;
 }
 
@@ -105,13 +107,17 @@ for ($r = 0; $r < $gridSize; $r++) {
     for ($c = 0; $c < $gridSize; $c++) {
         foreach ($directions as $dir) {
             $currentWord = "";
-            for ($step = 0; $step < 5; step++) {
+            for ($step = 0; $step < 5; $step++) {
                 $nextRow = $r + ($dir[0] * $step);
                 $nextCol = $c + ($dir[1] * $step);
                 $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
-                if (!$letter) break; 
+                if (!$letter) {
+                    break;
+                }
                 $currentWord .= $letter;
-                if (strlen($currentWord) >= 3) $potentialWords[] = $currentWord;
+                if (strlen($currentWord) >= 3) {
+                    $potentialWords[] = $currentWord;
+                }
             }
         }
     }
@@ -119,7 +125,7 @@ for ($r = 0; $r < $gridSize; $r++) {
 
 $uniquePotentialWords = array_unique($potentialWords);
 if (empty($uniquePotentialWords)) {
-    echo json_encode(['score' => 0, 'words' => [], 'breakdown' => [3=>0, 4=>0, 5=>0]]);
+    echo json_encode(['score' => 0, 'words' => [], 'breakdown' => [3 => 0, 4 => 0, 5 => 0]]);
     exit;
 }
 
@@ -132,7 +138,9 @@ $grouped = [];
 foreach ($validWords as $w) {
     $rev = strrev($w);
     $key = strcmp($w, $rev) < 0 ? $w : $rev;
-    if (!isset($grouped[$key])) $grouped[$key] = [];
+    if (!isset($grouped[$key])) {
+        $grouped[$key] = [];
+    }
     if (!in_array($w, $grouped[$key])) {
         $grouped[$key][] = $w;
     }
@@ -145,10 +153,14 @@ $breakdown = [3 => 0, 4 => 0, 5 => 0];
 foreach ($grouped as $key => $group) {
     $len = strlen($key);
     $breakdown[$len]++;
-    if ($len === 5) $score += 20;
-    elseif ($len === 4) $score += 5;
-    elseif ($len === 3) $score += 1;
-    
+    if ($len === 5) {
+        $score += 20;
+    } elseif ($len === 4) {
+        $score += 5;
+    } elseif ($len === 3) {
+        $score += 1;
+    }
+
     sort($group);
     $displayWords[] = implode('/', $group);
 }
