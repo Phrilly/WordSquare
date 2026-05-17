@@ -1,169 +1,50 @@
 <?php
-// validate.php
 header('Content-Type: application/json');
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
-
-if (!file_exists('config.php')) {
-    http_response_code(500);
-    echo json_encode(['error' => 'config.php is missing.']);
-    exit;
-}
-
-require_once 'config.php';
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php-error.log');
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
+    $configFile = __DIR__ . '/config.php';
+    if (!file_exists($configFile)) {
+        throw new Exception('config.php missing at: ' . $configFile);
+    }
+
+    require_once $configFile;
+
+    if (!isset($host, $dbname, $user, $pass)) {
+        throw new Exception('config.php does not define $host, $dbname, $user, $pass');
+    }
+
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]
+    );
+
+    $raw = file_get_contents('php://input');
+    $input = json_decode($raw, true);
+
+    if ($raw !== '' && $input === null && json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Invalid JSON: ' . json_last_error_msg());
+    }
+
+    echo json_encode([
+        'ok' => true,
+        'message' => 'validate.php is running',
+        'db' => 'connected'
+    ]);
+} catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed.']);
-    exit;
+    echo json_encode([
+        'ok' => false,
+        'error' => $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 }
-
-$input = json_decode(file_get_contents('php://input'), true);
-
-if (isset($input['action'])) {
-
-    // Action: Dump dictionary to browser memory
-    if ($input['action'] === 'get_dict') {
-        try {
-            $stmt = $pdo->query("SELECT word FROM dictionary");
-            $words = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            echo json_encode(['words' => $words]);
-            exit;
-        } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Database query failed.']);
-            exit;
-        }
-    }
-
-    // Action: Save Highscore
-    if ($input['action'] === 'save_score') {
-        $initials = strtoupper(substr(trim($input['initials'] ?? '---'), 0, 3));
-        $score = (int)($input['score'] ?? 0);
-        $grid = isset($input['grid']) ? substr(trim($input['grid']), 0, 25) : '';
-
-        if (!empty($initials) && $score >= 0) {
-            $stmt = $pdo->prepare("INSERT INTO highscores (initials, score, grid) VALUES (?, ?, ?)");
-            $stmt->execute([$initials, $score, $grid]);
-            $newId = $pdo->lastInsertId();
-
-            $stmtTop = $pdo->query("SELECT id FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 1");
-            $topRow = $stmtTop->fetch(PDO::FETCH_ASSOC);
-            $isTopScore = ($topRow && $topRow['id'] == $newId);
-
-            echo json_encode(['success' => true, 'is_top_score' => $isTopScore]);
-        } else {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid data.']);
-        }
-        exit;
-    }
-
-    // Action: Get Today's Highscores
-    if ($input['action'] === 'get_highscores') {
-        $stmt = $pdo->query("SELECT initials, score, grid FROM highscores WHERE DATE(created_at) = CURDATE() ORDER BY score DESC, created_at ASC LIMIT 10");
-        $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['highscores' => $scores]);
-        exit;
-    }
-
-    // Action: Get Yesterday's Winner
-    if ($input['action'] === 'get_yesterdays_winner') {
-        try {
-            $stmt = $pdo->query("SELECT initials FROM highscores WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) ORDER BY score DESC, created_at ASC LIMIT 1");
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            echo json_encode(['winner_initials' => $row ? $row['initials'] : null]);
-            exit;
-        } catch (PDOException $e) {
-            echo json_encode(['winner_initials'] = null);
-            exit;
-        }
-    }
-}
-
-// Fallback logic for basic grid scoring
-if (!isset($input['grid']) || count($input['grid']) !== 25) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid grid data submitted.']);
-    exit;
-}
-
-$cells = $input['grid'];
-$gridSize = 5;
-$directions = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1]];
-
-function getLetterAt($r, $c, $cells, $gridSize) {
-    if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) {
-        return $cells[$r * $gridSize + $c];
-    }
-    return null;
-}
-
-$potentialWords = [];
-for ($r = 0; $r < $gridSize; $r++) {
-    for ($c = 0; $c < $gridSize; $c++) {
-        foreach ($directions as $dir) {
-            $currentWord = "";
-            for ($step = 0; $step < 5; $step++) {
-                $nextRow = $r + ($dir[0] * $step);
-                $nextCol = $c + ($dir[1] * $step);
-                $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
-                if (!$letter) {
-                    break;
-                }
-                $currentWord .= $letter;
-                if (strlen($currentWord) >= 3) {
-                    $potentialWords[] = $currentWord;
-                }
-            }
-        }
-    }
-}
-
-$uniquePotentialWords = array_unique($potentialWords);
-if (empty($uniquePotentialWords)) {
-    echo json_encode(['score' => 0, 'words' => [], 'breakdown' => [3 => 0, 4 => 0, 5 => 0]]);
-    exit;
-}
-
-$placeholders = str_repeat('?,', count($uniquePotentialWords) - 1) . '?';
-$stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
-$stmt->execute(array_values($uniquePotentialWords));
-$validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-$grouped = [];
-foreach ($validWords as $w) {
-    $rev = strrev($w);
-    $key = strcmp($w, $rev) < 0 ? $w : $rev;
-    if (!isset($grouped[$key])) {
-        $grouped[$key] = [];
-    }
-    if (!in_array($w, $grouped[$key])) {
-        $grouped[$key][] = $w;
-    }
-}
-
-$score = 0;
-$displayWords = [];
-$breakdown = [3 => 0, 4 => 0, 5 => 0];
-
-foreach ($grouped as $key => $group) {
-    $len = strlen($key);
-    $breakdown[$len]++;
-    if ($len === 5) {
-        $score += 20;
-    } elseif ($len === 4) {
-        $score += 5;
-    } elseif ($len === 3) {
-        $score += 1;
-    }
-
-    sort($group);
-    $displayWords[] = implode('/', $group);
-}
-
-echo json_encode(['score' => $score, 'words' => $displayWords, 'breakdown' => $breakdown]);
-?>
