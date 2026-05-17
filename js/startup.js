@@ -13,9 +13,11 @@ function triggerMiniWinnerBurst() {
     p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
     p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
     p.style.setProperty('--rot', (Math.random() - 0.5) * 360 + 'deg');
-    p.style.animation = 'explode 0.8s ease-out forwards';
+    
+    // Adjusted particle animation to 1.5s to match the new 2-second window
+    p.style.animation = 'explode 1.5s ease-out forwards';
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 800);
+    setTimeout(() => p.remove(), 1500);
   }
 }
 
@@ -61,11 +63,12 @@ function checkYesterdaysWinner() {
 
       triggerMiniWinnerBurst();
 
+      // Exactly 2 seconds total: 1.5 seconds of display, 0.5 seconds of smooth fade out
       setTimeout(() => {
-        overlay.style.transition = 'opacity 0.3s';
+        overlay.style.transition = 'opacity 0.5s';
         overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 300);
-      }, 1200);
+        setTimeout(() => overlay.remove(), 500);
+      }, 1500);
     })
     .catch(e => {
       console.error("Could not fetch yesterday's winner", e);
