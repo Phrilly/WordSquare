@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 // Hostinger database credentials matching u271511030_word_square
 $db_host = '127.0.0.1'; 
 $db_user = 'u271511030_word_square';      
-$db_pass = 'your_actual_hostinger_password_here'; // <-- Paste your exact password here          
+$db_pass = 'Np1cardyt!'; // <-- Paste your exact password here          
 $db_name = 'u271511030_word_square';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
