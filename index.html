@@ -271,8 +271,7 @@
         <div id="ai-computing-status">Analyzing permutations...<br>Finding Optimal AI Score</div>
         
         <div class="alphabet-modal" id="alphabet-modal">
-            <!-- Alphabet Generated Below -->
-        </div>
+            </div>
 
         <div class="overlay-modal" id="highscore-entry-modal">
             <h2 style="margin-top: 0; color: var(--highlight);">GAME OVER</h2>
@@ -298,8 +297,7 @@
         <div class="overlay-modal" id="leaderboard-modal">
             <h3 id="leaderboard-title" style="margin-top: 0; color: var(--highlight);">TODAY'S HIGH SCORES</h3>
             <ul class="leaderboard-list" id="leaderboard-list">
-                <!-- Scores injected here -->
-            </ul>
+                </ul>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
                 <button class="arcade-btn" id="view-winning-btn" style="display:none; background-color: #FFD700; color: #1a1a1a;" onclick="showBestBoard()">VIEW #1 BOARD</button>
                 <button class="arcade-btn" style="background-color: #a8c2ea; color: #1a1a1a;" onclick="showAIBoard()">VIEW AI'S BOARD</button>
@@ -312,8 +310,7 @@
             <h2 id="board-viewer-title" style="margin-top: 0; color: #FFD700;">🏆 #1 BOARD 🏆</h2>
             <div style="font-size: 20px; margin-bottom: 20px;">Score: <strong id="best-board-score"></strong> by <strong id="best-board-initials" style="color:var(--highlight)"></strong></div>
             <div class="grid-container" id="best-grid" style="margin-bottom: 20px; pointer-events: none;">
-                <!-- 25 cells injected via JS -->
-            </div>
+                </div>
             <button class="arcade-btn" onclick="showLeaderboardFromBest()">BACK TO LEADERBOARD</button>
         </div>
 
@@ -366,12 +363,12 @@
         </div>
     </div>
 
-    <div class="version-tag">Version 6.0 (AI Hill Climber)</div>
+    <div class="version-tag">Version 6.1 (AI Logic Decay)</div>
 
     <script>
         const gridSize = 5;
         let cells = Array(gridSize * gridSize).fill('');
-        let wildcardState = Array(gridSize * gridSize).fill(false); // Tracks which specific tiles were wildcards
+        let wildcardState = Array(gridSize * gridSize).fill(false);
         
         let placedCount = 0;
         let pendingCellIndex = null;
@@ -432,15 +429,126 @@
 
         function generateBagSequence() {
             const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
-            const bagString = "EEEEEEEEEEEAAAAAAAAIIIIIIIOOOOOOOUUUSSSSSRRRRRTTTTTNNNNNLLLLDDDDGGCCMMBBPP HHFFWWYYVKXJQZ????????????";
-            const initialBag = bagString.replace(/ /g, '').split('');
             
-            let sequence = [];
-            for (let i = 0; i < 25; i++) {
-                const index = Math.floor(rng() * initialBag.length);
-                sequence.push(initialBag.splice(index, 1)[0]);
+            // THE "TOMORROW" SWITCH
+            // Updated to activate at midnight on May 18, 2026.
+            const today = new Date();
+            const isNewLogicActive = today.getTime() >= new Date('2026-05-18T00:00:00').getTime();
+
+            if (!isNewLogicActive && isCurrentGameDaily) {
+                // Legacy Logic (Runs only for today)
+                const bagString = "EEEEEEEEEEEAAAAAAAAIIIIIIIOOOOOOOUUUSSSSSRRRRRTTTTTNNNNNLLLLDDDDGGCCMMBBPP HHFFWWYYVKXJQZ????????????";
+                const initialBag = bagString.replace(/ /g, '').split('');
+                let sequence = [];
+                for (let i = 0; i < 25; i++) {
+                    const index = Math.floor(rng() * initialBag.length);
+                    sequence.push(initialBag.splice(index, 1)[0]);
+                }
+                return sequence;
             }
+
+            // --- PROPOSAL 1: DYNAMIC PROBABILITY DECAY (Activates Tomorrow) ---
+            let currentWeights = {
+                'E': 1200, 'A': 850, 'R': 750, 'T': 700, 'O': 650, 
+                'I': 600,  'N': 600, 'S': 300, 'L': 400, 'C': 350, 
+                'D': 350,  'P': 300, 'M': 300, 'H': 250, 'G': 250, 
+                'B': 200,  'F': 200, 'Y': 200, 'W': 150, 'K': 100, 
+                'V': 100,  'X': 50,  'Z': 50,  'J': 50,  'Q': 50, 'U': 150, '?': 250
+            };
+
+            let sequence = [];
+            let vowelCount = 0;
+            const vowels = ['A', 'E', 'I', 'O', 'U'];
+
+            for (let i = 0; i < 25; i++) {
+                if (vowelCount >= 9) {
+                    vowels.forEach(v => currentWeights[v] = 0);
+                }
+
+                let totalWeight = Object.values(currentWeights).reduce((sum, weight) => sum + weight, 0);
+                let roll = rng() * totalWeight;
+                let runningSum = 0;
+                let selectedLetter = 'E';
+
+                for (const [letter, weight] of Object.entries(currentWeights)) {
+                    runningSum += weight;
+                    if (roll <= runningSum) {
+                        selectedLetter = letter;
+                        break;
+                    }
+                }
+
+                sequence.push(selectedLetter);
+                if (vowels.includes(selectedLetter)) vowelCount++;
+
+                if (selectedLetter === 'S') {
+                    currentWeights['S'] = Math.round(currentWeights['S'] * 0.10); 
+                } else if (vowels.includes(selectedLetter)) {
+                    currentWeights[selectedLetter] = Math.round(currentWeights[selectedLetter] * 0.30);
+                    vowels.forEach(v => {
+                        if (v !== selectedLetter) currentWeights[v] = Math.round(currentWeights[v] * 0.85);
+                    });
+                } else {
+                    currentWeights[selectedLetter] = Math.round(currentWeights[selectedLetter] * 0.40);
+                }
+
+                if (selectedLetter === 'Q') currentWeights['U'] = 4000;
+            }
+
+            for (let i = sequence.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+            }
+
             return sequence;
+        }
+
+        async function checkYesterdaysWinner() {
+            try {
+                const res = await fetch('validate.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'get_yesterdays_winner' })
+                });
+                const data = await res.json();
+                
+                if (data.winner_initials) {
+                    const overlay = document.createElement('div');
+                    overlay.style.position = 'fixed';
+                    overlay.style.top = '0'; overlay.style.left = '0';
+                    overlay.style.width = '100vw'; overlay.style.height = '100vh';
+                    overlay.style.backgroundColor = 'rgba(15, 35, 60, 0.9)';
+                    overlay.style.zIndex = '9998';
+                    overlay.style.display = 'flex';
+                    overlay.style.flexDirection = 'column';
+                    overlay.style.justifyContent = 'center';
+                    overlay.style.alignItems = 'center';
+                    
+                    const title = document.createElement('h1');
+                    title.innerText = "YESTERDAY'S CHAMPION";
+                    title.style.color = 'var(--highlight)';
+                    title.style.marginBottom = '20px';
+                    
+                    const initialsBox = document.createElement('div');
+                    initialsBox.innerText = data.winner_initials;
+                    initialsBox.style.fontSize = '80px';
+                    initialsBox.style.fontWeight = 'bold';
+                    initialsBox.style.color = '#FFD700';
+                    initialsBox.style.textShadow = '0 0 20px #ffaa00';
+                    
+                    overlay.appendChild(title);
+                    overlay.appendChild(initialsBox);
+                    document.body.appendChild(overlay);
+
+                    triggerExplosion(true);
+
+                    setTimeout(() => {
+                        overlay.style.transition = 'opacity 1s';
+                        overlay.style.opacity = '0';
+                        setTimeout(() => overlay.remove(), 1000);
+                    }, 4000);
+                }
+            } catch (e) { console.error("Could not fetch yesterday's winner", e); }
         }
 
         function setupAlphabetGrid() {
@@ -476,6 +584,10 @@
             } catch(e) { console.error("Failed to load dictionary", e); }
             
             document.getElementById('loading-screen').style.display = 'none';
+            
+            // Check for yesterday's winner right after load
+            checkYesterdaysWinner();
+
             initGame();
         }
 
@@ -861,7 +973,6 @@
             return score;
         }
 
-        // --- NEW: AI Hill Climbing Optimizer ---
         function startAIOptimizer(callback) {
             let bestIndices = Array.from({length: 25}, (_, i) => i);
             let bestScore = currentScore;
@@ -871,7 +982,6 @@
             const endTime = performance.now() + 1500;
             
             function computeChunk() {
-                // Short 12ms chunks to keep 60fps animations smooth
                 const chunkEnd = performance.now() + 12; 
                 while(performance.now() < chunkEnd) {
                     let candidateIndices = [...currentTestIndices];
