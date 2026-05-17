@@ -3,20 +3,18 @@
   padding: 0;
   margin: 20px 0;
   width: 100%;
-  max-width: 320px;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .lb-row-container {
-  display: grid;
-  grid-template-columns: 56px 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 0;
   box-sizing: border-box;
 }
 
@@ -24,17 +22,17 @@
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
   color: var(--highlight);
-  width: auto;
+  width: 48px;
   text-align: right;
-  margin-right: 0;
+  margin-right: 12px;
   font-size: 18px;
+  flex: 0 0 48px;
 }
 
 .lb-initials-group {
   display: flex;
   gap: 4px;
-  justify-content: flex-start;
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .lb-initial-tile {
@@ -52,11 +50,11 @@
   box-shadow:
     inset 2px 2px 3px rgba(255, 255, 255, 1),
     inset -2px -2px 3px rgba(0, 0, 0, 0.15),
-    1px 2px 3px rgba(0, 0, 0, 0.3);
+    1px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .lb-score-tile {
-  min-width: clamp(48px, calc(var(--game-size) * 0.12), 60px);
+  min-width: clamp(44px, calc(var(--game-size) * 0.12), 56px);
   height: clamp(28px, calc(var(--game-size) * 0.08), 36px);
   padding: 0 10px;
   display: flex;
@@ -65,42 +63,42 @@
   font-size: clamp(16px, calc(var(--game-size) * 0.05), 20px);
   font-family: Arial, sans-serif;
   font-weight: bold;
-  background-color: #355b8c;
+  background-color: #2b4c7e;
   color: #ffffff;
   border-radius: 4px;
   box-shadow:
-    inset 2px 2px 3px rgba(255, 255, 255, 0.22),
-    inset -2px -2px 3px rgba(0, 0, 0, 0.22),
-    1px 2px 3px rgba(0, 0, 0, 0.25);
-  margin-left: 12px;
+    inset 2px 2px 3px rgba(255, 255, 255, 0.3),
+    inset -2px -2px 3px rgba(0, 0, 0, 0.3),
+    1px 2px 3px rgba(0, 0, 0, 0.4);
+  margin-left: auto;
 }
 
 .leaderboard-list li.is-top-score .lb-row-container {
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.20), rgba(255, 170, 0, 0.08));
-  border: 1px solid rgba(255, 215, 0, 0.42);
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.16), rgba(255, 170, 0, 0.06));
+  border: 1px solid rgba(255, 215, 0, 0.35);
   border-radius: 10px;
   padding: 8px 10px;
   box-shadow:
-    0 0 18px rgba(255, 215, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    0 0 14px rgba(255, 215, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   animation: goldPulse 1.8s ease-in-out infinite;
 }
 
 .leaderboard-list li.is-top-score .lb-rank {
   color: #FFD700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.55);
 }
 
 .leaderboard-list li.is-top-score .lb-initial-tile {
-  border: 1px solid rgba(255, 215, 0, 0.45);
+  border: 1px solid rgba(255, 215, 0, 0.4);
 }
 
 .leaderboard-list li.is-top-score .lb-score-tile {
   background: linear-gradient(180deg, #ffd700, #f0a500);
   color: #1a1a1a;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 14px rgba(255, 215, 0, 0.28);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 12px rgba(255, 215, 0, 0.24);
 }
 
 .leaderboard-list li.is-top-score .lb-score-tile::before {
