@@ -94,7 +94,7 @@ async function submitHighscore() {
     lbTitle.innerText = "🏆 NEW DAILY HIGH SCORE! 🏆";
     lbTitle.classList.add('is-celebration');
     lbModal.classList.add('is-celebration');
-    triggerExplosion(true);
+    triggerExplosion(false);
   } else {
     lbTitle.innerText = "TODAY'S HIGH SCORES";
     lbTitle.style.color = "var(--highlight)";
