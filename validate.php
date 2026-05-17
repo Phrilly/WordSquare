@@ -1,104 +1,72 @@
 <?php
+declare(strict_types=1);
+
 // validate.php
 header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/validate-error.log');
+ini_set('error_log', __DIR__ . '/php-error.log');
 
-function respond(array $payload, int $status = 200): void {
-    http_response_code($status);
+function jsonResponse(array $payload, int $statusCode = 200): void
+{
+    http_response_code($statusCode);
     echo json_encode($payload);
     exit;
 }
 
-function log_message(string $message, array $context = []): void {
-    if (!empty($context)) {
-        $message .= ' | ' . json_encode($context);
-    }
-    error_log($message);
+function normaliseInitials(?string $initials): string
+{
+    $initials = strtoupper(trim((string)$initials));
+    $initials = preg_replace('/[^A-Z]/', '', $initials) ?? '';
+    $initials = substr($initials, 0, 3);
+    return str_pad($initials, 3, '-');
 }
 
-function normalizeGridInput($gridInput): array {
-    if (is_array($gridInput)) {
-        if (count($gridInput) !== 25) {
-            return [];
-        }
-        $cells = array_values($gridInput);
-    } elseif (is_string($gridInput)) {
-        $gridInput = preg_replace('/\s+/', '', $gridInput);
-        if (strlen($gridInput) !== 25) {
-            return [];
-        }
-        $cells = str_split($gridInput);
-    } else {
-        return [];
-    }
-
-    $normalized = [];
-
-    foreach ($cells as $cell) {
-        if (!is_scalar($cell)) {
-            return [];
-        }
-
-        $cell = trim((string)$cell);
-        if ($cell === '') {
-            return [];
-        }
-
-        $cell = strtoupper(substr($cell, 0, 1));
-
-        if (!preg_match('/^[A-Z?]$/', $cell)) {
-            return [];
-        }
-
-        $normalized[] = $cell;
-    }
-
-    return count($normalized) === 25 ? $normalized : [];
+function normaliseGridString(?string $grid): string
+{
+    $grid = trim((string)$grid);
+    $grid = preg_replace('/[^A-Za-z]/', '', $grid) ?? '';
+    return substr($grid, 0, 25);
 }
 
-function getLetterAt(int $r, int $c, array $cells, int $gridSize): ?string {
+function getLetterAt(int $r, int $c, array $cells, int $gridSize): ?string
+{
     if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) {
-        return $cells[$r * $gridSize + $c];
+        $idx = ($r * $gridSize) + $c;
+        return isset($cells[$idx]) ? (string)$cells[$idx] : null;
     }
     return null;
 }
 
 if (!file_exists(__DIR__ . '/config.php')) {
-    log_message('config.php missing');
-    respond(['error' => 'config.php is missing.'], 500);
+    jsonResponse(['error' => 'config.php is missing.'], 500);
 }
 
 require_once __DIR__ . '/config.php';
 
+if (!isset($host, $dbname, $user, $pass)) {
+    error_log('validate.php: Missing DB config variables in config.php');
+    jsonResponse(['error' => 'Database configuration is incomplete.'], 500);
+}
+
 try {
-    $dsn = "mysql:host={$host};dbname={$dbname};charset=utf8mb4";
-
-    if (isset($port) && $port !== '') {
-        $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
-    }
-
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
+    $pdo = new PDO(
+        "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
 } catch (PDOException $e) {
-    log_message('Database connection failed', ['exception' => $e->getMessage()]);
-    respond(['error' => 'Database connection failed.'], 500);
+    error_log('validate.php DB connection failed: ' . $e->getMessage());
+    jsonResponse(['error' => 'Database connection failed.'], 500);
 }
 
-$rawBody = file_get_contents('php://input');
-$input = json_decode($rawBody, true);
-
-if ($rawBody !== '' && $input === null && json_last_error() !== JSON_ERROR_NONE) {
-    log_message('Invalid JSON received', ['json_error' => json_last_error_msg()]);
-    respond(['error' => 'Invalid JSON body.'], 400);
-}
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
 
 if (!is_array($input)) {
     $input = [];
@@ -107,91 +75,122 @@ if (!is_array($input)) {
 if (isset($input['action'])) {
     $action = (string)$input['action'];
 
-    try {
-        if ($action === 'get_dict') {
+    if ($action === 'get_dict') {
+        try {
             $stmt = $pdo->query("SELECT word FROM dictionary");
             $words = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            respond(['words' => $words]);
+
+            $words = array_values(array_filter($words, function ($word) {
+                return is_string($word) && preg_match('/^[A-Z]{3,5}$/i', $word);
+            }));
+
+            $words = array_map('strtoupper', $words);
+
+            jsonResponse(['words' => $words]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_dict failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Database query failed.'], 500);
+        }
+    }
+
+    if ($action === 'save_score') {
+        $initials = normaliseInitials($input['initials'] ?? null);
+        $score = isset($input['score']) ? (int)$input['score'] : -1;
+        $grid = normaliseGridString($input['grid'] ?? '');
+
+        if ($score < 0) {
+            jsonResponse(['error' => 'Invalid score.'], 400);
         }
 
-        if ($action === 'save_score') {
-            $initialsRaw = strtoupper((string)($input['initials'] ?? ''));
-            $initials = preg_replace('/[^A-Z]/', '', $initialsRaw);
-            $initials = substr($initials . '---', 0, 3);
+        if (strlen($grid) !== 25) {
+            jsonResponse(['error' => 'Invalid grid.'], 400);
+        }
 
-            $score = filter_var($input['score'] ?? null, FILTER_VALIDATE_INT);
-            if ($score === false || $score < 0) {
-                respond(['error' => 'Invalid score.'], 400);
-            }
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO highscores (initials, score, grid)
+                VALUES (:initials, :score, :grid)
+            ");
+            $stmt->execute([
+                ':initials' => $initials,
+                ':score' => $score,
+                ':grid' => $grid,
+            ]);
 
-            $grid = preg_replace('/[^A-Za-z]/', '', (string)($input['grid'] ?? ''));
-            $grid = substr($grid, 0, 25);
-
-            $stmt = $pdo->prepare("INSERT INTO highscores (initials, score, grid) VALUES (?, ?, ?)");
-            $stmt->execute([$initials, $score, $grid]);
-
-            $newId = $pdo->lastInsertId();
+            $newId = (int)$pdo->lastInsertId();
 
             $stmtTop = $pdo->query("
                 SELECT id
                 FROM highscores
                 WHERE DATE(created_at) = CURDATE()
-                ORDER BY score DESC, created_at ASC
+                ORDER BY score DESC, created_at ASC, id ASC
                 LIMIT 1
             ");
             $topRow = $stmtTop->fetch();
-            $isTopScore = ($topRow && (string)$topRow['id'] === (string)$newId);
+            $isTopScore = ($topRow && (int)$topRow['id'] === $newId);
 
-            respond([
+            jsonResponse([
                 'success' => true,
                 'is_top_score' => $isTopScore
             ]);
+        } catch (PDOException $e) {
+            error_log('validate.php save_score failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to save score.'], 500);
         }
+    }
 
-        if ($action === 'get_highscores') {
+    if ($action === 'get_highscores') {
+        try {
             $stmt = $pdo->query("
-                SELECT initials, score, grid
+                SELECT id, initials, score, grid, created_at
                 FROM highscores
                 WHERE DATE(created_at) = CURDATE()
-                ORDER BY score DESC, created_at ASC
+                ORDER BY score DESC, created_at ASC, id ASC
                 LIMIT 10
             ");
             $scores = $stmt->fetchAll();
-            respond(['highscores' => $scores]);
-        }
 
-        if ($action === 'get_yesterdays_winner') {
+            jsonResponse(['highscores' => $scores]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_highscores failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to load highscores.'], 500);
+        }
+    }
+
+    if ($action === 'get_yesterdays_winner') {
+        try {
             $stmt = $pdo->query("
-                SELECT initials
+                SELECT initials, score, grid, created_at
                 FROM highscores
                 WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                ORDER BY score DESC, created_at ASC
+                ORDER BY score DESC, created_at ASC, id ASC
                 LIMIT 1
             ");
             $row = $stmt->fetch();
-            respond(['winner_initials' => $row ? $row['initials'] : null]);
+
+            jsonResponse([
+                'winner_initials' => $row ? $row['initials'] : null
+            ]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_yesterdays_winner failed: ' . $e->getMessage());
+            jsonResponse(['winner_initials' => null]);
         }
-
-        respond(['error' => 'Unknown action.'], 400);
-    } catch (PDOException $e) {
-        log_message('Action query failed', [
-            'action' => $action,
-            'exception' => $e->getMessage()
-        ]);
-
-        if ($action === 'get_yesterdays_winner') {
-            respond(['winner_initials' => null]);
-        }
-
-        respond(['error' => 'Database query failed.'], 500);
     }
+
+    jsonResponse(['error' => 'Unknown action.'], 400);
 }
 
-// Optional fallback scoring endpoint
-$grid = normalizeGridInput($input['grid'] ?? null);
+if (!isset($input['grid']) || !is_array($input['grid']) || count($input['grid']) !== 25) {
+    jsonResponse(['error' => 'Invalid grid data submitted.'], 400);
+}
 
-if (empty($grid)) {
-    respond(['error' => 'Invalid grid data submitted.'], 400);
+$cells = array_map(function ($cell) {
+    $cell = strtoupper(trim((string)$cell));
+    return preg_match('/^[A-Z]$/', $cell) ? $cell : '';
+}, $input['grid']);
+
+if (count(array_filter($cells, fn($c) => $c !== '')) !== 25) {
+    jsonResponse(['error' => 'Grid must contain 25 letters.'], 400);
 }
 
 $gridSize = 5;
@@ -206,13 +205,12 @@ for ($r = 0; $r < $gridSize; $r++) {
     for ($c = 0; $c < $gridSize; $c++) {
         foreach ($directions as $dir) {
             $currentWord = '';
-
             for ($step = 0; $step < 5; $step++) {
                 $nextRow = $r + ($dir[0] * $step);
                 $nextCol = $c + ($dir[1] * $step);
+                $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
 
-                $letter = getLetterAt($nextRow, $nextCol, $grid, $gridSize);
-                if ($letter === null || $letter === '') {
+                if (!$letter) {
                     break;
                 }
 
@@ -229,7 +227,7 @@ for ($r = 0; $r < $gridSize; $r++) {
 $uniquePotentialWords = array_values(array_unique($potentialWords));
 
 if (empty($uniquePotentialWords)) {
-    respond([
+    jsonResponse([
         'score' => 0,
         'words' => [],
         'breakdown' => [3 => 0, 4 => 0, 5 => 0]
@@ -242,9 +240,11 @@ try {
     $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
     $stmt->execute($uniquePotentialWords);
     $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $validWords = array_map('strtoupper', array_filter($validWords, 'is_string'));
 } catch (PDOException $e) {
-    log_message('Fallback scoring query failed', ['exception' => $e->getMessage()]);
-    respond(['error' => 'Database query failed.'], 500);
+    error_log('validate.php scoring dictionary lookup failed: ' . $e->getMessage());
+    jsonResponse(['error' => 'Dictionary lookup failed.'], 500);
 }
 
 $grouped = [];
@@ -283,11 +283,11 @@ foreach ($grouped as $key => $group) {
         $score += 1;
     }
 
-    sort($group);
+    sort($group, SORT_STRING);
     $displayWords[] = implode('/', $group);
 }
 
-respond([
+jsonResponse([
     'score' => $score,
     'words' => $displayWords,
     'breakdown' => $breakdown
