@@ -40,10 +40,10 @@ function checkYesterdaysWinner() {
       triggerExplosion(true);
 
       setTimeout(() => {
-        overlay.style.transition = 'opacity 1s';
+        overlay.style.transition = 'opacity 0.5s';
         overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 1000);
-      }, 4000);
+        setTimeout(() => overlay.remove(), 500);
+      }, 2000);
     })
     .catch(e => {
       console.error("Could not fetch yesterday's winner", e);
