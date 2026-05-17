@@ -19,16 +19,20 @@
   display: flex;
 }
 
+#highscore-entry-modal {
+  justify-content: center;
+}
+
 #leaderboard-modal {
   justify-content: flex-start;
-  padding-top: 28px;
-  padding-bottom: 36px;
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
 
 #best-board-modal {
   justify-content: flex-start;
   padding-top: 24px;
-  padding-bottom: 30px;
+  padding-bottom: 24px;
 }
 
 .initials-wrapper {
