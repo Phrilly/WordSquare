@@ -33,6 +33,6 @@
 
   /* Expands the modal outwards to provide enough vertical room for the board */
   #best-board-modal {
-    inset: -30px -10px;
+    inset: -45px -10px;
   }
 }
