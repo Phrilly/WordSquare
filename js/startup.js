@@ -21,7 +21,7 @@ function triggerMiniWinnerBurst() {
   }
 }
 
-function showWinnerOverlay(initials) {
+function showWinnerOverlay(initials, version) {
   const overlay = document.createElement('div');
   overlay.style.position = 'fixed';
   overlay.style.top = '0';
@@ -50,6 +50,18 @@ function showWinnerOverlay(initials) {
 
   overlay.appendChild(title);
   overlay.appendChild(initialsBox);
+
+  if (version) {
+    const versionEl = document.createElement('div');
+    versionEl.innerText = `v${version}`;
+    versionEl.style.position = 'absolute';
+    versionEl.style.bottom = '10px';
+    versionEl.style.right = '15px';
+    versionEl.style.color = 'var(--text-secondary)';
+    versionEl.style.fontSize = '14px';
+    overlay.appendChild(versionEl);
+  }
+
   document.body.appendChild(overlay);
 
   triggerMiniWinnerBurst();
@@ -114,7 +126,7 @@ window.onload = async function bootstrapGame() {
   document.getElementById('loading-screen').style.display = 'none';
 
   if (winnerData.winner_initials) {
-    showWinnerOverlay(winnerData.winner_initials);
+    showWinnerOverlay(winnerData.winner_initials, winnerData.app_version);
   }
 
   initGame();
