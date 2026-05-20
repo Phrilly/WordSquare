@@ -16,7 +16,7 @@ function triggerMiniWinnerBurst() {
     p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
     p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 6000);
+    setTimeout(() => p.remove(), 3000);
   }
 }
 
@@ -64,12 +64,12 @@ function showWinnerOverlay(initials) {
 
   triggerMiniWinnerBurst();
 
-  // The particle explosion lasts 6000ms. This timeout starts fading the overlay at 5500ms.
+  // The particle explosion lasts 3000ms. This timeout starts fading the overlay at 2500ms.
   setTimeout(() => {
     overlay.style.transition = 'opacity 0.5s';
     overlay.style.opacity = '0';
     setTimeout(() => overlay.remove(), 500);
-  }, 5500);
+  }, 2500);
 }
 
 initialsInput.addEventListener('input', (e) => {
