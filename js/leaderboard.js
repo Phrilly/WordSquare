@@ -179,4 +179,20 @@ async function loadLeaderboard() {
     console.error("Error loading scores", e);
     listEl.innerHTML = '<li style="border:none; justify-content:center;">Error loading leaderboard.</li>';
   }
+
+  if (listEl.parentElement && !listEl.parentElement.querySelector('.audit-link-container')) {
+    const auditLinkContainer = document.createElement('div');
+    auditLinkContainer.className = 'audit-link-container';
+    auditLinkContainer.style.textAlign = 'center';
+    auditLinkContainer.style.padding = '10px 15px 15px';
+
+    const auditLink = document.createElement('a');
+    auditLink.href = 'audit.php';
+    auditLink.target = '_blank';
+    auditLink.innerText = "View Today's Game Log";
+    auditLink.style.color = 'var(--text-secondary)';
+
+    auditLinkContainer.appendChild(auditLink);
+    listEl.parentElement.appendChild(auditLinkContainer);
+  }
 }
