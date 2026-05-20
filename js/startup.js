@@ -4,7 +4,7 @@ function triggerMiniWinnerBurst() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const maxDim = Math.max(window.innerWidth, window.innerHeight);
   
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 150; i++) {
     const p = document.createElement('div');
     p.className = 'particle mega-burst' + (Math.random() > 0.5 ? ' alt' : '');
     p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -16,7 +16,7 @@ function triggerMiniWinnerBurst() {
     p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
     p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 4000);
+    setTimeout(() => p.remove(), 6000);
   }
 }
 
@@ -62,7 +62,7 @@ function showWinnerOverlay(initials) {
     overlay.style.transition = 'opacity 0.5s';
     overlay.style.opacity = '0';
     setTimeout(() => overlay.remove(), 500);
-  }, 2500);
+  }, 4000);
 }
 
 initialsInput.addEventListener('input', (e) => {
