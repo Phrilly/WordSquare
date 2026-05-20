@@ -78,5 +78,5 @@ function showAIBoard() {
 
   const chars = aiBestGrid.map(t => t.isWild ? t.char.toLowerCase() : t.char);
   const cupSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="#cbd5e1" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom;"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10"/><path d="M17 4v8a5 5 0 0 1-10 0V4"/><path d="M4 4h3v5H4z"/><path d="M17 4h3v5h-3z"/></svg>`;
-  showBoardViewer(`${cupSvg} AI OPTIMAL ${cupSvg}`, aiBestScore, "StC", chars, 'ai');
+  showBoardViewer(`${cupSvg} Skerries the Cup ${cupSvg}`, aiBestScore, "StC", chars, 'ai');
 }
