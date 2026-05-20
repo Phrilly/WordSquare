@@ -167,36 +167,22 @@ function selectWildcard(letter) {
 
 function calculateRealTimeScoreLocal() {
   const validWords = findValidWordsLocalArray(cells);
-  currentScore = 0;
-
-  let grouped = {};
-  validWords.forEach(w => {
-    let rev = w.split('').reverse().join('');
-    let key = w < rev ? w : rev;
-    if (!grouped[key]) grouped[key] = new Set();
-    grouped[key].add(w);
-  });
 
   const groupedData = buildGroupedWordData(validWords);
 
-  Object.keys(grouped).forEach(key => {
-    let len = key.length;
+  currentScore = (groupedData.display[3].length * 1) + 
+                 (groupedData.display[4].length * 5) + 
+                 (groupedData.display[5].length * 20);
 
-    if (len === 3) {
-      currentScore += 1;
-    } else if (len === 4) {
-      currentScore += 5;
-    } else if (len === 5) {
-      currentScore += 20;
-      if (!explodedWords.has(key)) {
-        triggerExplosion(false);
-        explodedWords.add(key);
-      }
+  groupedData.display[5].forEach(displayStr => {
+    if (!explodedWords.has(displayStr)) {
+      triggerExplosion(false);
+      explodedWords.add(displayStr);
     }
   });
 
   scoreEl.innerText = currentScore;
-  renderWordListsForBoard(validWords);
+  renderWordListsForBoard(groupedData);
   applyColorsToSpecificGrid(groupedData.rawScoringWords, cells, gridEl);
 }
 

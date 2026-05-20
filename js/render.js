@@ -34,9 +34,7 @@ function setBoardViewerTheme(mode) {
   }
 }
 
-function renderWordListsForBoard(validWords) {
-  const groupedData = buildGroupedWordData(validWords);
-
+function renderWordListsForBoard(groupedData) {
   document.getElementById('list-5').innerHTML = groupedData.display[5]
     .map(w => `<span class="word-badge word-5">${w}</span>`)
     .join('');

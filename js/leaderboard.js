@@ -35,7 +35,7 @@ function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
   const groupedData = buildGroupedWordData(bValid);
 
   applyColorsToSpecificGrid(groupedData.rawScoringWords, normalizedChars, bg);
-  renderWordListsForBoard(bValid);
+  renderWordListsForBoard(groupedData);
   document.getElementById('best-board-modal').classList.add('active');
 }
 
