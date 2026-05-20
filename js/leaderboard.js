@@ -180,19 +180,27 @@ async function loadLeaderboard() {
     listEl.innerHTML = '<li style="border:none; justify-content:center;">Error loading leaderboard.</li>';
   }
 
-  if (listEl.parentElement && !listEl.parentElement.querySelector('.audit-link-container')) {
+  const actionsContainer = document.querySelector('#leaderboard-modal .overlay-actions');
+  if (actionsContainer && !actionsContainer.parentElement.querySelector('.audit-link-container')) {
     const auditLinkContainer = document.createElement('div');
     auditLinkContainer.className = 'audit-link-container';
     auditLinkContainer.style.textAlign = 'center';
-    auditLinkContainer.style.padding = '10px 15px 15px';
+    auditLinkContainer.style.paddingTop = '15px';
+    auditLinkContainer.style.marginTop = '15px';
+    auditLinkContainer.style.borderTop = '1px solid rgba(255,255,255,0.2)';
 
     const auditLink = document.createElement('a');
     auditLink.href = 'audit.php';
     auditLink.target = '_blank';
     auditLink.innerText = "View Today's Game Log";
-    auditLink.style.color = 'var(--text-secondary)';
+    auditLink.style.color = 'var(--highlight)';
+    auditLink.style.opacity = '0.8';
+    auditLink.style.textDecoration = 'none';
+    auditLink.style.transition = 'opacity 0.2s';
+    auditLink.addEventListener('mouseenter', () => auditLink.style.opacity = '1');
+    auditLink.addEventListener('mouseleave', () => auditLink.style.opacity = '0.8');
 
     auditLinkContainer.appendChild(auditLink);
-    listEl.parentElement.appendChild(auditLinkContainer);
+    actionsContainer.parentElement.insertBefore(auditLinkContainer, actionsContainer);
   }
 }
