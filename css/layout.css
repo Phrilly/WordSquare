@@ -63,11 +63,21 @@
 .overlay-actions {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
   width: 100%;
   max-width: 220px;
-  margin-top: 10px;
+  margin: 15px auto 0;
   flex-shrink: 0;
+}
+
+#play-again-btn {
+  animation: playAgainBling 2s infinite ease-in-out;
+  border: 1px solid #a8c2ea;
+}
+
+#play-again-btn:active {
+  animation: none;
 }
 
 .results-area {

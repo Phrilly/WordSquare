@@ -39,6 +39,9 @@ function showWinnerOverlay(initials) {
   title.style.color = 'var(--highlight)';
   title.style.marginBottom = '12px';
   title.style.fontSize = '36px';
+  title.style.textAlign = 'center';
+  title.style.lineHeight = '1.2';
+  title.style.padding = '0 20px';
 
   const initialsBox = document.createElement('div');
   initialsBox.innerText = initials;
@@ -46,6 +49,7 @@ function showWinnerOverlay(initials) {
   initialsBox.style.fontWeight = 'bold';
   initialsBox.style.color = '#FFD700';
   initialsBox.style.textShadow = '0 0 16px #ffaa00';
+  initialsBox.style.textAlign = 'center';
 
   overlay.appendChild(title);
   overlay.appendChild(initialsBox);
