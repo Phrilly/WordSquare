@@ -200,5 +200,5 @@
 }
 
 #best-grid {
-  max-width: min(82vw, 430px);
+  max-width: min(75vw, 45vh, 360px);
 }
