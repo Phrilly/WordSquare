@@ -2,21 +2,21 @@ function triggerMiniWinnerBurst() {
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const maxDim = Math.max(window.innerWidth, window.innerHeight);
   
   for (let i = 0; i < 80; i++) {
     const p = document.createElement('div');
-    p.className = 'particle' + (Math.random() > 0.5 ? ' alt' : '');
+    p.className = 'particle mega-burst' + (Math.random() > 0.5 ? ' alt' : '');
     p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
     p.style.left = centerX + 'px';
     p.style.top = centerY + 'px';
     const angle = Math.random() * Math.PI * 2;
-    const distance = 100 + Math.random() * (window.innerWidth * 0.4);
+    const distance = 100 + Math.random() * (maxDim * 0.6);
     p.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
     p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
     p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
-    p.style.animation = 'explode 2.8s ease-out forwards';
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 2800);
+    setTimeout(() => p.remove(), 1000);
   }
 }
 
