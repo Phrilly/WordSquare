@@ -1,21 +1,9 @@
 function getDailySeed() {
   const today = new Date();
-  const dateStr = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+  const dateStr = today.getUTCFullYear() + "-" + (today.getUTCMonth() + 1) + "-" + today.getUTCDate();
   let s = 0;
   for (let i = 0; i < dateStr.length; i++) s += dateStr.charCodeAt(i) * (i + 1);
   return (s + dailyOffset) * 12345;
-}
-
-function cycleDailyBoard() {
-  dailyOffset++;
-  localStorage.setItem('ws_daily_offset', dailyOffset);
-  initGame();
-}
-
-function resetDailyOffset() {
-  dailyOffset = 0;
-  localStorage.removeItem('ws_daily_offset');
-  initGame();
 }
 
 function getSeededRandom() {

@@ -12,6 +12,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Settings
   document.getElementById('daily-toggle')?.addEventListener('change', initGame);
-  document.getElementById('cycle-daily-btn')?.addEventListener('click', cycleDailyBoard);
-  document.getElementById('reset-daily-btn')?.addEventListener('click', resetDailyOffset);
 });

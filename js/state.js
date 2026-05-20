@@ -15,7 +15,8 @@ let bestDailyData = null;
 
 let aiBestScore = 0;
 let aiBestGrid = [];
-let dailyOffset = parseInt(localStorage.getItem('ws_daily_offset')) || 0;
+localStorage.removeItem('ws_daily_offset');
+let dailyOffset = 0;
 let dailySeed = 0;
 let sessionId = '';
 
