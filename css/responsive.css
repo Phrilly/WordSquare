@@ -30,4 +30,9 @@
     height: 24px;
     font-size: 14px;
   }
+
+  /* Expands the modal outwards to provide enough vertical room for the board */
+  #best-board-modal {
+    inset: -30px -10px;
+  }
 }
