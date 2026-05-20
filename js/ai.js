@@ -57,7 +57,7 @@ function runAIOptimizerOnBestGrid(bestGridString) {
         aiRow.innerHTML = `
           <div class="lb-row-container" style="background: rgba(168, 194, 234, 0.15); border: 1px solid rgba(168, 194, 234, 0.3);">
             <div style="display:flex; align-items:center;">
-              <div class="lb-rank" style="color: var(--highlight);">🤖</div>
+              <div class="lb-rank" style="color: var(--highlight);">🏆</div>
               <div class="lb-initials-group"><div class="lb-initial-tile" style="background-color: #a8c2ea;">A</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">I</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">.</div></div>
             </div>
             <div class="lb-score-tile" style="background-color: #4a6c9e;">${aiBestScore}</div>
@@ -76,5 +76,5 @@ function showAIBoard() {
   if (!aiBestGrid || aiBestGrid.length !== 25) return;
 
   const chars = aiBestGrid.map(t => t.isWild ? t.char.toLowerCase() : t.char);
-  showBoardViewer("🤖 AI OPTIMAL 🤖", aiBestScore, "THE AI", chars, 'ai');
+  showBoardViewer("🏆 AI OPTIMAL 🏆", aiBestScore, "THE AI", chars, 'ai');
 }

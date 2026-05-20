@@ -16,7 +16,7 @@ function triggerMiniWinnerBurst() {
     p.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
     p.style.setProperty('--rot', (Math.random() - 0.5) * 720 + 'deg');
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1000);
+    setTimeout(() => p.remove(), 4000);
   }
 }
 

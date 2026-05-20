@@ -111,7 +111,7 @@ function triggerExplosion(isMega = false) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const particleCount = isMega ? 150 : 40;
-  const durationMs = isMega ? 6000 : 2800;
+  const durationMs = isMega ? 6000 : 4000;
 
   for (let i = 0; i < particleCount; i++) {
     const p = document.createElement('div');

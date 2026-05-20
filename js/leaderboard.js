@@ -79,7 +79,7 @@ async function submitHighscore() {
     lbTitle.innerText = "🏆 NEW DAILY HIGH SCORE! 🏆";
     lbTitle.classList.add('is-celebration');
     lbModal.classList.add('is-celebration');
-    triggerExplosion(false);
+    triggerExplosion(true);
   } else {
     lbTitle.innerText = "TODAY'S HIGH SCORES";
     lbTitle.style.color = "var(--highlight)";
@@ -155,7 +155,7 @@ async function loadLeaderboard() {
         `;
         li.addEventListener('click', () => {
           showBoardViewer(
-            index === 0 ? "🏆 #1 BOARD 🏆" : `BOARD BY ${initials}`,
+            index === 0 ? "👑 #1 BOARD 👑" : `BOARD BY ${initials}`,
             entry.score,
             initials,
             entry.grid,
@@ -173,7 +173,7 @@ async function loadLeaderboard() {
         aiRow.innerHTML = `
           <div class="lb-row-container" style="opacity: 0.6;">
             <div style="display:flex; align-items:center;">
-              <div class="lb-rank">🤖</div>
+              <div class="lb-rank">🏆</div>
               <div class="lb-initials-group"><div class="lb-initial-tile">A</div><div class="lb-initial-tile">I</div><div class="lb-initial-tile">.</div></div>
             </div>
             <div class="lb-score-tile">...</div>
