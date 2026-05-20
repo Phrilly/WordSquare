@@ -1,3 +1,5 @@
+alert("DIAGNOSTIC: leaderboard.js version 6.8 has loaded. If you see this, the file is not cached. If you do NOT see this, the problem is server-side caching.");
+
 function hideModalsForBoardView() {
   leaderboardModal.classList.remove('active');
   document.getElementById('best-board-modal').classList.remove('active');
