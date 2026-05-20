@@ -8,9 +8,6 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 ini_set('error_log', __DIR__ . '/php-error.log');
 
-// Define the application version. I will increment this with each new deployment.
-define('APP_VERSION', '1.0.1');
-
 function jsonResponse(array $payload, int $statusCode = 200): void
 {
     http_response_code($statusCode);
@@ -300,8 +297,7 @@ if (isset($input['action'])) {
             $row = $stmt->fetch();
 
             jsonResponse([
-                'winner_initials' => $row ? $row['initials'] : null,
-                'app_version' => APP_VERSION
+                'winner_initials' => $row ? $row['initials'] : null
             ]);
         } catch (PDOException $e) {
             error_log('validate.php get_yesterdays_winner failed: ' . $e->getMessage());
