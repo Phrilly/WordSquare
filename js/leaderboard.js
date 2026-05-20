@@ -11,7 +11,7 @@ function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
   topBarEl.style.opacity = '0';
 
   setBoardViewerTheme(themeClass);
-  boardViewerTitleEl.innerText = titleText;
+  boardViewerTitleEl.innerHTML = titleText;
   document.getElementById('best-board-score').innerText = score;
   document.getElementById('best-board-initials').innerText = initials;
 
@@ -170,10 +170,11 @@ async function loadLeaderboard() {
         aiRow.id = 'ai-leaderboard-row';
         aiRow.style.borderBottom = 'none';
         aiRow.style.padding = '0';
+        const cupSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="#cbd5e1" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom;"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10"/><path d="M17 4v8a5 5 0 0 1-10 0V4"/><path d="M4 4h3v5H4z"/><path d="M17 4h3v5h-3z"/></svg>`;
         aiRow.innerHTML = `
           <div class="lb-row-container" style="opacity: 0.6;">
             <div style="display:flex; align-items:center;">
-              <div class="lb-rank" style="filter: grayscale(100%);">🏆</div>
+              <div class="lb-rank">${cupSvg}</div>
               <div class="lb-initials-group"><div class="lb-initial-tile">S</div><div class="lb-initial-tile">t</div><div class="lb-initial-tile">C</div></div>
             </div>
             <div class="lb-score-tile">...</div>
