@@ -6,13 +6,13 @@
   <title>Word Square Classic</title>
   <link rel="icon" href="data:,">
 
-  <link rel="stylesheet" href="css/base.css?v=6.8">
-  <link rel="stylesheet" href="css/layout.css?v=6.8">
-  <link rel="stylesheet" href="css/board.css?v=6.8">
-  <link rel="stylesheet" href="css/modals.css?v=6.8">
-  <link rel="stylesheet" href="css/leaderboard.css?v=6.8">
-  <link rel="stylesheet" href="css/effects.css?v=6.8">
-  <link rel="stylesheet" href="css/responsive.css?v=6.8">
+  <link rel="stylesheet" href="css/base.css?v=6.9">
+  <link rel="stylesheet" href="css/layout.css?v=6.9">
+  <link rel="stylesheet" href="css/board.css?v=6.9">
+  <link rel="stylesheet" href="css/modals.css?v=6.9">
+  <link rel="stylesheet" href="css/leaderboard.css?v=6.9">
+  <link rel="stylesheet" href="css/effects.css?v=6.9">
+  <link rel="stylesheet" href="css/responsive.css?v=6.9">
 </head>
 <body>
   <div id="loading-screen">
@@ -58,10 +58,10 @@
     <div class="overlay-modal" id="leaderboard-modal">
       <h3 id="leaderboard-title" style="margin-top:0; color:var(--highlight);">TODAY'S HIGH SCORES</h3>
       <ul class="leaderboard-list" id="leaderboard-list"></ul>
+      <div class="audit-link-container" style="text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); width: 100%;">
+        <a href="audit.php" target="_blank" style="color: var(--highlight); opacity: 0.8; text-decoration: none; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.8'">View Today's Game Log</a>
+      </div>
       <div class="overlay-actions">
-        <button class="arcade-btn" id="view-winning-btn" hidden style="background-color:#FFD700; color:#1a1a1a;">VIEW #1 BOARD</button>
-        <button class="arcade-btn" id="view-ai-btn" hidden style="background-color:#a8c2ea; color:#1a1a1a;">VIEW AI'S BOARD</button>
-        <button class="arcade-btn" id="view-my-board-btn">VIEW MY BOARD</button>
         <button class="arcade-btn" id="play-again-btn">PLAY AGAIN</button>
       </div>
     </div>
@@ -76,8 +76,6 @@
       <button class="arcade-btn" id="back-to-leaderboard-btn">BACK TO LEADERBOARD</button>
     </div>
   </div>
-
-  <button id="return-to-menu-btn" class="arcade-btn" hidden>SHOW LEADERBOARD</button>
 
   <div class="results-area">
     <div class="result-row">
@@ -129,15 +127,15 @@
     </div>
   </div>
 
-  <div class="version-tag">Version 6.8 Bounded Bag Bell Curve AI</div>
+  <div class="version-tag">Version 6.9 Bounded Bag Bell Curve AI</div>
 
-  <script src="js/state.js?v=6.8" defer></script>
-  <script src="js/utils.js?v=6.8" defer></script>
-  <script src="js/render.js?v=6.8" defer></script>
-  <script src="js/gameplay.js?v=6.8" defer></script>
-  <script src="js/leaderboard.js?v=6.8" defer></script>
-  <script src="js/ai.js?v=6.8" defer></script>
-  <script src="js/startup.js?v=6.8" defer></script>
-  <script src="js/events.js?v=6.8" defer></script>
+  <script src="js/state.js?v=6.9" defer></script>
+  <script src="js/utils.js?v=6.9" defer></script>
+  <script src="js/render.js?v=6.9" defer></script>
+  <script src="js/gameplay.js?v=6.9" defer></script>
+  <script src="js/leaderboard.js?v=6.9" defer></script>
+  <script src="js/ai.js?v=6.9" defer></script>
+  <script src="js/startup.js?v=6.9" defer></script>
+  <script src="js/events.js?v=6.9" defer></script>
 </body>
 </html>

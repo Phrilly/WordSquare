@@ -51,7 +51,21 @@ function runAIOptimizerOnBestGrid(bestGridString) {
         return { char: char.toUpperCase(), isWild: isWild };
       });
 
-      document.getElementById('view-ai-btn').hidden = false;
+      const aiRow = document.getElementById('ai-leaderboard-row');
+      if (aiRow) {
+        aiRow.title = "Click to view AI's optimal board";
+        aiRow.innerHTML = `
+          <div class="lb-row-container" style="background: rgba(168, 194, 234, 0.15); border: 1px solid rgba(168, 194, 234, 0.3);">
+            <div style="display:flex; align-items:center;">
+              <div class="lb-rank" style="color: var(--highlight);">🤖</div>
+              <div class="lb-initials-group"><div class="lb-initial-tile" style="background-color: #a8c2ea;">A</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">I</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">.</div></div>
+            </div>
+            <div class="lb-score-tile" style="background-color: #4a6c9e;">${aiBestScore}</div>
+          </div>
+        `;
+        aiRow.style.cursor = 'pointer';
+        aiRow.addEventListener('click', showAIBoard);
+      }
     }
   }
 
@@ -61,32 +75,6 @@ function runAIOptimizerOnBestGrid(bestGridString) {
 function showAIBoard() {
   if (!aiBestGrid || aiBestGrid.length !== 25) return;
 
-  document.getElementById('leaderboard-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').hidden = true;
-  topBarEl.style.opacity = '0';
-
-  setBoardViewerTheme('ai');
-  boardViewerTitleEl.innerText = "🤖 AI OPTIMAL 🤖";
-  document.getElementById('best-board-score').innerText = aiBestScore;
-  document.getElementById('best-board-initials').innerText = "THE AI";
-
-  const bg = document.getElementById('best-grid');
-  bg.innerHTML = '';
-
-  let chars = aiBestGrid.map(t => t.char);
-
-  for (let i = 0; i < 25; i++) {
-    let c = document.createElement('div');
-    c.className = 'grid-cell';
-    if (aiBestGrid[i].isWild) c.classList.add('is-wildcard');
-    c.innerText = chars[i];
-    bg.appendChild(c);
-  }
-
-  const bValid = findValidWordsLocalArray(chars);
-  const groupedData = buildGroupedWordData(bValid);
-
-  applyColorsToSpecificGrid(groupedData.rawScoringWords, chars, bg);
-  renderWordListsForBoard(bValid);
-  document.getElementById('best-board-modal').classList.add('active');
+  const chars = aiBestGrid.map(t => t.isWild ? t.char.toLowerCase() : t.char);
+  showBoardViewer("🤖 AI OPTIMAL 🤖", aiBestScore, "THE AI", chars, 'ai');
 }

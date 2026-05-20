@@ -1,41 +1,24 @@
-alert("DIAGNOSTIC: leaderboard.js version 6.8 has loaded. If you see this, the file is not cached. If you do NOT see this, the problem is server-side caching.");
-
-function hideModalsForBoardView() {
-  leaderboardModal.classList.remove('active');
-  document.getElementById('best-board-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').hidden = false;
-  topBarEl.style.opacity = '1';
-  calculateRealTimeScoreLocal();
-}
-
-function showLeaderboard() {
-  document.getElementById('return-to-menu-btn').style.display = 'none';
-  leaderboardModal.classList.add('active');
-  topBarEl.style.opacity = '0';
-}
-
 function showLeaderboardFromBest() {
   document.getElementById('best-board-modal').classList.remove('active');
   document.getElementById('leaderboard-modal').classList.add('active');
   topBarEl.style.opacity = '0';
 }
 
-function showBestBoard() {
-  if (!bestDailyData || !bestDailyData.grid || bestDailyData.grid.length !== 25) return;
+function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
+  if (!gridChars || gridChars.length !== 25) return;
 
   document.getElementById('leaderboard-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').hidden = true;
   topBarEl.style.opacity = '0';
 
-  setBoardViewerTheme('top');
-  boardViewerTitleEl.innerText = "🏆 #1 BOARD 🏆";
-  document.getElementById('best-board-score').innerText = bestDailyData.score;
-  document.getElementById('best-board-initials').innerText = bestDailyData.initials;
+  setBoardViewerTheme(themeClass);
+  boardViewerTitleEl.innerText = titleText;
+  document.getElementById('best-board-score').innerText = score;
+  document.getElementById('best-board-initials').innerText = initials;
 
   const bg = document.getElementById('best-grid');
   bg.innerHTML = '';
 
-  let chars = bestDailyData.grid.split('');
+  let chars = typeof gridChars === 'string' ? gridChars.split('') : gridChars;
   let normalizedChars = chars.map(c => c.toUpperCase());
 
   for (let i = 0; i < 25; i++) {
@@ -137,17 +120,12 @@ async function loadLeaderboard() {
     const data = await res.json();
 
     listEl.innerHTML = '';
-    document.getElementById('view-ai-btn').hidden = true;
 
     if (data.highscores && data.highscores.length > 0) {
       bestDailyData = data.highscores[0];
 
-      const viewWinningBtn = document.getElementById('view-winning-btn');
       if (bestDailyData && bestDailyData.grid && bestDailyData.grid.length === 25) {
-        viewWinningBtn.hidden = false;
         runAIOptimizerOnBestGrid(bestDailyData.grid);
-      } else {
-        viewWinningBtn.hidden = true;
       }
 
       data.highscores.forEach((entry, index) => {
@@ -161,48 +139,53 @@ async function loadLeaderboard() {
         const topClass = index === 0 ? 'is-top-score' : '';
         const rankLabel = index === 0 ? '👑 1.' : `${index + 1}.`;
 
-        listEl.innerHTML += `
-          <li class="${topClass}" style="border-bottom:none; padding:0;">
-            <div class="lb-row-container">
-              <div style="display:flex; align-items:center;">
-                <div class="lb-rank">${rankLabel}</div>
-                <div class="lb-initials-group">${initialsHtml}</div>
-              </div>
-              <div class="lb-score-tile">${entry.score}</div>
+        const li = document.createElement('li');
+        li.className = topClass;
+        li.style.borderBottom = 'none';
+        li.style.padding = '0';
+        li.title = "Click to view this board";
+        li.innerHTML = `
+          <div class="lb-row-container">
+            <div style="display:flex; align-items:center;">
+              <div class="lb-rank">${rankLabel}</div>
+              <div class="lb-initials-group">${initialsHtml}</div>
             </div>
-          </li>
+            <div class="lb-score-tile">${entry.score}</div>
+          </div>
         `;
+        li.addEventListener('click', () => {
+          showBoardViewer(
+            index === 0 ? "🏆 #1 BOARD 🏆" : `BOARD BY ${initials}`,
+            entry.score,
+            initials,
+            entry.grid,
+            index === 0 ? 'top' : 'default'
+          );
+        });
+        listEl.appendChild(li);
       });
+
+      if (bestDailyData && bestDailyData.grid && bestDailyData.grid.length === 25) {
+        const aiRow = document.createElement('li');
+        aiRow.id = 'ai-leaderboard-row';
+        aiRow.style.borderBottom = 'none';
+        aiRow.style.padding = '0';
+        aiRow.innerHTML = `
+          <div class="lb-row-container" style="opacity: 0.6;">
+            <div style="display:flex; align-items:center;">
+              <div class="lb-rank">🤖</div>
+              <div class="lb-initials-group"><div class="lb-initial-tile">A</div><div class="lb-initial-tile">I</div><div class="lb-initial-tile">.</div></div>
+            </div>
+            <div class="lb-score-tile">...</div>
+          </div>
+        `;
+        listEl.appendChild(aiRow);
+      }
     } else {
-      document.getElementById('view-winning-btn').hidden = true;
       listEl.innerHTML = '<li style="border:none; justify-content:center;">No scores today!</li>';
     }
   } catch (e) {
     console.error("Error loading scores", e);
     listEl.innerHTML = '<li style="border:none; justify-content:center;">Error loading leaderboard.</li>';
-  }
-
-  const actionsContainer = document.querySelector('#leaderboard-modal .overlay-actions');
-  if (actionsContainer && !actionsContainer.parentElement.querySelector('.audit-link-container')) {
-    const auditLinkContainer = document.createElement('div');
-    auditLinkContainer.className = 'audit-link-container';
-    auditLinkContainer.style.textAlign = 'center';
-    auditLinkContainer.style.paddingTop = '15px';
-    auditLinkContainer.style.marginTop = '15px';
-    auditLinkContainer.style.borderTop = '1px solid rgba(255,255,255,0.2)';
-
-    const auditLink = document.createElement('a');
-    auditLink.href = 'audit.php';
-    auditLink.target = '_blank';
-    auditLink.innerText = "View Today's Game Log";
-    auditLink.style.color = 'var(--highlight)';
-    auditLink.style.opacity = '0.8';
-    auditLink.style.textDecoration = 'none';
-    auditLink.style.transition = 'opacity 0.2s';
-    auditLink.addEventListener('mouseenter', () => auditLink.style.opacity = '1');
-    auditLink.addEventListener('mouseleave', () => auditLink.style.opacity = '0.8');
-
-    auditLinkContainer.appendChild(auditLink);
-    actionsContainer.parentElement.insertBefore(auditLinkContainer, actionsContainer);
   }
 }

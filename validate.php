@@ -274,7 +274,7 @@ if (isset($input['action'])) {
                 FROM highscores
                 WHERE DATE(created_at) = CURDATE()
                 ORDER BY score DESC, created_at ASC, id ASC
-                LIMIT 10
+                LIMIT 8
             ");
             $scores = $stmt->fetchAll();
 

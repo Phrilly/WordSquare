@@ -15,4 +15,19 @@
   .board-score-line {
     font-size: 18px;
   }
+
+  .lb-row-container {
+    padding: 4px;
+    gap: 4px;
+  }
+  .lb-score-tile {
+    min-width: 40px;
+    padding: 0 6px;
+    font-size: 14px;
+  }
+  .lb-initial-tile {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
 }

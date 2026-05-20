@@ -27,7 +27,7 @@ function setBoardViewerTheme(mode) {
     boardViewerTitleEl.classList.add('top-score-mode');
     boardViewerScoreLineEl.classList.add('top-score-mode');
     boardViewerScoreEl.classList.add('glow-gold');
-  } else {
+  } else if (mode === 'ai') {
     boardViewerTitleEl.classList.add('ai-mode');
     boardViewerScoreLineEl.classList.add('ai-mode');
     boardViewerScoreEl.classList.add('glow-blue');

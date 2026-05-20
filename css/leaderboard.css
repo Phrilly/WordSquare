@@ -76,6 +76,17 @@
   gap: 6px;
 }
 
+.leaderboard-list li {
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+.leaderboard-list li:hover {
+  filter: brightness(1.15);
+}
+.leaderboard-list li:active {
+  transform: scale(0.98);
+}
+
 .lb-row-container {
   display: flex;
   align-items: center;

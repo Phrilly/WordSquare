@@ -23,7 +23,6 @@ function initGame() {
   highscoreEntryModal.classList.remove('active');
   leaderboardModal.classList.remove('active');
   document.getElementById('best-board-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').hidden = true;
 
   topBarEl.style.opacity = '1';
 

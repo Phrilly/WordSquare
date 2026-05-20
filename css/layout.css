@@ -120,19 +120,3 @@
   color: var(--highlight);
   opacity: 0.7;
 }
-
-#return-to-menu-btn {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  box-shadow: 0 6px 0 rgba(0,0,0,0.6);
-  background-color: var(--highlight);
-  color: #1a1a1a;
-}
-
-#return-to-menu-btn:active {
-  box-shadow: 0 2px 0 rgba(0,0,0,0.6);
-  transform: translateX(-50%) translateY(4px);
-}
