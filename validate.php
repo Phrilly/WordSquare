@@ -39,6 +39,96 @@ function getLetterAt(int $r, int $c, array $cells, int $gridSize): ?string
     return null;
 }
 
+function calculateGridScore(string $gridString, PDO $pdo): int {
+    $cells = str_split(strtoupper(trim($gridString)));
+    $cells = array_map(function ($cell) {
+        return preg_match('/^[A-Z]$/', $cell) ? $cell : '';
+    }, $cells);
+
+    if (count($cells) !== 25) return 0;
+
+    $gridSize = 5;
+    $directions = [
+        [0, 1], [0, -1], [1, 0], [-1, 0],
+        [1, 1], [-1, -1], [-1, 1], [1, -1]
+    ];
+
+    $potentialWords = [];
+
+    for ($r = 0; $r < $gridSize; $r++) {
+        for ($c = 0; $c < $gridSize; $c++) {
+            foreach ($directions as $dir) {
+                $currentWord = '';
+                for ($step = 0; $step < 5; $step++) {
+                    $nextRow = $r + ($dir[0] * $step);
+                    $nextCol = $c + ($dir[1] * $step);
+                    $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
+
+                    if (!$letter) {
+                        break;
+                    }
+
+                    $currentWord .= $letter;
+
+                    if (strlen($currentWord) >= 3) {
+                        $potentialWords[] = $currentWord;
+                    }
+                }
+            }
+        }
+    }
+
+    $uniquePotentialWords = array_values(array_unique($potentialWords));
+
+    if (empty($uniquePotentialWords)) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($uniquePotentialWords), '?'));
+
+    try {
+        $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
+        $stmt->execute($uniquePotentialWords);
+        $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $validWords = array_map('strtoupper', array_filter($validWords, 'is_string'));
+    } catch (PDOException $e) {
+        error_log('validate.php scoring dictionary lookup failed: ' . $e->getMessage());
+        return 0;
+    }
+
+    $grouped = [];
+
+    foreach ($validWords as $w) {
+        $rev = strrev($w);
+        $key = strcmp($w, $rev) < 0 ? $w : $rev;
+
+        if (!isset($grouped[$key])) {
+            $grouped[$key] = [];
+        }
+
+        if (!in_array($w, $grouped[$key], true)) {
+            $grouped[$key][] = $w;
+        }
+    }
+
+    $score = 0;
+
+    foreach ($grouped as $key => $group) {
+        $len = strlen($key);
+
+        if ($len === 5) {
+            $score += 20;
+        } elseif ($len === 4) {
+            $score += 5;
+        } elseif ($len === 3) {
+            $score += 1;
+        }
+    }
+    
+    return $score;
+}
+
 if (!file_exists(__DIR__ . '/config.php')) {
     jsonResponse(['error' => 'config.php is missing.'], 500);
 }
@@ -86,6 +176,15 @@ if (isset($input['action'])) {
 
             $words = array_map('strtoupper', $words);
 
+            $etag = md5(implode(',', $words));
+            header("ETag: \"{$etag}\"");
+            header('Cache-Control: public, max-age=0, must-revalidate');
+
+            if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH'], '"') === $etag) {
+                http_response_code(304);
+                exit;
+            }
+
             jsonResponse(['words' => $words]);
         } catch (PDOException $e) {
             error_log('validate.php get_dict failed: ' . $e->getMessage());
@@ -95,16 +194,13 @@ if (isset($input['action'])) {
 
     if ($action === 'save_score') {
         $initials = normaliseInitials($input['initials'] ?? null);
-        $score = isset($input['score']) ? (int)$input['score'] : -1;
         $grid = normaliseGridString($input['grid'] ?? '');
-
-        if ($score < 0) {
-            jsonResponse(['error' => 'Invalid score.'], 400);
-        }
 
         if (strlen($grid) !== 25) {
             jsonResponse(['error' => 'Invalid grid.'], 400);
         }
+
+            $score = calculateGridScore($grid, $pdo);
 
         try {
             $stmt = $pdo->prepare("
@@ -179,117 +275,3 @@ if (isset($input['action'])) {
 
     jsonResponse(['error' => 'Unknown action.'], 400);
 }
-
-if (!isset($input['grid']) || !is_array($input['grid']) || count($input['grid']) !== 25) {
-    jsonResponse(['error' => 'Invalid grid data submitted.'], 400);
-}
-
-$cells = array_map(function ($cell) {
-    $cell = strtoupper(trim((string)$cell));
-    return preg_match('/^[A-Z]$/', $cell) ? $cell : '';
-}, $input['grid']);
-
-if (count(array_filter($cells, fn($c) => $c !== '')) !== 25) {
-    jsonResponse(['error' => 'Grid must contain 25 letters.'], 400);
-}
-
-$gridSize = 5;
-$directions = [
-    [0, 1], [0, -1], [1, 0], [-1, 0],
-    [1, 1], [-1, -1], [-1, 1], [1, -1]
-];
-
-$potentialWords = [];
-
-for ($r = 0; $r < $gridSize; $r++) {
-    for ($c = 0; $c < $gridSize; $c++) {
-        foreach ($directions as $dir) {
-            $currentWord = '';
-            for ($step = 0; $step < 5; $step++) {
-                $nextRow = $r + ($dir[0] * $step);
-                $nextCol = $c + ($dir[1] * $step);
-                $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
-
-                if (!$letter) {
-                    break;
-                }
-
-                $currentWord .= $letter;
-
-                if (strlen($currentWord) >= 3) {
-                    $potentialWords[] = $currentWord;
-                }
-            }
-        }
-    }
-}
-
-$uniquePotentialWords = array_values(array_unique($potentialWords));
-
-if (empty($uniquePotentialWords)) {
-    jsonResponse([
-        'score' => 0,
-        'words' => [],
-        'breakdown' => [3 => 0, 4 => 0, 5 => 0]
-    ]);
-}
-
-$placeholders = implode(',', array_fill(0, count($uniquePotentialWords), '?'));
-
-try {
-    $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
-    $stmt->execute($uniquePotentialWords);
-    $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-    $validWords = array_map('strtoupper', array_filter($validWords, 'is_string'));
-} catch (PDOException $e) {
-    error_log('validate.php scoring dictionary lookup failed: ' . $e->getMessage());
-    jsonResponse(['error' => 'Dictionary lookup failed.'], 500);
-}
-
-$grouped = [];
-
-foreach ($validWords as $w) {
-    $rev = strrev($w);
-    $key = strcmp($w, $rev) < 0 ? $w : $rev;
-
-    if (!isset($grouped[$key])) {
-        $grouped[$key] = [];
-    }
-
-    if (!in_array($w, $grouped[$key], true)) {
-        $grouped[$key][] = $w;
-    }
-}
-
-$score = 0;
-$displayWords = [];
-$breakdown = [3 => 0, 4 => 0, 5 => 0];
-
-foreach ($grouped as $key => $group) {
-    $len = strlen($key);
-
-    if (!isset($breakdown[$len])) {
-        continue;
-    }
-
-    $breakdown[$len]++;
-
-    if ($len === 5) {
-        $score += 20;
-    } elseif ($len === 4) {
-        $score += 5;
-    } elseif ($len === 3) {
-        $score += 1;
-    }
-
-    sort($group, SORT_STRING);
-    $displayWords[] = implode('/', $group);
-}
-
-jsonResponse([
-    'score' => $score,
-    'words' => $displayWords,
-    'breakdown' => $breakdown
-]);
-?>
