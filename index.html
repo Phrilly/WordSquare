@@ -44,14 +44,14 @@
           <div class="initial-tile" id="init-tile-2"></div>
           <div class="initial-tile" id="init-tile-3"></div>
         </div>
-        <button class="arcade-btn" onclick="submitHighscore()">SAVE SCORE</button>
+        <button class="arcade-btn" id="submit-score-btn">SAVE SCORE</button>
       </div>
 
-      <div id="non-daily-section" style="display:none; margin-top:15px;">
+      <div id="non-daily-section" hidden style="margin-top:15px;">
         <p style="color:#ffcccc; font-size:14px; margin-bottom:20px; max-width:250px;">
           Daily Challenge Mode was disabled.<br>Score will not be saved.
         </p>
-        <button class="arcade-btn" onclick="skipToLeaderboard()">VIEW LEADERBOARD</button>
+        <button class="arcade-btn" id="skip-to-leaderboard-btn">VIEW LEADERBOARD</button>
       </div>
     </div>
 
@@ -59,10 +59,10 @@
       <h3 id="leaderboard-title" style="margin-top:0; color:var(--highlight);">TODAY'S HIGH SCORES</h3>
       <ul class="leaderboard-list" id="leaderboard-list"></ul>
       <div class="overlay-actions">
-        <button class="arcade-btn" id="view-winning-btn" style="display:none; background-color:#FFD700; color:#1a1a1a;" onclick="showBestBoard()">VIEW #1 BOARD</button>
-        <button class="arcade-btn" id="view-ai-btn" style="display:none; background-color:#a8c2ea; color:#1a1a1a;" onclick="showAIBoard()">VIEW AI'S BOARD</button>
-        <button class="arcade-btn" onclick="hideModalsForBoardView()">VIEW MY BOARD</button>
-        <button class="arcade-btn" onclick="initGame()">PLAY AGAIN</button>
+        <button class="arcade-btn" id="view-winning-btn" hidden style="background-color:#FFD700; color:#1a1a1a;">VIEW #1 BOARD</button>
+        <button class="arcade-btn" id="view-ai-btn" hidden style="background-color:#a8c2ea; color:#1a1a1a;">VIEW AI'S BOARD</button>
+        <button class="arcade-btn" id="view-my-board-btn">VIEW MY BOARD</button>
+        <button class="arcade-btn" id="play-again-btn">PLAY AGAIN</button>
       </div>
     </div>
 
@@ -73,11 +73,11 @@
         <strong id="best-board-initials" style="color:var(--highlight)"></strong>
       </div>
       <div class="grid-container" id="best-grid" style="margin-bottom:20px; pointer-events:none; opacity:1;"></div>
-      <button class="arcade-btn" onclick="showLeaderboardFromBest()">BACK TO LEADERBOARD</button>
+      <button class="arcade-btn" id="back-to-leaderboard-btn">BACK TO LEADERBOARD</button>
     </div>
   </div>
 
-  <button id="return-to-menu-btn" class="arcade-btn" style="display:none;" onclick="showLeaderboard()">SHOW LEADERBOARD</button>
+  <button id="return-to-menu-btn" class="arcade-btn" hidden>SHOW LEADERBOARD</button>
 
   <div class="results-area">
     <div class="result-row">
@@ -101,7 +101,7 @@
         <span style="opacity:0.7; font-size:12px;">Generates the exact same letter sequence all day.</span>
       </div>
       <label class="switch">
-        <input type="checkbox" id="daily-toggle" checked onchange="initGame()">
+        <input type="checkbox" id="daily-toggle" checked>
         <span class="slider"></span>
       </label>
     </div>
@@ -123,20 +123,21 @@
         <span style="opacity:0.7; font-size:12px;">Generates a new daily sequence local.</span>
       </div>
       <div style="display:flex; gap:5px;">
-        <button class="arcade-btn mini-btn" onclick="cycleDailyBoard()">CYCLE</button>
-        <button class="arcade-btn mini-btn mini-btn-warn" onclick="resetDailyOffset()">RESET</button>
+        <button class="arcade-btn mini-btn" id="cycle-daily-btn">CYCLE</button>
+        <button class="arcade-btn mini-btn mini-btn-warn" id="reset-daily-btn">RESET</button>
       </div>
     </div>
   </div>
 
   <div class="version-tag">Version 6.3 Bounded Bag Bell Curve AI</div>
 
-  <script src="js/state.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/gameplay.js"></script>
-  <script src="js/leaderboard.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/startup.js"></script>
+  <script src="js/state.js" defer></script>
+  <script src="js/utils.js" defer></script>
+  <script src="js/render.js" defer></script>
+  <script src="js/gameplay.js" defer></script>
+  <script src="js/leaderboard.js" defer></script>
+  <script src="js/ai.js" defer></script>
+  <script src="js/startup.js" defer></script>
+  <script src="js/events.js" defer></script>
 </body>
 </html>

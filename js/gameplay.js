@@ -23,7 +23,7 @@ function initGame() {
   highscoreEntryModal.classList.remove('active');
   leaderboardModal.classList.remove('active');
   document.getElementById('best-board-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').style.display = 'none';
+  document.getElementById('return-to-menu-btn').hidden = true;
 
   topBarEl.style.opacity = '1';
 
@@ -120,8 +120,8 @@ function placeLetter(index, letter, cellEl, isWildcard) {
     document.getElementById('final-score-display').innerText = currentScore;
 
     if (isCurrentGameDaily) {
-      document.getElementById('daily-save-section').style.display = 'block';
-      document.getElementById('non-daily-section').style.display = 'none';
+      document.getElementById('daily-save-section').hidden = false;
+      document.getElementById('non-daily-section').hidden = true;
 
       initialsInput.value = '';
       document.getElementById('init-tile-1').innerText = '';
@@ -131,8 +131,8 @@ function placeLetter(index, letter, cellEl, isWildcard) {
       highscoreEntryModal.classList.add('active');
       initialsInput.focus();
     } else {
-      document.getElementById('daily-save-section').style.display = 'none';
-      document.getElementById('non-daily-section').style.display = 'block';
+      document.getElementById('daily-save-section').hidden = true;
+      document.getElementById('non-daily-section').hidden = false;
       highscoreEntryModal.classList.add('active');
     }
   } else {

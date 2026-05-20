@@ -51,7 +51,7 @@ function runAIOptimizerOnBestGrid(bestGridString) {
         return { char: char.toUpperCase(), isWild: isWild };
       });
 
-      document.getElementById('view-ai-btn').style.display = 'block';
+      document.getElementById('view-ai-btn').hidden = false;
     }
   }
 
@@ -62,7 +62,7 @@ function showAIBoard() {
   if (!aiBestGrid || aiBestGrid.length !== 25) return;
 
   document.getElementById('leaderboard-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').style.display = 'none';
+  document.getElementById('return-to-menu-btn').hidden = true;
   topBarEl.style.opacity = '0';
 
   setBoardViewerTheme('ai');

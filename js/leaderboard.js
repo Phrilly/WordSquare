@@ -1,7 +1,7 @@
 function hideModalsForBoardView() {
   leaderboardModal.classList.remove('active');
   document.getElementById('best-board-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').style.display = 'block';
+  document.getElementById('return-to-menu-btn').hidden = false;
   topBarEl.style.opacity = '1';
   calculateRealTimeScoreLocal();
 }
@@ -22,7 +22,7 @@ function showBestBoard() {
   if (!bestDailyData || !bestDailyData.grid || bestDailyData.grid.length !== 25) return;
 
   document.getElementById('leaderboard-modal').classList.remove('active');
-  document.getElementById('return-to-menu-btn').style.display = 'none';
+  document.getElementById('return-to-menu-btn').hidden = true;
   topBarEl.style.opacity = '0';
 
   setBoardViewerTheme('top');
@@ -135,17 +135,17 @@ async function loadLeaderboard() {
     const data = await res.json();
 
     listEl.innerHTML = '';
-    document.getElementById('view-ai-btn').style.display = 'none';
+    document.getElementById('view-ai-btn').hidden = true;
 
     if (data.highscores && data.highscores.length > 0) {
       bestDailyData = data.highscores[0];
 
       const viewWinningBtn = document.getElementById('view-winning-btn');
       if (bestDailyData && bestDailyData.grid && bestDailyData.grid.length === 25) {
-        viewWinningBtn.style.display = 'block';
+        viewWinningBtn.hidden = false;
         runAIOptimizerOnBestGrid(bestDailyData.grid);
       } else {
-        viewWinningBtn.style.display = 'none';
+        viewWinningBtn.hidden = true;
       }
 
       data.highscores.forEach((entry, index) => {
@@ -172,7 +172,7 @@ async function loadLeaderboard() {
         `;
       });
     } else {
-      document.getElementById('view-winning-btn').style.display = 'none';
+      document.getElementById('view-winning-btn').hidden = true;
       listEl.innerHTML = '<li style="border:none; justify-content:center;">No scores today!</li>';
     }
   } catch (e) {
