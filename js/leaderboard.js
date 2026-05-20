@@ -173,8 +173,8 @@ async function loadLeaderboard() {
         aiRow.innerHTML = `
           <div class="lb-row-container" style="opacity: 0.6;">
             <div style="display:flex; align-items:center;">
-              <div class="lb-rank">🏆</div>
-              <div class="lb-initials-group"><div class="lb-initial-tile">A</div><div class="lb-initial-tile">I</div><div class="lb-initial-tile">.</div></div>
+              <div class="lb-rank" style="filter: grayscale(100%);">🏆</div>
+              <div class="lb-initials-group"><div class="lb-initial-tile">S</div><div class="lb-initial-tile">t</div><div class="lb-initial-tile">C</div></div>
             </div>
             <div class="lb-score-tile">...</div>
           </div>

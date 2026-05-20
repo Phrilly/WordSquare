@@ -57,8 +57,8 @@ function runAIOptimizerOnBestGrid(bestGridString) {
         aiRow.innerHTML = `
           <div class="lb-row-container" style="background: rgba(168, 194, 234, 0.15); border: 1px solid rgba(168, 194, 234, 0.3);">
             <div style="display:flex; align-items:center;">
-              <div class="lb-rank" style="color: var(--highlight);">🏆</div>
-              <div class="lb-initials-group"><div class="lb-initial-tile" style="background-color: #a8c2ea;">A</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">I</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">.</div></div>
+              <div class="lb-rank" style="color: var(--highlight); filter: grayscale(100%);">🏆</div>
+              <div class="lb-initials-group"><div class="lb-initial-tile" style="background-color: #a8c2ea;">S</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">t</div><div class="lb-initial-tile" style="background-color: #a8c2ea;">C</div></div>
             </div>
             <div class="lb-score-tile" style="background-color: #4a6c9e;">${aiBestScore}</div>
           </div>
