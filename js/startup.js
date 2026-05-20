@@ -1,13 +1,12 @@
 function triggerMiniWinnerBurst() {
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
-  // TEST ANIMATION: If the code updates successfully, you will see emojis instead of letters.
-  const emojis = ["🏆", "⭐", "✨", "💥", "🎉"];
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   
   for (let i = 0; i < 80; i++) {
     const p = document.createElement('div');
     p.className = 'particle' + (Math.random() > 0.5 ? ' alt' : '');
-    p.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+    p.innerText = alphabet[Math.floor(Math.random() * alphabet.length)];
     p.style.left = centerX + 'px';
     p.style.top = centerY + 'px';
     const angle = Math.random() * Math.PI * 2;
