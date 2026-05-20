@@ -84,6 +84,8 @@ nextLetterEl.addEventListener('click', () => {
 
 window.onload = async function bootstrapGame() {
   setupAlphabetGrid();
+  // Generate a unique ID for this browser session for auditing purposes.
+  sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
   const dictPromise = fetch('validate.php', {
     method: 'POST',

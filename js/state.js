@@ -17,6 +17,7 @@ let aiBestScore = 0;
 let aiBestGrid = [];
 let dailyOffset = parseInt(localStorage.getItem('ws_daily_offset')) || 0;
 let dailySeed = 0;
+let sessionId = '';
 
 const gridEl = document.getElementById('grid');
 const headerLabelEl = document.getElementById('header-label');

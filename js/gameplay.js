@@ -110,6 +110,7 @@ function placeLetter(index, letter, cellEl, isWildcard) {
   }, 300);
 
   calculateRealTimeScoreLocal();
+  
 
   if (placedCount === 25) {
     headerLabelEl.innerText = 'Score:';
@@ -117,6 +118,9 @@ function placeLetter(index, letter, cellEl, isWildcard) {
     leftHeaderEl.title = '';
 
     topBarEl.style.opacity = '0';
+
+    logGameToServer();
+
     document.getElementById('final-score-display').innerText = currentScore;
 
     if (isCurrentGameDaily) {
@@ -195,4 +199,31 @@ function calculateRealTimeScoreLocal() {
   scoreEl.innerText = currentScore;
   renderWordListsForBoard(validWords);
   applyColorsToSpecificGrid(groupedData.rawScoringWords, cells, gridEl);
+}
+
+async function logGameToServer() {
+  let gridString = "";
+  for (let i = 0; i < 25; i++) {
+    let char = cells[i];
+    if (wildcardState[i]) gridString += char.toLowerCase();
+    else gridString += char;
+  }
+
+  try {
+    await fetch('validate.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'log_game',
+        session_id: sessionId,
+        game_seed: dailySeed,
+        is_daily: isCurrentGameDaily,
+        daily_offset: dailyOffset,
+        final_score: currentScore,
+        grid: gridString
+      })
+    });
+  } catch (e) {
+    console.error("Failed to log game to server", e);
+  }
 }

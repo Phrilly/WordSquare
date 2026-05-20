@@ -235,6 +235,38 @@ if (isset($input['action'])) {
         }
     }
 
+    if ($action === 'log_game') {
+        $sessionId = $input['session_id'] ?? '';
+        $gameSeed = isset($input['game_seed']) ? (int)$input['game_seed'] : 0;
+        $isDaily = isset($input['is_daily']) ? (bool)$input['is_daily'] : false;
+        $dailyOffset = isset($input['daily_offset']) ? (int)$input['daily_offset'] : 0;
+        $finalScore = isset($input['final_score']) ? (int)$input['final_score'] : 0;
+        $grid = normaliseGridString($input['grid'] ?? '');
+
+        if (empty($sessionId) || strlen($grid) !== 25) {
+            jsonResponse(['error' => 'Invalid audit data.'], 400);
+        }
+
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO game_log (session_id, game_seed, is_daily, daily_offset, final_score, grid)
+                VALUES (:session_id, :game_seed, :is_daily, :daily_offset, :final_score, :grid)
+            ");
+            $stmt->execute([
+                ':session_id' => $sessionId,
+                ':game_seed' => $gameSeed,
+                ':is_daily' => $isDaily,
+                ':daily_offset' => $dailyOffset,
+                ':final_score' => $finalScore,
+                ':grid' => $grid,
+            ]);
+            jsonResponse(['success' => true]);
+        } catch (PDOException $e) {
+            error_log('validate.php log_game failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to log game.'], 500);
+        }
+    }
+
     if ($action === 'get_highscores') {
         try {
             $stmt = $pdo->query("
