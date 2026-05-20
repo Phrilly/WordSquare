@@ -21,6 +21,12 @@ function triggerMiniWinnerBurst() {
 }
 
 function showWinnerOverlay(initials) {
+  // REVIEW NOTE: The dynamic creation of this overlay with inline styles
+  // makes it hard to maintain. A better approach would be to define the
+  // overlay's structure in index.html, style it with CSS classes, and
+  // use this JavaScript function simply to populate the data and make
+  // the pre-existing element visible.
+
   const overlay = document.createElement('div');
   overlay.style.position = 'fixed';
   overlay.style.top = '0';
@@ -58,11 +64,12 @@ function showWinnerOverlay(initials) {
 
   triggerMiniWinnerBurst();
 
+  // The particle explosion lasts 6000ms. This timeout starts fading the overlay at 5500ms.
   setTimeout(() => {
     overlay.style.transition = 'opacity 0.5s';
     overlay.style.opacity = '0';
     setTimeout(() => overlay.remove(), 500);
-  }, 4000);
+  }, 5500);
 }
 
 initialsInput.addEventListener('input', (e) => {
