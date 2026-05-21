@@ -33,12 +33,14 @@ function generateBagSequence() {
   const vowels = ['A', 'E', 'I', 'O', 'U'];
   let sequence = [];
   let isValid = false;
+  let vowelCount = 0;
+  let sCount = 0;
 
   while (!isValid) {
     sequence = [];
     let tempBag = [...initialBag];
-    let vowelCount = 0;
-    let sCount = 0;
+    vowelCount = 0;
+    sCount = 0;
 
     for (let i = 0; i < 25; i++) {
       const index = Math.floor(rng() * tempBag.length);
@@ -69,9 +71,32 @@ function generateBagSequence() {
     }
   }
 
+  const activeRules = {
+    enforceWildcardLimits: Date.now() >= Date.UTC(2026, 4, 22),
+    minVowels: 6
+  };
+
   for (let i = 0; i < wcCount && safeIndices.length > 0; i++) {
     const randSafeIdx = Math.floor(rng() * safeIndices.length);
     const replaceIdx = safeIndices.splice(randSafeIdx, 1)[0];
+    const charToReplace = sequence[replaceIdx];
+
+    if (activeRules.enforceWildcardLimits) {
+      let isEssential = false;
+
+      if (vowels.includes(charToReplace) && vowelCount <= activeRules.minVowels) {
+        isEssential = true;
+      }
+
+      if (isEssential) {
+        i--;
+        continue;
+      }
+      
+      if (vowels.includes(charToReplace)) vowelCount--;
+      if (charToReplace === 'S') sCount--;
+    }
+
     sequence[replaceIdx] = '?';
   }
 
