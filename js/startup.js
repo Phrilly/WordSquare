@@ -116,11 +116,23 @@ window.onload = async function bootstrapGame() {
     return { winner_initials: null };
   });
 
-  const [dictData, winnerData] = await Promise.all([dictPromise, winnerPromise]);
+  const hsPromise = fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_highscores' })
+  }).then(res => res.json()).catch(e => {
+    console.error("Could not fetch highscores", e);
+    return { highscores: [] };
+  });
+
+  const [dictData, winnerData, hsData] = await Promise.all([dictPromise, winnerPromise, hsPromise]);
 
   if (dictData.words) {
     gameDictionary = new Set(dictData.words);
   }
+
+  // Pre-initialize game in background
+  initGame();
 
   document.getElementById('loading-screen').style.display = 'none';
 
@@ -128,5 +140,63 @@ window.onload = async function bootstrapGame() {
     showWinnerOverlay(winnerData.winner_initials);
   }
 
-  initGame();
+  // Setup and show Opening Screen
+  const openingScreen = document.getElementById('opening-screen');
+  const openingGrid = document.getElementById('opening-grid');
+  openingGrid.innerHTML = '';
+  
+  const highscores = hsData.highscores || [];
+  
+  for (let r = 0; r < 8; r++) {
+    const scoreData = highscores[r] || null;
+    
+    // Col 0: Rank
+    let rankCell = document.createElement('div');
+    rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
+    if (r === 0 && scoreData) rankCell.classList.add('top-rank');
+    rankCell.innerText = scoreData ? (r + 1).toString() : '';
+    openingGrid.appendChild(rankCell);
+    
+    // Cols 1,2,3: Initials
+    let initials = scoreData ? (scoreData.initials || '---').padEnd(3, ' ') : '   ';
+    for (let i = 0; i < 3; i++) {
+      let c = document.createElement('div');
+      c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
+      c.innerText = initials[i] !== ' ' ? initials[i] : '';
+      openingGrid.appendChild(c);
+    }
+    
+    // Col 4: Spacer
+    let sep = document.createElement('div');
+    sep.className = 'grid-cell';
+    openingGrid.appendChild(sep);
+    
+    // Cols 5,6,7: Score
+    let scoreStr = scoreData ? scoreData.score.toString().padStart(3, ' ') : '   ';
+    for (let i = 0; i < 3; i++) {
+      let c = document.createElement('div');
+      c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
+      c.innerText = scoreStr[i] !== ' ' ? scoreStr[i] : '';
+      openingGrid.appendChild(c);
+    }
+  }
+
+  openingScreen.style.display = 'flex';
+
+  const playBtn = document.getElementById('play-btn-tiles');
+  playBtn.addEventListener('click', () => {
+    const allCells = openingScreen.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+      cell.style.setProperty('--rot', (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 45) + 'deg');
+      cell.style.animationDelay = (Math.random() * 0.2) + 's';
+      cell.classList.add('falling-tile');
+    });
+    
+    setTimeout(() => {
+      openingScreen.style.opacity = '0';
+      setTimeout(() => {
+        openingScreen.style.display = 'none';
+      }, 500);
+    }, 900);
+  });
 };

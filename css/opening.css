@@ -1,0 +1,83 @@
+.opening-screen {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-color);
+  z-index: 9990; /* below loading screen (10000) but above everything else */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.5s;
+}
+
+.opening-grid {
+  grid-template-columns: repeat(8, 1fr) !important;
+  grid-template-rows: repeat(8, 1fr) !important;
+  width: min(90vw, 500px) !important;
+  height: min(90vw, 500px) !important;
+  gap: 4px !important;
+  padding: 8px !important;
+  background-color: rgba(43, 76, 126, 0.8) !important; /* Slightly distinct background */
+}
+
+.opening-grid .grid-cell {
+  font-size: min(4.5vw, 24px) !important;
+  background-color: #203a5c; /* Empty cell look */
+  color: #f5f7fb;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.opening-grid .grid-cell.filled {
+  background-color: #fdf6e3;
+  color: #1a1a1a;
+  border: none;
+  box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 1), inset -2px -2px 4px rgba(0, 0, 0, 0.15), 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.opening-grid .grid-cell.rank {
+  background-color: var(--color-3); /* Gold/orange for rank */
+  color: #fff;
+  border: none;
+}
+
+.opening-grid .grid-cell.top-rank {
+  background-color: #ffd700;
+  color: #000;
+  text-shadow: 0 0 2px rgba(255,255,255,0.8);
+}
+
+.play-button-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.play-tile {
+  width: min(15vw, 60px) !important;
+  height: min(15vw, 60px) !important;
+  font-size: min(8vw, 32px) !important;
+  transition: transform 0.2s;
+  box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.3), inset -3px -3px 5px rgba(0, 0, 0, 0.3), 2px 3px 5px rgba(0, 0, 0, 0.4) !important;
+  border: none !important;
+  background-color: var(--color-4) !important; /* Green */
+  color: #fff !important;
+}
+
+.play-button-container:hover .play-tile {
+  transform: scale(1.05) translateY(-2px);
+}
+.play-button-container:active .play-tile {
+  transform: scale(0.95) translateY(2px);
+}
+
+.falling-tile {
+  animation: fallAway 1.2s forwards cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  pointer-events: none;
+}
+
+@keyframes fallAway {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(var(--rot, 45deg)); opacity: 0; }
+}

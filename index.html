@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/modals.css?v=6.30">
   <link rel="stylesheet" href="css/leaderboard.css?v=6.30">
   <link rel="stylesheet" href="css/effects.css?v=6.30">
+  <link rel="stylesheet" href="css/opening.css?v=6.30">
   <link rel="stylesheet" href="css/responsive.css?v=6.30">
   <style>
     .back-arrow {
@@ -54,6 +55,19 @@
   <div id="loading-screen">
     <div class="spinner"></div>
     <h2>Loading Game Engine...</h2>
+  </div>
+
+  <div id="opening-screen" class="opening-screen" style="display:none;">
+    <h1 style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;">TODAY'S HIGH SCORES</h1>
+    <div class="grid-container opening-grid" id="opening-grid">
+      <!-- 64 cells populated via JS -->
+    </div>
+    <div class="play-button-container" id="play-btn-tiles">
+      <div class="grid-cell play-tile">P</div>
+      <div class="grid-cell play-tile">L</div>
+      <div class="grid-cell play-tile">A</div>
+      <div class="grid-cell play-tile">Y</div>
+    </div>
   </div>
 
   <div class="top-bar">
