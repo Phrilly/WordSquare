@@ -35,17 +35,7 @@ function setBoardViewerTheme(mode) {
 }
 
 function renderWordListsForBoard(groupedData) {
-  document.getElementById('list-5').innerHTML = groupedData.display[5]
-    .map(w => `<span class="word-badge word-5">${w}</span>`)
-    .join('');
-
-  document.getElementById('list-4').innerHTML = groupedData.display[4]
-    .map(w => `<span class="word-badge word-4">${w}</span>`)
-    .join('');
-
-  document.getElementById('list-3').innerHTML = groupedData.display[3]
-    .map(w => `<span class="word-badge word-3">${w}</span>`)
-    .join('');
+  // Lists removed from UI
 }
 
 function applyColorsToSpecificGrid(validWords, cellsArray, containerElement) {

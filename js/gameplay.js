@@ -11,7 +11,7 @@ function initGame() {
   currentScore = 0;
   usedWildcards.clear();
 
-  isCurrentGameDaily = document.getElementById('daily-toggle').checked;
+  isCurrentGameDaily = true;
   if (isCurrentGameDaily) dailySeed = getDailySeed();
 
   gameDeck = generateBagSequence();
@@ -25,10 +25,6 @@ function initGame() {
   document.getElementById('best-board-modal').classList.remove('active');
 
   topBarEl.style.opacity = '1';
-
-  document.getElementById('list-5').innerHTML = '';
-  document.getElementById('list-4').innerHTML = '';
-  document.getElementById('list-3').innerHTML = '';
 
   for (let i = 0; i < 25; i++) {
     const cell = document.createElement('div');
@@ -51,7 +47,6 @@ function setNextLetter() {
 }
 
 function handleHoverEnter(index, cellEl) {
-  if (!document.getElementById('hover-toggle').checked) return;
   if (cells[index] !== '' || placedCount >= 25) return;
 
   const letter = nextLetterEl.innerText;

@@ -8,8 +8,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Best Board Modal
   document.getElementById('back-to-leaderboard-btn')?.addEventListener('click', showLeaderboardFromBest);
-
-
-  // Settings
-  document.getElementById('daily-toggle')?.addEventListener('change', initGame);
 });
