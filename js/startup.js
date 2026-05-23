@@ -147,37 +147,91 @@ window.onload = async function bootstrapGame() {
   
   const highscores = hsData.highscores || [];
   
-  for (let r = 0; r < 8; r++) {
-    const scoreData = highscores[r] || null;
+  if (highscores.length === 0) {
+    // No scores layout: Crossword "NO SCORES YET"
+    // NO (horizontal): row 1, col 2-3
+    // SCORES (vertical): row 1-6, col 3 (intersect 'O')
+    // YET (horizontal): row 5, col 2-4 (intersect 'E' at col 3)
+    // Map of cells: [row][col] -> 'LETTER'
+    const noScoreMap = {
+      1: { 2: 'N', 3: 'O' }, // O is shared
+      2: { 3: 'S' },
+      3: { 3: 'C' },
+      4: { 3: 'O' },
+      5: { 3: 'R' },
+      6: { 2: 'Y', 3: 'E', 4: 'T' }, // E is shared
+      7: { 3: 'S' }
+    };
+    // Wait, the user asked NO SCORES YET with SCORES vertical sharing O and E
+    // 'N', 'O' -> 'O' is at index 1 of NO.
+    // 'S', 'C', 'O', 'R', 'E', 'S' -> 'O' is index 2, 'E' is index 4.
+    // So if 'O' is shared: row 2, col 3 = 'O'. 'N' is row 2, col 2.
+    // 'S' = row 0, col 3. 'C' = row 1, col 3.
+    // 'O' = row 2, col 3.
+    // 'R' = row 3, col 3.
+    // 'E' = row 4, col 3.
+    // 'S' = row 5, col 3.
+    // 'YET' shares 'E'. 'E' is row 4, col 3. So 'Y' = row 4, col 2. 'T' = row 4, col 4.
     
-    // Col 0: Rank
-    let rankCell = document.createElement('div');
-    rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
-    if (r === 0 && scoreData) rankCell.classList.add('top-rank');
-    rankCell.innerText = scoreData ? (r + 1).toString() : '';
-    openingGrid.appendChild(rankCell);
-    
-    // Cols 1,2,3: Initials
-    let initials = scoreData ? (scoreData.initials || '---').padEnd(3, ' ') : '   ';
-    for (let i = 0; i < 3; i++) {
-      let c = document.createElement('div');
-      c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
-      c.innerText = initials[i] !== ' ' ? initials[i] : '';
-      openingGrid.appendChild(c);
+    const crosswordMap = {
+      1: { 3: 'S' },
+      2: { 3: 'C' },
+      3: { 2: 'N', 3: 'O' }, 
+      4: { 3: 'R' },
+      5: { 2: 'Y', 3: 'E', 4: 'T' }, 
+      6: { 3: 'S' }
+    };
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        let cell = document.createElement('div');
+        if (crosswordMap[r] && crosswordMap[r][c]) {
+          cell.className = 'grid-cell filled';
+          cell.innerText = crosswordMap[r][c];
+          
+          // Let's color the crossword tiles to make them pop (using WordSquare colors)
+          if (r === 3 && c === 2) cell.classList.add('word-3'); // N
+          else if (r === 5 && (c === 2 || c === 4)) cell.classList.add('word-3'); // Y, T
+          else cell.classList.add('word-4'); // The vertical SCORES and shared O/E
+        } else {
+          cell.className = 'grid-cell';
+        }
+        openingGrid.appendChild(cell);
+      }
     }
-    
-    // Col 4: Spacer
-    let sep = document.createElement('div');
-    sep.className = 'grid-cell';
-    openingGrid.appendChild(sep);
-    
-    // Cols 5,6,7: Score
-    let scoreStr = scoreData ? scoreData.score.toString().padStart(3, ' ') : '   ';
-    for (let i = 0; i < 3; i++) {
-      let c = document.createElement('div');
-      c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
-      c.innerText = scoreStr[i] !== ' ' ? scoreStr[i] : '';
-      openingGrid.appendChild(c);
+  } else {
+    for (let r = 0; r < 8; r++) {
+      const scoreData = highscores[r] || null;
+      
+      // Col 0: Rank
+      let rankCell = document.createElement('div');
+      rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
+      if (r === 0 && scoreData) rankCell.classList.add('top-rank');
+      rankCell.innerText = scoreData ? (r + 1).toString() : '';
+      openingGrid.appendChild(rankCell);
+      
+      // Cols 1,2,3: Initials
+      let initials = scoreData ? (scoreData.initials || '---').padEnd(3, ' ') : '   ';
+      for (let i = 0; i < 3; i++) {
+        let c = document.createElement('div');
+        c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
+        c.innerText = initials[i] !== ' ' ? initials[i] : '';
+        openingGrid.appendChild(c);
+      }
+      
+      // Col 4: Spacer
+      let sep = document.createElement('div');
+      sep.className = 'grid-cell';
+      openingGrid.appendChild(sep);
+      
+      // Cols 5,6,7: Score
+      let scoreStr = scoreData ? scoreData.score.toString().padStart(3, ' ') : '   ';
+      for (let i = 0; i < 3; i++) {
+        let c = document.createElement('div');
+        c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
+        c.innerText = scoreStr[i] !== ' ' ? scoreStr[i] : '';
+        openingGrid.appendChild(c);
+      }
     }
   }
 
