@@ -145,38 +145,57 @@ window.onload = async function bootstrapGame() {
   const openingGrid = document.getElementById('opening-grid');
   openingGrid.innerHTML = '';
   
-  const highscores = hsData.highscores || [];
+  const highscores = (hsData && Array.isArray(hsData.highscores)) ? hsData.highscores : [];
   
-  for (let r = 0; r < 8; r++) {
-    const scoreData = highscores[r] || null;
-    
-    // Col 0: Rank
-    let rankCell = document.createElement('div');
-    rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
-    if (r === 0 && scoreData) rankCell.classList.add('top-rank');
-    rankCell.innerText = scoreData ? (r + 1).toString() : '';
-    openingGrid.appendChild(rankCell);
-    
-    // Cols 1,2,3: Initials
-    let initials = scoreData ? (scoreData.initials || '---').padEnd(3, ' ') : '   ';
-    for (let i = 0; i < 3; i++) {
-      let c = document.createElement('div');
-      c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
-      c.innerText = initials[i] !== ' ' ? initials[i] : '';
-      openingGrid.appendChild(c);
+  if (highscores.length > 0) {
+    for (let r = 0; r < 8; r++) {
+      const scoreData = highscores[r] || null;
+      
+      // Col 0: Rank
+      let rankCell = document.createElement('div');
+      rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
+      if (r === 0 && scoreData) rankCell.classList.add('top-rank');
+      rankCell.innerText = scoreData ? (r + 1).toString() : '';
+      openingGrid.appendChild(rankCell);
+      
+      // Cols 1,2,3: Initials
+      let initials = scoreData ? (scoreData.initials || '---').padEnd(3, ' ') : '   ';
+      for (let i = 0; i < 3; i++) {
+        let c = document.createElement('div');
+        c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
+        c.innerText = initials[i] !== ' ' ? initials[i] : '';
+        openingGrid.appendChild(c);
+      }
+      
+      // Col 4: Spacer
+      let sep = document.createElement('div');
+      sep.className = 'grid-cell';
+      openingGrid.appendChild(sep);
+      
+      // Cols 5,6,7: Score
+      let scoreStr = scoreData ? scoreData.score.toString().padStart(3, ' ') : '   ';
+      for (let i = 0; i < 3; i++) {
+        let c = document.createElement('div');
+        c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
+        c.innerText = scoreStr[i] !== ' ' ? scoreStr[i] : '';
+        openingGrid.appendChild(c);
+      }
     }
-    
-    // Col 4: Spacer
-    let sep = document.createElement('div');
-    sep.className = 'grid-cell';
-    openingGrid.appendChild(sep);
-    
-    // Cols 5,6,7: Score
-    let scoreStr = scoreData ? scoreData.score.toString().padStart(3, ' ') : '   ';
-    for (let i = 0; i < 3; i++) {
+  } else {
+    const noScoresGrid = [
+      " ", " ", " ", " ", " ", " ", " ", " ",
+      " ", " ", " ", " ", "S", " ", " ", " ",
+      " ", " ", " ", " ", "C", " ", " ", " ",
+      " ", " ", " ", "N", "O", " ", " ", " ",
+      " ", " ", " ", " ", "R", " ", " ", " ",
+      " ", " ", " ", "Y", "E", "T", " ", " ",
+      " ", " ", " ", " ", "S", " ", " ", " ",
+      " ", " ", " ", " ", " ", " ", " ", " "
+    ];
+    for (let i = 0; i < 64; i++) {
       let c = document.createElement('div');
-      c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
-      c.innerText = scoreStr[i] !== ' ' ? scoreStr[i] : '';
+      c.className = 'grid-cell' + (noScoresGrid[i] !== " " ? ' filled' : '');
+      c.innerText = noScoresGrid[i] !== " " ? noScoresGrid[i] : '';
       openingGrid.appendChild(c);
     }
   }
