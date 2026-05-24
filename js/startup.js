@@ -86,38 +86,35 @@ window.addEventListener('load', async function bootstrapGame() {
       setupAlphabetGrid();
     }
     
-    // Correctly targeting the state.js variable without "window."
     sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    // Deep Cache Busting Configuration
+    const timestamp = Date.now();
+    const fetchConfig = (actionName) => ({
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
+      body: JSON.stringify({ action: actionName })
+    });
 
     let dictData = { words: [] }, winnerData = { winner_initials: null }, hsData = { highscores: [] };
 
     try {
-      const dictPromise = fetch('validate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_dict' })
-      }).then(res => res.json()).catch(e => {
-        console.error("Failed to load dictionary", e);
-        return { words: [] };
-      });
+      const dictPromise = fetch(`validate.php?t=${timestamp}`, fetchConfig('get_dict'))
+        .then(res => res.json())
+        .catch(e => { console.error("Dict error:", e); return { words: [] }; });
 
-      const winnerPromise = fetch('validate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_yesterdays_winner' })
-      }).then(res => res.json()).catch(e => {
-        console.error("Could not fetch yesterday's winner", e);
-        return { winner_initials: null };
-      });
+      const winnerPromise = fetch(`validate.php?t=${timestamp}`, fetchConfig('get_yesterdays_winner'))
+        .then(res => res.json())
+        .catch(e => { console.error("Winner error:", e); return { winner_initials: null }; });
 
-      const hsPromise = fetch('validate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_highscores' })
-      }).then(res => res.json()).catch(e => {
-        console.error("Could not fetch highscores", e);
-        return { highscores: [] };
-      });
+      const hsPromise = fetch(`validate.php?t=${timestamp}`, fetchConfig('get_highscores'))
+        .then(res => res.json())
+        .catch(e => { console.error("HS error:", e); return { highscores: [] }; });
 
       const results = await Promise.all([dictPromise, winnerPromise, hsPromise]);
       dictData = results[0] || { words: [] };
@@ -127,9 +124,14 @@ window.addEventListener('load', async function bootstrapGame() {
       console.error("Fetch block failed completely", fetchErr);
     }
 
-    if (dictData && dictData.words) {
-      // Correctly targeting the state.js variable without "window."
-      gameDictionary = new Set(dictData.words);
+    // Explicitly mutate the Set created in state.js to preserve scoping
+    if (dictData && dictData.words && dictData.words.length > 0) {
+      if (typeof gameDictionary !== 'undefined') {
+        gameDictionary.clear();
+        dictData.words.forEach(w => gameDictionary.add(w));
+      }
+    } else {
+      alert("Game Engine Warning: Dictionary failed to load. Words will not score. Please force-refresh your browser.");
     }
 
     try {
@@ -231,15 +233,11 @@ window.addEventListener('load', async function bootstrapGame() {
         }
       } catch (e) {
         console.error("Failed to build opening screen grid cleanly", e);
-        alert("Opening screen error: " + e.message);
       } finally {
         openingScreen.style.display = 'flex';
       }
-    } else {
-      console.warn("Opening screen elements not found in DOM");
     }
   } catch (globalErr) {
     console.error("Global bootstrap error:", globalErr);
-    alert("Fatal Error: " + globalErr.message);
   }
 });
