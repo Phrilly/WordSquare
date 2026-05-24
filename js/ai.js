@@ -1,5 +1,26 @@
-function runAIOptimizerOnBestGrid(bestGridString) {
-  let rawChars = bestGridString.split('');
+// Drop-in replacement: We make this async so it can fetch the #1 human score first
+async function runAIOptimizerOnBestGrid(localGridString) {
+  // 1. Hijack the local letters and fetch the Champion's letters instead
+  let targetGridString = localGridString; // Fallback just in case
+
+  try {
+    const response = await fetch('validate.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_highscores' })
+    });
+    const data = await response.json();
+    
+    // Grab the grid from the actual #1 human player of the day
+    if (data && data.highscores && data.highscores.length > 0) {
+      targetGridString = data.highscores[0].grid;
+    }
+  } catch (err) {
+    console.error("AI couldn't fetch human champion grid, falling back to local.", err);
+  }
+
+  // 2. Proceed with optimization using the exact same letters for EVERY player
+  let rawChars = targetGridString.split('');
   let upperChars = rawChars.map(c => c.toUpperCase());
 
   let bestIndices = Array.from({ length: 25 }, (_, i) => i);
@@ -44,6 +65,7 @@ function runAIOptimizerOnBestGrid(bestGridString) {
     if (performance.now() < endTime) {
       requestAnimationFrame(computeChunk);
     } else {
+      // Expose globally so the viewer can access it
       aiBestScore = bestScore;
       aiBestGrid = bestIndices.map(idx => {
         let char = rawChars[idx];
