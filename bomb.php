@@ -153,6 +153,8 @@ function autoVer($url) {
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>
   <script src="<?= autoVer('js/render.js') ?>" defer></script>
   
+  <script src="<?= autoVer('js/gameplay.js') ?>" defer></script>
+  
   <script src="<?= autoVer('js/gameplay-bomb.js') ?>" defer></script>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
