@@ -1,62 +1,62 @@
-/* 1. Clean, High-Contrast Bomb Design */
+/* 1. Off-White Background to make the Emoji and Fuse highly visible */
 .grid-cell.has-bomb {
-  background-color: #ff9800 !important; 
-  /* Embeds a crisp, flat black bomb icon - no emojis */
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000000"><path d="M11 2a1 1 0 0 1 2 0v2a1 1 0 0 1-2 0V2zm5.7 2.3a1 1 0 0 1 1.4 1.4l-1.4 1.4a1 1 0 0 1-1.4-1.4l1.4-1.4zM12 7a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/></svg>');
-  background-size: 60%;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 2px solid #212121;
-  cursor: pointer;
-  transition: transform 0.1s ease-in-out;
+  /* Clean, off-white to subtle silver gradient */
+  background: radial-gradient(circle, #ffffff 10%, #e2e8f0 100%) !important;
+  border: 2px solid #94a3b8 !important;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1), 0 0 5px rgba(255, 255, 255, 0.2);
+  cursor: crosshair;
 }
 
-.grid-cell.has-bomb:hover {
-  transform: scale(1.05);
-}
-
+/* Bring back the classic bomb emoji */
 .grid-cell.has-bomb::after {
-  display: none; /* Removes the old emoji */
+  content: '💣';
+  font-size: clamp(24px, 5vw, 36px);
+  position: absolute;
+  /* An aggressive tick-tock shake */
+  animation: pulse-bomb 1s infinite alternate ease-in-out;
+  pointer-events: none;
+  z-index: 10;
+  /* A dark drop-shadow so the bomb stands out against the white tile */
+  filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.5));
 }
 
-/* 2. The Letter Smithereens Animation */
-.grid-cell.exploding {
-  z-index: 999;
-  animation: shatter 0.6s cubic-bezier(0.1, 0.8, 0.1, 1) forwards !important;
+@keyframes pulse-bomb {
+  0% { transform: scale(1) rotate(-5deg); }
+  100% { transform: scale(1.15) rotate(5deg); }
+}
+
+/* 2. Particle Classes for the JavaScript Explosion */
+.bomb-particle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  /* Uses CSS variables injected by JS to determine where they fly */
+  animation: blast-particle 0.7s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  z-index: 9999;
+}
+
+.bomb-particle.shard {
+  font-size: 32px;
   font-weight: bold;
-  background-image: none !important; /* Hides the bomb icon instantly */
-  pointer-events: none; /* Prevents accidental double-clicks during the explosion */
+  color: #ffffff;
+  /* Makes the flying letters look scorched and glowing */
+  text-shadow: 0 0 4px #000, 0 0 15px #ff0000;
+  font-family: inherit;
 }
 
-@keyframes shatter {
-  /* Stage 1: The letter lands and the cell ignites */
+.bomb-particle.debris {
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor; /* Gives the fire and smoke a natural glow */
+}
+
+@keyframes blast-particle {
   0% {
-    background-color: #ff0000;
-    transform: scale(1);
-    color: #ffffff;
-    text-shadow: 0 0 0 #ffffff;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 1;
   }
-  /* Stage 2: The blast core turns white-hot, the letter fractures */
-  20% {
-    background-color: #ffeb3b;
-    transform: scale(1.3);
-    color: transparent; /* Hides the main letter so shadows look like shards */
-    text-shadow:
-      -3px -3px 0px #000000,
-       3px -3px 0px #000000,
-      -3px  3px 0px #000000,
-       3px  3px 0px #000000;
-  }
-  /* Stage 3: The shards fly off into the distance and fade away */
   100% {
-    background-color: transparent;
-    transform: scale(1.5);
-    color: transparent;
-    text-shadow:
-      -50px -50px 15px #ff0000,
-       50px -50px 15px #ff0000,
-      -50px  50px 15px #ff0000,
-       50px  50px 15px #ff0000;
+    /* Shoots the particle across the screen based on the --tx and --ty variables */
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.2) rotate(720deg);
     opacity: 0;
   }
 }
