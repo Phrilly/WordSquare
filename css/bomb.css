@@ -30,8 +30,8 @@
   position: absolute;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  /* Uses CSS variables injected by JS to determine where they fly */
-  animation: blast-particle 0.7s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  /* UPDATED: Animation slowed down to 1.4 seconds for a longer explosion */
+  animation: blast-particle 1.4s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
   z-index: 9999;
 }
 

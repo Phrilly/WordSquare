@@ -122,8 +122,8 @@ function createBombParticles(cellEl, letter) {
     container.appendChild(p);
   }
 
-  // Sweep up the debris from the DOM once the animation finishes
-  setTimeout(() => container.remove(), 800);
+  // UPDATED: Sweep up the debris from the DOM once the new longer animation finishes
+  setTimeout(() => container.remove(), 1500);
 }
 
 // 7. Hook into Clicks: Intercept bombs and trigger the particle engine
@@ -144,6 +144,12 @@ window.handleCellClick = function(index, cellEl) {
     
     // Trigger the JavaScript particle blast across the screen
     createBombParticles(cellEl, letterToBurn);
+
+    // UPDATED: Wait a bit longer before returning the tile to its empty state
+    setTimeout(() => { 
+      cellEl.classList.remove('exploding'); 
+      cellEl.innerText = ''; // Clear the ashes from the grid cell
+    }, 1000);
 
     // Consume the letter without locking the square
     deckIndex++; 
