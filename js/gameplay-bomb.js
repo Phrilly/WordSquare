@@ -1,92 +1,142 @@
 // ================================
-// BOMB VARIANT - DAILY DETERMINISTIC
+// BOMB VARIANT - FIXED DAILY DECK
 // ================================
 
-// 1. New tracking vars for the variant only
+// Variant-only state
 var deckIndex = 0;
 var activeBombs = [];
 
 
-// 2. Override the bag generator to produce a deterministic 28-letter deck
-// Uses the same seededRandom path as your normal daily game.
-window.generateBagSequence = function() {
+// Small deterministic PRNG from a string seed
+function seededHash(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed) {
+  return function() {
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeDailyRandom(suffix) {
+  return mulberry32(seededHash(String(dailySeed) + ':' + suffix));
+}
+
+
+// Build the fixed 28-letter deck for the day
+function buildBombDailyDeck() {
   const frequencies = {
     A:9, B:2, C:2, D:4, E:12, F:2, G:3, H:2, I:9, J:1, K:1, L:4,
     M:2, N:6, O:8, P:2, Q:1, R:6, S:4, T:6, U:4, V:2, W:2, X:1, Y:2, Z:1
   };
 
+  const rnd = makeDailyRandom('bomb-deck');
   let pool = [];
+
   for (const [letter, count] of Object.entries(frequencies)) {
-    for (let i = 0; i < count; i++) pool.push(letter);
+    for (let i = 0; i < count; i++) {
+      pool.push(letter);
+    }
   }
 
-  const randomFunc =
-    (typeof isCurrentGameDaily !== 'undefined' &&
-     isCurrentGameDaily &&
-     typeof seededRandom === 'function')
-      ? seededRandom
-      : Math.random;
-
-  // Fisher-Yates shuffle
+  // Fisher-Yates using our own RNG
   for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(randomFunc() * (i + 1));
+    const j = Math.floor(rnd() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  // Take 28 letters for bomb mode
   return pool.slice(0, 28);
-};
+}
 
 
-// 3. Deterministic bomb spawner
-window.spawnBombs = function() {
-  const gridCells = document.querySelectorAll('#grid .grid-cell');
-  gridCells.forEach(c => c.classList.remove('has-bomb'));
-  activeBombs = [];
+// Build the fixed bomb positions for the day
+function buildBombPositions() {
+  const rnd = makeDailyRandom('bomb-positions');
+  const positions = [];
 
-  const randomFunc =
-    (typeof isCurrentGameDaily !== 'undefined' &&
-     isCurrentGameDaily &&
-     typeof seededRandom === 'function')
-      ? seededRandom
-      : Math.random;
-
-  while (activeBombs.length < 3) {
-    const r = Math.floor(randomFunc() * 25);
-    if (!activeBombs.includes(r)) {
-      activeBombs.push(r);
-      if (gridCells[r]) gridCells[r].classList.add('has-bomb');
-    }
+  while (positions.length < 3) {
+    const r = Math.floor(rnd() * 25);
+    if (!positions.includes(r)) positions.push(r);
   }
-};
+
+  return positions;
+}
 
 
-// 4. Hook initGame: reset variant state, run classic setup, then deploy bombs
-const originalInitGame = window.initGame;
+// Override initGame completely for the bomb mode
 window.initGame = function() {
+  const existingCells = document.querySelectorAll('#grid > .grid-cell:not(.alpha-cell)');
+  existingCells.forEach(cell => cell.remove());
+
+  cells = Array(gridSize * gridSize).fill('');
+  wildcardState = Array(gridSize * gridSize).fill(false);
+
+  placedCount = 0;
+  pendingCellIndex = null;
+  explodedWords.clear();
+  currentScore = 0;
+  usedWildcards.clear();
+
   deckIndex = 0;
   activeBombs = [];
 
-  originalInitGame();
+  isCurrentGameDaily = true;
+  if (isCurrentGameDaily) dailySeed = getDailySeed();
 
-  // originalInitGame() has already:
-  // - set isCurrentGameDaily = true
-  // - set dailySeed = getDailySeed()
-  // - built gameDeck using generateBagSequence()
+  // IMPORTANT:
+  // Build the fixed 28-letter daily deck directly from the daily seed.
+  gameDeck = buildBombDailyDeck();
 
-  window.spawnBombs();
-  window.setNextLetter();
+  scoreEl.innerText = '0';
+  headerLabelEl.innerText = 'Next:';
+
+  alphabetModal.classList.remove('active');
+  highscoreEntryModal.classList.remove('active');
+  leaderboardModal.classList.remove('active');
+  document.getElementById('best-board-modal').classList.remove('active');
+
+  topBarEl.style.opacity = '1';
+
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'grid-cell';
+    cell.dataset.index = i;
+    cell.addEventListener('click', () => handleCellClick(i, cell));
+    cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
+    cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
+    gridEl.appendChild(cell);
+  }
+
+  nextLetterEl.style.display = 'inline-flex';
+  leftHeaderEl.title = 'Click to open wildcard picker';
+
+  // Fixed bomb positions for the same day
+  activeBombs = buildBombPositions();
+  const gridCells = document.querySelectorAll('#grid .grid-cell');
+  activeBombs.forEach(i => {
+    if (gridCells[i]) gridCells[i].classList.add('has-bomb');
+  });
+
+  setNextLetter();
 };
 
 
-// 5. Override next-letter display to use the 28-letter bomb deck index
+// Override next letter to read from the 28-letter deck
 window.setNextLetter = function() {
   if (deckIndex >= gameDeck.length || placedCount >= 25) return;
-  document.getElementById('next-letter').innerText = gameDeck[deckIndex];
+  nextLetterEl.innerText = gameDeck[deckIndex];
 };
 
 
-// 6. Particle engine for bomb effects
+// Particle engine
 function createBombParticles(cellEl, letter) {
   const rect = cellEl.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
@@ -104,7 +154,6 @@ function createBombParticles(cellEl, letter) {
 
   const colors = ['#ef4444', '#f97316', '#eab308', '#44403c', '#1c1917'];
 
-  // Letter shards
   for (let i = 0; i < 6; i++) {
     const shard = document.createElement('div');
     shard.innerText = letter;
@@ -123,7 +172,6 @@ function createBombParticles(cellEl, letter) {
     container.appendChild(shard);
   }
 
-  // Debris
   for (let i = 0; i < 25; i++) {
     const p = document.createElement('div');
     p.className = 'bomb-particle debris';
@@ -153,16 +201,15 @@ function createBombParticles(cellEl, letter) {
 }
 
 
-// 7. Hook clicks: intercept bombs, burn the current letter, do not lock the cell
+// Override click logic for bombs
 const originalHandleCellClick = window.handleCellClick;
 window.handleCellClick = function(index, cellEl) {
-  if (typeof cells !== 'undefined' && cells[index] !== '') return;
-  if (placedCount >= 25) return;
+  if (cells[index] !== '' || placedCount >= 25) return;
 
   if (activeBombs.includes(index)) {
     activeBombs = activeBombs.filter(b => b !== index);
 
-    const letterToBurn = document.getElementById('next-letter').innerText;
+    const letterToBurn = nextLetterEl.innerText;
 
     cellEl.classList.remove('has-bomb');
     createBombParticles(cellEl, letterToBurn);
@@ -172,9 +219,9 @@ window.handleCellClick = function(index, cellEl) {
       cellEl.innerText = '';
     }, 1000);
 
-    // Burn the current letter without placing it
+    // Burn letter, do not place it
     deckIndex++;
-    window.setNextLetter();
+    setNextLetter();
     return;
   }
 
@@ -182,9 +229,57 @@ window.handleCellClick = function(index, cellEl) {
 };
 
 
-// 8. Hook placeLetter so normal placements also advance the custom deck index
+// Override placement so normal placements also advance the 28-letter deck
 const originalPlaceLetter = window.placeLetter;
 window.placeLetter = function(index, letter, cellEl, isWildcard) {
+  cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
+
+  cells[index] = letter;
+  wildcardState[index] = isWildcard;
+
+  cellEl.innerText = letter;
+  placedCount++;
   deckIndex++;
-  originalPlaceLetter(index, letter, cellEl, isWildcard);
+
+  if (isWildcard) {
+    cellEl.classList.add('is-wildcard');
+  }
+
+  cellEl.classList.add('tile-pop');
+  setTimeout(() => {
+    cellEl.classList.remove('tile-pop');
+  }, 300);
+
+  calculateRealTimeScoreLocal();
+
+  if (placedCount === 25) {
+    headerLabelEl.innerText = 'Score:';
+    nextLetterEl.style.display = 'none';
+    leftHeaderEl.title = '';
+
+    topBarEl.style.opacity = '0';
+
+    logGameToServer();
+
+    document.getElementById('final-score-display').innerText = currentScore;
+
+    if (isCurrentGameDaily) {
+      document.getElementById('daily-save-section').hidden = false;
+      document.getElementById('non-daily-section').hidden = true;
+
+      initialsInput.value = '';
+      document.getElementById('init-tile-1').innerText = '';
+      document.getElementById('init-tile-2').innerText = '';
+      document.getElementById('init-tile-3').innerText = '';
+
+      highscoreEntryModal.classList.add('active');
+      initialsInput.focus();
+    } else {
+      document.getElementById('daily-save-section').hidden = true;
+      document.getElementById('non-daily-section').hidden = false;
+      highscoreEntryModal.classList.add('active');
+    }
+  } else {
+    setNextLetter();
+  }
 };
