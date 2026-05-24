@@ -1,3 +1,57 @@
+// --- ON-SCREEN MOBILE DEBUGGER ---
+let earlyLogs = [];
+let debugDiv = null;
+
+function mobileDebugLog(msg) {
+    if (debugDiv) {
+        debugDiv.innerHTML += msg + "<br><br>";
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+    } else {
+        earlyLogs.push(msg);
+        // Fallback alert for immediate hard crashes before the DOM loads
+        alert("CRASH LOG: " + msg); 
+    }
+}
+
+window.onerror = function(msg, url, line, col, error) {
+    mobileDebugLog(`💥 ERROR: ${msg}<br>LINE: ${line}<br>URL: ${url}`);
+    return false;
+};
+
+window.addEventListener("unhandledrejection", function(e) {
+    mobileDebugLog(`⚠️ PROMISE REJECTED: ${e.reason}`);
+});
+
+const originalConsoleError = console.error;
+console.error = function(...args) {
+    mobileDebugLog(`❌ CONSOLE ERROR: ${args.map(a => String(a)).join(' ')}`);
+    originalConsoleError.apply(console, args);
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    debugDiv = document.createElement("div");
+    debugDiv.style.position = "fixed";
+    debugDiv.style.bottom = "0";
+    debugDiv.style.left = "0";
+    debugDiv.style.width = "100%";
+    debugDiv.style.height = "35%";
+    debugDiv.style.backgroundColor = "rgba(0,0,0,0.9)";
+    debugDiv.style.color = "#00ff00";
+    debugDiv.style.zIndex = "999999";
+    debugDiv.style.overflowY = "auto";
+    debugDiv.style.fontSize = "12px";
+    debugDiv.style.fontFamily = "monospace";
+    debugDiv.style.padding = "10px";
+    debugDiv.style.borderTop = "2px solid #00ff00";
+    document.body.appendChild(debugDiv);
+
+    earlyLogs.forEach(log => {
+        debugDiv.innerHTML += log + "<br><br>";
+    });
+    mobileDebugLog("✅ Debug console initialized. Waiting for errors...");
+});
+// --- END DEBUGGER ---
+
 const BURST_DURATION = 3000;
 
 function triggerMiniWinnerBurst() {
@@ -52,99 +106,75 @@ function showWinnerOverlay(initials) {
   }, BURST_DURATION - 500);
 }
 
-window.addEventListener('load', async function bootstrapGame() {
+initialsInput.addEventListener('input', (e) => {
+  const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+  e.target.value = val;
+  document.getElementById('init-tile-1').textContent = val[0] || '';
+  document.getElementById('init-tile-2').textContent = val[1] || '';
+  document.getElementById('init-tile-3').textContent = val[2] || '';
+});
+
+nextLetterEl.addEventListener('click', () => {
+  if (nextLetterEl.textContent === '?') {
+    pendingCellIndex = -1;
+    updateWildcardModal();
+    alphabetModal.classList.add('active');
+  } else {
+    const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
+    if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
+      nextLetterEl.textContent = forcedLetter.toUpperCase();
+    }
+  }
+});
+
+(async function bootstrapGame() {
   try {
-    if (typeof initialsInput !== 'undefined' && initialsInput) {
-      initialsInput.addEventListener('input', (e) => {
-        const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-        e.target.value = val;
-        const tile1 = document.getElementById('init-tile-1');
-        const tile2 = document.getElementById('init-tile-2');
-        const tile3 = document.getElementById('init-tile-3');
-        if (tile1) tile1.textContent = val[0] || '';
-        if (tile2) tile2.textContent = val[1] || '';
-        if (tile3) tile3.textContent = val[2] || '';
-      });
-    }
-
-    if (typeof nextLetterEl !== 'undefined' && nextLetterEl) {
-      nextLetterEl.addEventListener('click', () => {
-        if (nextLetterEl.textContent === '?') {
-          if (typeof pendingCellIndex !== 'undefined') pendingCellIndex = -1;
-          if (typeof updateWildcardModal === 'function') updateWildcardModal();
-          if (typeof alphabetModal !== 'undefined' && alphabetModal) alphabetModal.classList.add('active');
-        } else {
-          const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
-          if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
-            nextLetterEl.textContent = forcedLetter.toUpperCase();
-          }
-        }
-      });
-    }
-
-    if (typeof setupAlphabetGrid === 'function') {
-      setupAlphabetGrid();
-    }
-    
+    setupAlphabetGrid();
     sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
-    // Deep Cache Busting Configuration
-    const timestamp = Date.now();
-    const fetchConfig = (actionName) => ({
+    const fetchOpts = (actionName) => ({
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: actionName })
     });
 
-    let dictData = { words: [] }, winnerData = { winner_initials: null }, hsData = { highscores: [] };
+    mobileDebugLog("Fetching data from validate.php...");
 
-    try {
-      const dictPromise = fetch(`validate.php?t=${timestamp}`, fetchConfig('get_dict'))
-        .then(res => res.json())
-        .catch(e => { console.error("Dict error:", e); return { words: [] }; });
+    const dictPromise = fetch('validate.php', fetchOpts('get_dict'))
+      .then(res => {
+          if (!res.ok) throw new Error("Dict fetch failed with status: " + res.status);
+          return res.json();
+      }).catch(e => {
+          console.error("Dict error:", e);
+          return { words: [] };
+      });
+    
+    const winnerPromise = fetch('validate.php', fetchOpts('get_yesterdays_winner'))
+      .then(res => res.json()).catch(e => {
+          console.error("Winner error:", e);
+          return { winner_initials: null };
+      });
+    
+    const hsPromise = fetch('validate.php', fetchOpts('get_highscores'))
+      .then(res => res.json()).catch(e => {
+          console.error("Highscore error:", e);
+          return { highscores: [] };
+      });
 
-      const winnerPromise = fetch(`validate.php?t=${timestamp}`, fetchConfig('get_yesterdays_winner'))
-        .then(res => res.json())
-        .catch(e => { console.error("Winner error:", e); return { winner_initials: null }; });
+    const [dictData, winnerData, hsData] = await Promise.all([dictPromise, winnerPromise, hsPromise]);
 
-      const hsPromise = fetch(`validate.php?t=${timestamp}`, fetchConfig('get_highscores'))
-        .then(res => res.json())
-        .catch(e => { console.error("HS error:", e); return { highscores: [] }; });
+    mobileDebugLog(`Dictionary loaded: ${dictData.words ? dictData.words.length : 0} words`);
 
-      const results = await Promise.all([dictPromise, winnerPromise, hsPromise]);
-      dictData = results[0] || { words: [] };
-      winnerData = results[1] || { winner_initials: null };
-      hsData = results[2] || { highscores: [] };
-    } catch (fetchErr) {
-      console.error("Fetch block failed completely", fetchErr);
-    }
-
-    // Explicitly mutate the Set created in state.js to preserve scoping
     if (dictData && dictData.words && dictData.words.length > 0) {
-      if (typeof gameDictionary !== 'undefined') {
-        gameDictionary.clear();
-        dictData.words.forEach(w => gameDictionary.add(w));
-      }
+      gameDictionary = new Set(dictData.words);
     } else {
-      alert("Game Engine Warning: Dictionary failed to load. Words will not score. Please force-refresh your browser.");
+      console.error("Dictionary was empty after fetch.");
     }
 
-    try {
-      if (typeof initGame === 'function') initGame();
-    } catch (error) {
-      console.error("Error during initGame:", error);
-      alert("Game Load Error: " + error.message);
-    }
-
+    initGame();
+    
     const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) {
-      loadingScreen.style.display = 'none';
-    }
+    if (loadingScreen) loadingScreen.style.display = 'none';
 
     if (winnerData && winnerData.winner_initials) {
       showWinnerOverlay(winnerData.winner_initials);
@@ -154,90 +184,82 @@ window.addEventListener('load', async function bootstrapGame() {
     const openingGrid = document.getElementById('opening-grid');
     
     if (openingScreen && openingGrid) {
-      try {
-        openingGrid.innerHTML = '';
-        
-        let highscores = [];
-        if (hsData && Array.isArray(hsData.highscores)) {
-          highscores = hsData.highscores;
-        } else if (Array.isArray(hsData)) {
-          highscores = hsData;
-        }
-        
-        if (highscores.length > 0) {
-          for (let r = 0; r < 8; r++) {
-            const scoreData = highscores[r] || null;
-            
-            let rankCell = document.createElement('div');
-            rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
-            if (r === 0 && scoreData) rankCell.classList.add('top-rank');
-            rankCell.textContent = scoreData ? (r + 1).toString() : '';
-            openingGrid.appendChild(rankCell);
-            
-            let initials = scoreData ? String(scoreData.initials || '---').substring(0,3).padEnd(3, ' ') : '   ';
-            for (let i = 0; i < 3; i++) {
-              let c = document.createElement('div');
-              c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
-              c.textContent = initials[i] !== ' ' ? initials[i] : '';
-              openingGrid.appendChild(c);
-            }
-            
-            let sep = document.createElement('div');
-            sep.className = 'grid-cell';
-            openingGrid.appendChild(sep);
-            
-            let scoreStr = scoreData && scoreData.score != null ? String(scoreData.score).padStart(3, ' ') : '   ';
-            for (let i = 0; i < 3; i++) {
-              let c = document.createElement('div');
-              c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
-              c.textContent = scoreStr[i] !== ' ' ? scoreStr[i] : '';
-              openingGrid.appendChild(c);
-            }
-          }
-        } else {
-          const noScoresGrid = [
-            " ", " ", " ", " ", " ", " ", " ", " ",
-            " ", " ", " ", " ", "S", " ", " ", " ",
-            " ", " ", " ", " ", "C", " ", " ", " ",
-            " ", " ", " ", "N", "O", " ", " ", " ",
-            " ", " ", " ", " ", "R", " ", " ", " ",
-            " ", " ", " ", "Y", "E", "T", " ", " ",
-            " ", " ", " ", " ", "S", " ", " ", " ",
-            " ", " ", " ", " ", " ", " ", " ", " "
-          ];
-          for (let i = 0; i < 64; i++) {
+      openingGrid.innerHTML = '';
+      
+      let highscores = (hsData && Array.isArray(hsData.highscores)) ? hsData.highscores : (Array.isArray(hsData) ? hsData : []);
+      mobileDebugLog(`Highscores parsed: ${highscores.length}`);
+      
+      if (highscores.length > 0) {
+        for (let r = 0; r < 8; r++) {
+          const scoreData = highscores[r] || null;
+          
+          let rankCell = document.createElement('div');
+          rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
+          if (r === 0 && scoreData) rankCell.classList.add('top-rank');
+          rankCell.textContent = scoreData ? (r + 1).toString() : '';
+          openingGrid.appendChild(rankCell);
+          
+          let initials = scoreData ? String(scoreData.initials || '---').substring(0,3).padEnd(3, ' ') : '   ';
+          for (let i = 0; i < 3; i++) {
             let c = document.createElement('div');
-            c.className = 'grid-cell' + (noScoresGrid[i] !== " " ? ' filled' : '');
-            c.textContent = noScoresGrid[i] !== " " ? noScoresGrid[i] : '';
+            c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
+            c.textContent = initials[i] !== ' ' ? initials[i] : '';
+            openingGrid.appendChild(c);
+          }
+          
+          let sep = document.createElement('div');
+          sep.className = 'grid-cell';
+          openingGrid.appendChild(sep);
+          
+          let scoreStr = scoreData && scoreData.score != null ? String(scoreData.score).padStart(3, ' ') : '   ';
+          for (let i = 0; i < 3; i++) {
+            let c = document.createElement('div');
+            c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
+            c.textContent = scoreStr[i] !== ' ' ? scoreStr[i] : '';
             openingGrid.appendChild(c);
           }
         }
-
-        const playBtn = document.getElementById('play-btn-tiles');
-        if (playBtn) {
-          playBtn.addEventListener('click', () => {
-            const allCells = openingScreen.querySelectorAll('.grid-cell');
-            allCells.forEach(cell => {
-              cell.style.setProperty('--rot', (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 45) + 'deg');
-              cell.style.animationDelay = (Math.random() * 0.2) + 's';
-              cell.classList.add('falling-tile');
-            });
-            
-            setTimeout(() => {
-              openingScreen.style.opacity = '0';
-              setTimeout(() => {
-                openingScreen.style.display = 'none';
-              }, 500);
-            }, 900);
-          });
+      } else {
+        const noScoresGrid = [
+          " ", " ", " ", " ", " ", " ", " ", " ",
+          " ", " ", " ", " ", "S", " ", " ", " ",
+          " ", " ", " ", " ", "C", " ", " ", " ",
+          " ", " ", " ", "N", "O", " ", " ", " ",
+          " ", " ", " ", " ", "R", " ", " ", " ",
+          " ", " ", " ", "Y", "E", "T", " ", " ",
+          " ", " ", " ", " ", "S", " ", " ", " ",
+          " ", " ", " ", " ", " ", " ", " ", " "
+        ];
+        for (let i = 0; i < 64; i++) {
+          let c = document.createElement('div');
+          c.className = 'grid-cell' + (noScoresGrid[i] !== " " ? ' filled' : '');
+          c.textContent = noScoresGrid[i] !== " " ? noScoresGrid[i] : '';
+          openingGrid.appendChild(c);
         }
-      } catch (e) {
-        console.error("Failed to build opening screen grid cleanly", e);
-      } finally {
-        openingScreen.style.display = 'flex';
+      }
+
+      openingScreen.style.display = 'flex';
+
+      const playBtn = document.getElementById('play-btn-tiles');
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          const allCells = openingScreen.querySelectorAll('.grid-cell');
+          allCells.forEach(cell => {
+            cell.style.setProperty('--rot', (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 45) + 'deg');
+            cell.style.animationDelay = (Math.random() * 0.2) + 's';
+            cell.classList.add('falling-tile');
+          });
+          
+          setTimeout(() => {
+            openingScreen.style.opacity = '0';
+            setTimeout(() => {
+              openingScreen.style.display = 'none';
+            }, 500);
+          }, 900);
+        });
       }
     }
-  } catch (globalErr) {
-    console.error("Global bootstrap error:", globalErr);
+  } catch (err) {
+    console.error("Bootstrap final error:", err);
   }
-});
+})();
