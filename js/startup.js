@@ -54,7 +54,6 @@ function showWinnerOverlay(initials) {
 
 window.addEventListener('load', async function bootstrapGame() {
   try {
-    // Utilize the variables defined in state.js directly to avoid shadowing bugs
     if (typeof initialsInput !== 'undefined' && initialsInput) {
       initialsInput.addEventListener('input', (e) => {
         const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -87,7 +86,8 @@ window.addEventListener('load', async function bootstrapGame() {
       setupAlphabetGrid();
     }
     
-    window.sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Correctly targeting the state.js variable without "window."
+    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
     let dictData = { words: [] }, winnerData = { winner_initials: null }, hsData = { highscores: [] };
 
@@ -128,7 +128,8 @@ window.addEventListener('load', async function bootstrapGame() {
     }
 
     if (dictData && dictData.words) {
-      window.gameDictionary = new Set(dictData.words);
+      // Correctly targeting the state.js variable without "window."
+      gameDictionary = new Set(dictData.words);
     }
 
     try {
