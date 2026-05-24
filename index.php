@@ -11,6 +11,13 @@ function autoVer($url) {
     }
     return $url . '?v=' . time(); // Fallback if file isn't found
 }
+
+// VARIANT SCHEDULER: Calculate if today is a "Bomb Day" (1 day in every 5)
+// Anchored strictly to UTC. Midnight UTC = 1:00 AM BST. 
+// May 25, 2026 UTC is exactly Day 5 in this cycle.
+$epochTimestamp = strtotime('2026-05-20 00:00:00 UTC'); 
+$daysSinceEpoch = floor((time() - $epochTimestamp) / 86400);
+$isBombDay = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +27,6 @@ function autoVer($url) {
   <title>Word Square Classic</title>
   <link rel="icon" href="data:,">
 
-  <!-- Automated Cache Busting for CSS -->
   <link rel="stylesheet" href="<?= autoVer('css/base.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/layout.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/board.css') ?>">
@@ -29,6 +35,11 @@ function autoVer($url) {
   <link rel="stylesheet" href="<?= autoVer('css/effects.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/opening.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
+  
+  <?php if ($isBombDay): ?>
+  <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
+  <?php endif; ?>
+  
   <style>
     .back-arrow {
       position: absolute;
@@ -79,8 +90,7 @@ function autoVer($url) {
   <div id="opening-screen" class="opening-screen" style="display:none;">
     <h1 style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;">TODAY'S HIGH SCORES</h1>
     <div class="grid-container opening-grid" id="opening-grid">
-      <!-- 64 cells populated via JS -->
-    </div>
+      </div>
     <div class="play-button-container" id="play-btn-tiles">
       <div class="grid-cell play-tile">P</div>
       <div class="grid-cell play-tile">L</div>
@@ -148,11 +158,15 @@ function autoVer($url) {
 
   <div class="version-tag">Version Dynamic Auto-Versioning</div>
 
-  <!-- Automated Cache Busting for JS -->
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>
   <script src="<?= autoVer('js/render.js') ?>" defer></script>
   <script src="<?= autoVer('js/gameplay.js') ?>" defer></script>
+  
+  <?php if ($isBombDay): ?>
+  <script src="<?= autoVer('js/gameplay-bomb.js') ?>" defer></script>
+  <?php endif; ?>
+  
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
   <script src="<?= autoVer('js/ai.js') ?>" defer></script>
   <script src="<?= autoVer('js/startup.js') ?>" defer></script>
