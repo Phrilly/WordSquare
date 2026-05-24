@@ -1,3 +1,17 @@
+<?php
+// Prevent the browser and CDN from caching the main page structure
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+// Function to append the file's exact last-modified timestamp
+function autoVer($url) {
+    if (file_exists(__DIR__ . '/' . $url)) {
+        return $url . '?v=' . filemtime(__DIR__ . '/' . $url);
+    }
+    return $url . '?v=' . time(); // Fallback if file isn't found
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,14 +20,15 @@
   <title>Word Square Classic</title>
   <link rel="icon" href="data:,">
 
-  <link rel="stylesheet" href="css/base.css?v=7.00">
-  <link rel="stylesheet" href="css/layout.css?v=7.00">
-  <link rel="stylesheet" href="css/board.css?v=7.00">
-  <link rel="stylesheet" href="css/modals.css?v=7.00">
-  <link rel="stylesheet" href="css/leaderboard.css?v=7.00">
-  <link rel="stylesheet" href="css/effects.css?v=7.00">
-  <link rel="stylesheet" href="css/opening.css?v=7.00">
-  <link rel="stylesheet" href="css/responsive.css?v=7.01">
+  <!-- Automated Cache Busting for CSS -->
+  <link rel="stylesheet" href="<?= autoVer('css/base.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/layout.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/board.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/modals.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/leaderboard.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/effects.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/opening.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
   <style>
     .back-arrow {
       position: absolute;
@@ -131,15 +146,16 @@
     </div>
   </div>
 
-  <div class="version-tag">Version 7.00 Deep Cache Wipe</div>
+  <div class="version-tag">Version Dynamic Auto-Versioning</div>
 
-  <script src="js/state.js?v=7.00" defer></script>
-  <script src="js/utils.js?v=7.00" defer></script>
-  <script src="js/render.js?v=7.00" defer></script>
-  <script src="js/gameplay.js?v=7.00" defer></script>
-  <script src="js/leaderboard.js?v=7.00" defer></script>
-  <script src="js/ai.js?v=7.00" defer></script>
-  <script src="js/startup.js?v=7.00" defer></script>
-  <script src="js/events.js?v=7.00" defer></script>
+  <!-- Automated Cache Busting for JS -->
+  <script src="<?= autoVer('js/state.js') ?>" defer></script>
+  <script src="<?= autoVer('js/utils.js') ?>" defer></script>
+  <script src="<?= autoVer('js/render.js') ?>" defer></script>
+  <script src="<?= autoVer('js/gameplay.js') ?>" defer></script>
+  <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
+  <script src="<?= autoVer('js/ai.js') ?>" defer></script>
+  <script src="<?= autoVer('js/startup.js') ?>" defer></script>
+  <script src="<?= autoVer('js/events.js') ?>" defer></script>
 </body>
 </html>
