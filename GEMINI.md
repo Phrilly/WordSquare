@@ -21,3 +21,4 @@
 ## 5. Security & Persistence Integrity
 * **Parameterized Queries:** Under no circumstances should variables be concatenated directly into SQL queries. Every database operation must use strictly prepared statements and bound execution parameters.
 * **Sanitization:** All outputs destined for a user interface or terminal output must be explicitly escaped or sanitized based on the destination context to block injection vectors.
+There is no need to ask to read files or search text
