@@ -6,7 +6,6 @@ function triggerMiniWinnerBurst() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const maxDim = Math.max(window.innerWidth, window.innerHeight);
   
-  // Batch DOM insertions to prevent layout thrashing
   const fragment = document.createDocumentFragment();
   
   for (let i = 0; i < 150; i++) {
@@ -40,24 +39,21 @@ function showWinnerOverlay(initials) {
   initialsBox.textContent = initials;
   overlay.style.display = 'flex';
   
-  // Force a browser reflow to ensure the transition runs when the class is added
   void overlay.offsetWidth; 
   overlay.classList.add('active');
 
   triggerMiniWinnerBurst();
 
-  // Tie fade-out mathematically to the BURST_DURATION constant
   setTimeout(() => {
     overlay.classList.remove('active');
     setTimeout(() => {
       overlay.style.display = 'none';
-    }, 500); // 500ms matches the CSS opacity transition duration
+    }, 500); 
   }, BURST_DURATION - 500);
 }
 
 window.addEventListener('load', async function bootstrapGame() {
   
-  // Event listeners are bound here to prevent ReferenceErrors
   if (initialsInput) {
     initialsInput.addEventListener('input', (e) => {
       const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -144,84 +140,89 @@ window.addEventListener('load', async function bootstrapGame() {
   const openingGrid = document.getElementById('opening-grid');
   
   if (openingScreen && openingGrid) {
-    openingGrid.innerHTML = '';
-    
-    // Safely check structure of returned JSON
-    let highscores = [];
-    if (hsData && Array.isArray(hsData.highscores)) {
-      highscores = hsData.highscores;
-    } else if (Array.isArray(hsData)) {
-      highscores = hsData;
-    }
-    
-    if (highscores.length > 0) {
-      for (let r = 0; r < 8; r++) {
-        const scoreData = highscores[r] || null;
-        
-        let rankCell = document.createElement('div');
-        rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
-        if (r === 0 && scoreData) rankCell.classList.add('top-rank');
-        rankCell.textContent = scoreData ? (r + 1).toString() : '';
-        openingGrid.appendChild(rankCell);
-        
-        let initials = scoreData ? (scoreData.initials || '---').padEnd(3, ' ') : '   ';
-        for (let i = 0; i < 3; i++) {
-          let c = document.createElement('div');
-          c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
-          c.textContent = initials[i] !== ' ' ? initials[i] : '';
-          openingGrid.appendChild(c);
+    try {
+      openingGrid.innerHTML = '';
+      
+      let highscores = [];
+      if (hsData && Array.isArray(hsData.highscores)) {
+        highscores = hsData.highscores;
+      } else if (Array.isArray(hsData)) {
+        highscores = hsData;
+      }
+      
+      if (highscores.length > 0) {
+        for (let r = 0; r < 8; r++) {
+          const scoreData = highscores[r] || null;
+          
+          let rankCell = document.createElement('div');
+          rankCell.className = 'grid-cell' + (scoreData ? ' filled rank' : '');
+          if (r === 0 && scoreData) rankCell.classList.add('top-rank');
+          rankCell.textContent = scoreData ? (r + 1).toString() : '';
+          openingGrid.appendChild(rankCell);
+          
+          // Safely stringify to prevent null TypeError crashes
+          let initials = scoreData ? String(scoreData.initials || '---').substring(0,3).padEnd(3, ' ') : '   ';
+          for (let i = 0; i < 3; i++) {
+            let c = document.createElement('div');
+            c.className = 'grid-cell' + (scoreData && initials[i] !== ' ' ? ' filled' : '');
+            c.textContent = initials[i] !== ' ' ? initials[i] : '';
+            openingGrid.appendChild(c);
+          }
+          
+          let sep = document.createElement('div');
+          sep.className = 'grid-cell';
+          openingGrid.appendChild(sep);
+          
+          let scoreStr = scoreData && scoreData.score != null ? String(scoreData.score).padStart(3, ' ') : '   ';
+          for (let i = 0; i < 3; i++) {
+            let c = document.createElement('div');
+            c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
+            c.textContent = scoreStr[i] !== ' ' ? scoreStr[i] : '';
+            openingGrid.appendChild(c);
+          }
         }
-        
-        let sep = document.createElement('div');
-        sep.className = 'grid-cell';
-        openingGrid.appendChild(sep);
-        
-        let scoreStr = scoreData ? scoreData.score.toString().padStart(3, ' ') : '   ';
-        for (let i = 0; i < 3; i++) {
+      } else {
+        const noScoresGrid = [
+          " ", " ", " ", " ", " ", " ", " ", " ",
+          " ", " ", " ", " ", "S", " ", " ", " ",
+          " ", " ", " ", " ", "C", " ", " ", " ",
+          " ", " ", " ", "N", "O", " ", " ", " ",
+          " ", " ", " ", " ", "R", " ", " ", " ",
+          " ", " ", " ", "Y", "E", "T", " ", " ",
+          " ", " ", " ", " ", "S", " ", " ", " ",
+          " ", " ", " ", " ", " ", " ", " ", " "
+        ];
+        for (let i = 0; i < 64; i++) {
           let c = document.createElement('div');
-          c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');
-          c.textContent = scoreStr[i] !== ' ' ? scoreStr[i] : '';
+          c.className = 'grid-cell' + (noScoresGrid[i] !== " " ? ' filled' : '');
+          c.textContent = noScoresGrid[i] !== " " ? noScoresGrid[i] : '';
           openingGrid.appendChild(c);
         }
       }
-    } else {
-      const noScoresGrid = [
-        " ", " ", " ", " ", " ", " ", " ", " ",
-        " ", " ", " ", " ", "S", " ", " ", " ",
-        " ", " ", " ", " ", "C", " ", " ", " ",
-        " ", " ", " ", "N", "O", " ", " ", " ",
-        " ", " ", " ", " ", "R", " ", " ", " ",
-        " ", " ", " ", "Y", "E", "T", " ", " ",
-        " ", " ", " ", " ", "S", " ", " ", " ",
-        " ", " ", " ", " ", " ", " ", " ", " "
-      ];
-      for (let i = 0; i < 64; i++) {
-        let c = document.createElement('div');
-        c.className = 'grid-cell' + (noScoresGrid[i] !== " " ? ' filled' : '');
-        c.textContent = noScoresGrid[i] !== " " ? noScoresGrid[i] : '';
-        openingGrid.appendChild(c);
-      }
-    }
 
-    openingScreen.style.display = 'flex';
-
-    const playBtn = document.getElementById('play-btn-tiles');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        const allCells = openingScreen.querySelectorAll('.grid-cell');
-        allCells.forEach(cell => {
-          cell.style.setProperty('--rot', (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 45) + 'deg');
-          cell.style.animationDelay = (Math.random() * 0.2) + 's';
-          cell.classList.add('falling-tile');
-        });
-        
-        setTimeout(() => {
-          openingScreen.style.opacity = '0';
+      const playBtn = document.getElementById('play-btn-tiles');
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          const allCells = openingScreen.querySelectorAll('.grid-cell');
+          allCells.forEach(cell => {
+            cell.style.setProperty('--rot', (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 45) + 'deg');
+            cell.style.animationDelay = (Math.random() * 0.2) + 's';
+            cell.classList.add('falling-tile');
+          });
+          
           setTimeout(() => {
-            openingScreen.style.display = 'none';
-          }, 500);
-        }, 900);
-      });
+            openingScreen.style.opacity = '0';
+            setTimeout(() => {
+              openingScreen.style.display = 'none';
+            }, 500);
+          }, 900);
+        });
+      }
+    } catch (e) {
+      console.error("Failed to build opening screen grid cleanly", e);
+    } finally {
+      // The finally block guarantees the play button appears even if grid data fails
+      openingScreen.style.display = 'flex';
     }
   }
 });
