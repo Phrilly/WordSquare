@@ -1,0 +1,163 @@
+<?php
+// Prevent the browser and CDN from caching the main page structure
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+// Function to append the file's exact last-modified timestamp
+function autoVer($url) {
+    if (file_exists(__DIR__ . '/' . $url)) {
+        return $url . '?v=' . filemtime(__DIR__ . '/' . $url);
+    }
+    return $url . '?v=' . time(); // Fallback if file isn't found
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Square: Bomb Variant</title>
+  <link rel="icon" href="data:,">
+
+  <link rel="stylesheet" href="<?= autoVer('css/base.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/layout.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/board.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/modals.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/leaderboard.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/effects.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/opening.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
+  
+  <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
+  
+  <style>
+    .back-arrow {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 32px;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 10;
+      transition: color 0.2s, transform 0.2s;
+      font-family: inherit;
+    }
+    .back-arrow:hover {
+      color: var(--highlight, #fde047);
+      transform: scale(1.1);
+    }
+    #best-board-modal #best-grid {
+      width: min(80vw, 320px);
+      height: min(80vw, 320px);
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 5px;
+    }
+    #best-board-modal #best-grid .grid-cell {
+      width: 100%;
+      height: 100%;
+      font-size: min(6vw, 24px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <h2>Loading Game Engine...</h2>
+  </div>
+
+  <div id="winner-overlay" class="winner-overlay" style="display: none;">
+    <h1 class="winner-title">YESTERDAY'S CHAMPION</h1>
+    <div id="winner-initials" class="winner-initials"></div>
+  </div>
+
+  <div id="opening-screen" class="opening-screen" style="display:none;">
+    <h1 style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;">TODAY'S HIGH SCORES</h1>
+    <div class="grid-container opening-grid" id="opening-grid">
+      </div>
+    <div class="play-button-container" id="play-btn-tiles">
+      <div class="grid-cell play-tile">P</div>
+      <div class="grid-cell play-tile">L</div>
+      <div class="grid-cell play-tile">A</div>
+      <div class="grid-cell play-tile">Y</div>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <div id="left-header" title="Click to open wildcard picker">
+      <span id="header-label">Next:</span>
+      <span id="next-letter"></span>
+    </div>
+    <div id="score">0</div>
+  </div>
+
+  <div class="grid-container" id="grid">
+    <div class="alphabet-modal" id="alphabet-modal"></div>
+
+    <div class="overlay-modal" id="highscore-entry-modal">
+      <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
+      <div style="font-size:20px; margin-bottom:25px;">
+        Final Score: <strong id="final-score-display" style="color:var(--highlight)">0</strong>
+      </div>
+
+      <div id="daily-save-section">
+        <div class="initials-wrapper">
+          <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
+          <div class="initial-tile" id="init-tile-1"></div>
+          <div class="initial-tile" id="init-tile-2"></div>
+          <div class="initial-tile" id="init-tile-3"></div>
+        </div>
+        <button class="arcade-btn" id="submit-score-btn">SAVE SCORE</button>
+      </div>
+
+      <div id="non-daily-section" hidden style="margin-top:15px;">
+        <p style="color:#ffcccc; font-size:14px; margin-bottom:20px; max-width:250px;">
+          Daily Challenge Mode was disabled.<br>Score will not be saved.
+        </p>
+        <button class="arcade-btn" id="skip-to-leaderboard-btn">VIEW LEADERBOARD</button>
+      </div>
+    </div>
+
+    <div class="overlay-modal" id="leaderboard-modal">
+      <h3 id="leaderboard-title" style="margin-top:0; color:var(--highlight);">TODAY'S HIGH SCORES</h3>
+      <ul class="leaderboard-list" id="leaderboard-list"></ul>
+      <div class="audit-link-container" style="text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); width: 100%;">
+        <a href="audit.php" target="_blank" style="color: var(--highlight); opacity: 0.8; text-decoration: none; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.8'">View Today's Game Log</a>
+      </div>
+      <div class="overlay-actions">
+        <button class="arcade-btn" id="play-again-btn">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <div class="overlay-modal" id="best-board-modal">
+      <div id="back-to-leaderboard-btn" class="back-arrow" title="Back to Leaderboard">&#8592;</div>
+      <h2 id="board-viewer-title" class="board-title top-score-mode" style="margin-top:0; padding: 0 40px;">🏆 #1 BOARD 🏆</h2>
+      <div id="board-score-line" class="board-score-line top-score-mode">
+        Score <strong id="best-board-score" class="glow-gold"></strong> by
+        <strong id="best-board-initials" style="color:var(--highlight)"></strong>
+      </div>
+      <div class="grid-container" id="best-grid" style="pointer-events:none; opacity:1;"></div>
+    </div>
+  </div>
+
+  <div class="version-tag">Version Dynamic Auto-Versioning</div>
+
+  <script src="<?= autoVer('js/state.js') ?>" defer></script>
+  <script src="<?= autoVer('js/utils.js') ?>" defer></script>
+  <script src="<?= autoVer('js/render.js') ?>" defer></script>
+  
+  <script src="<?= autoVer('js/gameplay-bomb.js') ?>" defer></script>
+  
+  <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
+  <script src="<?= autoVer('js/ai.js') ?>" defer></script>
+  <script src="<?= autoVer('js/startup.js') ?>" defer></script>
+  <script src="<?= autoVer('js/events.js') ?>" defer></script>
+</body>
+</html>
