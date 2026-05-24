@@ -22,7 +22,7 @@ window.generateBagSequence = function() {
 // 3. The Bomb Spawner Logic
 window.spawnBombs = function() {
   const gridCells = document.querySelectorAll('#grid .grid-cell');
-  gridCells.forEach(c => c.classList.remove('has-bomb', 'exploding'));
+  gridCells.forEach(c => c.classList.remove('has-bomb'));
   activeBombs = [];
   
   const randomFunc = (typeof isCurrentGameDaily !== 'undefined' && isCurrentGameDaily && typeof seededRandom === 'function') ? seededRandom : Math.random;
@@ -42,10 +42,8 @@ window.initGame = function() {
   deckIndex = 0;
   activeBombs = [];
   
-  // Run your original code to build the board
   originalInitGame(); 
   
-  // Add the variant features
   window.spawnBombs();
   window.setNextLetter();
 };
@@ -56,7 +54,79 @@ window.setNextLetter = function() {
   document.getElementById('next-letter').innerText = gameDeck[deckIndex];
 };
 
-// 6. Hook into Clicks: Intercept bombs before classic logic fires
+// 6. NEW: The JavaScript Particle Engine for Fire, Smoke, and Letter Shards
+function createBombParticles(cellEl, letter) {
+  // Find exactly where the cell is on the user's screen
+  const rect = cellEl.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  // Create a temporary overlay container for the explosion
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100vw';
+  container.style.height = '100vh';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+
+  // Hex colors for fire and smoke
+  const colors = ['#ef4444', '#f97316', '#eab308', '#44403c', '#1c1917'];
+
+  // Spawn 6 Letter Shards
+  for (let i = 0; i < 6; i++) {
+    const shard = document.createElement('div');
+    shard.innerText = letter;
+    shard.className = 'bomb-particle shard';
+    
+    // Calculate a random distance and angle for each shard to fly
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 80 + Math.random() * 200; 
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+    
+    shard.style.left = centerX + 'px';
+    shard.style.top = centerY + 'px';
+    shard.style.setProperty('--tx', tx + 'px');
+    shard.style.setProperty('--ty', ty + 'px');
+    
+    container.appendChild(shard);
+  }
+
+  // Spawn 25 pieces of Fire and Smoke Debris
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'bomb-particle debris';
+    
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.backgroundColor = color;
+    p.style.color = color; 
+    
+    // Give each piece of debris a random size
+    const size = 10 + Math.random() * 25;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 50 + Math.random() * 250;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+    
+    p.style.left = centerX + 'px';
+    p.style.top = centerY + 'px';
+    p.style.setProperty('--tx', tx + 'px');
+    p.style.setProperty('--ty', ty + 'px');
+    
+    container.appendChild(p);
+  }
+
+  // Sweep up the debris from the DOM once the animation finishes
+  setTimeout(() => container.remove(), 800);
+}
+
+// 7. Hook into Clicks: Intercept bombs and trigger the particle engine
 const originalHandleCellClick = window.handleCellClick;
 window.handleCellClick = function(index, cellEl) {
   if (typeof cells !== 'undefined' && cells[index] !== '') return;
@@ -66,19 +136,16 @@ window.handleCellClick = function(index, cellEl) {
   if (activeBombs.includes(index)) {
     activeBombs = activeBombs.filter(b => b !== index);
     
-    // Grab the current letter and display it so it can be visually blown up
+    // Identify which letter is currently being sacrificed
     const letterToBurn = document.getElementById('next-letter').innerText;
-    cellEl.innerText = letterToBurn;
     
+    // Remove the bomb visuals instantly
     cellEl.classList.remove('has-bomb');
-    cellEl.classList.add('exploding');
     
-    setTimeout(() => { 
-      cellEl.classList.remove('exploding'); 
-      cellEl.innerText = ''; // Clear the ashes from the grid cell
-    }, 600);
+    // Trigger the JavaScript particle blast across the screen
+    createBombParticles(cellEl, letterToBurn);
 
-    // Consume the letter without locking the square in the game engine
+    // Consume the letter without locking the square
     deckIndex++; 
     window.setNextLetter(); 
     return; 
@@ -88,11 +155,9 @@ window.handleCellClick = function(index, cellEl) {
   originalHandleCellClick(index, cellEl);
 };
 
-// 7. Hook into placeLetter: Advance the custom deck counter
+// 8. Hook into placeLetter: Advance the custom deck counter
 const originalPlaceLetter = window.placeLetter;
 window.placeLetter = function(index, letter, cellEl, isWildcard) {
   deckIndex++; // Advance our burned letter tracker
-  
-  // Run your classic placement logic
   originalPlaceLetter(index, letter, cellEl, isWildcard);
 };
