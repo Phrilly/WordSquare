@@ -66,14 +66,19 @@ window.handleCellClick = function(index, cellEl) {
   if (activeBombs.includes(index)) {
     activeBombs = activeBombs.filter(b => b !== index);
     
+    // Grab the current letter and display it so it can be visually blown up
+    const letterToBurn = document.getElementById('next-letter').innerText;
+    cellEl.innerText = letterToBurn;
+    
     cellEl.classList.remove('has-bomb');
     cellEl.classList.add('exploding');
     
     setTimeout(() => { 
       cellEl.classList.remove('exploding'); 
-    }, 500);
+      cellEl.innerText = ''; // Clear the ashes from the grid cell
+    }, 600);
 
-    // Consume the letter without locking the square
+    // Consume the letter without locking the square in the game engine
     deckIndex++; 
     window.setNextLetter(); 
     return; 
