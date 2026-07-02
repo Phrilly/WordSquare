@@ -1,205 +1,198 @@
-// ================================
-// BOMB VARIANT - FIXED DAILY DECK
-// ================================
-
-let activeBombs = [];
-
-// Small deterministic PRNG from a string seed
-function seededHash(str) {
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return h >>> 0;
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: var(--game-size);
+  font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
+  margin-bottom: 20px;
+  transition: opacity 0.2s ease-in-out;
 }
 
-function mulberry32(seed) {
-  return function() {
-    let t = seed += 0x6D2B79F5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+#left-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap; /* Prevents the queue from wrapping to a new line */
 }
 
-function makeDailyRandom(suffix) {
-  return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
+/* The queue container manages the flow of the next letters */
+.queue-container {
+  display: none; 
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-left: 12px;
 }
 
-// Build the fixed 28-letter deck for the day
-function buildBombDailyDeck() {
-  const frequencies = {
-    A:9, B:2, C:2, D:4, E:12, F:2, G:3, H:2, I:9, J:1, K:1, L:4,
-    M:2, N:6, O:8, P:2, Q:1, R:6, S:4, T:6, U:4, V:2, W:2, X:1, Y:2, Z:1
-  };
-
-  const rnd = makeDailyRandom('bomb-deck');
-  let pool = [];
-
-  for (const [letter, count] of Object.entries(frequencies)) {
-    for (let i = 0; i < count; i++) {
-      pool.push(letter);
-    }
-  }
-
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-
-  return pool.slice(0, 28);
+.queue-container.is-active {
+  display: flex;
 }
 
-// Build the fixed bomb positions for the day
-function buildBombPositions() {
-  const rnd = makeDailyRandom('bomb-positions');
-  const positions = [];
-
-  while (positions.length < 3) {
-    const r = Math.floor(rnd() * 25);
-    if (!positions.includes(r)) positions.push(r);
-  }
-
-  return positions;
+/* The primary active tile */
+#next-letter {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+  background-color: #fdf6e3;
+  color: #1a1a1a;
+  border-radius: 6px;
+  box-shadow:
+    inset 3px 3px 5px rgba(255, 255, 255, 1),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.15),
+    2px 3px 5px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s;
+  z-index: 3;
+  flex-shrink: 0;
 }
 
-// Particle engine
-function createBombParticles(cellEl, letter) {
-  if (!cellEl) return;
-  
-  const rect = cellEl.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '0';
-  container.style.left = '0';
-  container.style.width = '100vw';
-  container.style.height = '100vh';
-  container.style.pointerEvents = 'none';
-  container.style.zIndex = '9999';
-  document.body.appendChild(container);
-
-  const colors = ['#ef4444', '#f97316', '#eab308', '#44403c', '#1c1917'];
-
-  for (let i = 0; i < 6; i++) {
-    const shard = document.createElement('div');
-    shard.innerText = letter;
-    shard.className = 'bomb-particle shard';
-
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 80 + Math.random() * 200;
-    const tx = Math.cos(angle) * distance;
-    const ty = Math.sin(angle) * distance;
-
-    shard.style.left = centerX + 'px';
-    shard.style.top = centerY + 'px';
-    shard.style.setProperty('--tx', tx + 'px');
-    shard.style.setProperty('--ty', ty + 'px');
-
-    container.appendChild(shard);
-  }
-
-  for (let i = 0; i < 25; i++) {
-    const p = document.createElement('div');
-    p.className = 'bomb-particle debris';
-
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    p.style.backgroundColor = color;
-    p.style.color = color;
-
-    const size = 10 + Math.random() * 25;
-    p.style.width = size + 'px';
-    p.style.height = size + 'px';
-
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 50 + Math.random() * 250;
-    const tx = Math.cos(angle) * distance;
-    const ty = Math.sin(angle) * distance;
-
-    p.style.left = centerX + 'px';
-    p.style.top = centerY + 'px';
-    p.style.setProperty('--tx', tx + 'px');
-    p.style.setProperty('--ty', ty + 'px');
-
-    container.appendChild(p);
-  }
-
-  setTimeout(() => { if (container) container.remove(); }, 1500);
+#next-letter:active {
+  transform: scale(0.95);
 }
 
-// ---------------------------------------------------------
-// EDA (Event-Driven Architecture) Hooks
-// ---------------------------------------------------------
+/* Base class for queued tiles */
+.queued-letter {
+  display: none; 
+  justify-content: center;
+  align-items: center;
+  /* Base size matches the main tile to maintain proportions when scaled */
+  width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+  border-radius: 6px;
+  user-select: none;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
 
-document.addEventListener('ws:beforeInit', () => {
-    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    
-    // Override the core deck with the 28-letter Bomb deck
-    gameDeck = buildBombDailyDeck();
-    activeBombs = [];
-});
+.queued-letter.is-active {
+  display: inline-flex;
+}
 
-document.addEventListener('ws:afterInit', () => {
-    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    
-    // Inject the bombs into the DOM grid
-    activeBombs = buildBombPositions();
-    if (gridEl) {
-        const gridCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
-        activeBombs.forEach(i => {
-            if (gridCells[i]) gridCells[i].classList.add('has-bomb');
-        });
-    }
+/* Emerging into the light: Step 1 (Slightly in the shadows) */
+#queue-1 {
+  background-color: #cbd5e1; /* Dimmer silver */
+  color: #475569;
+  transform: scale(0.75);
+  opacity: 0.85;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.15),
+    1px 2px 3px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  margin-left: -4px; /* Pulls it slightly behind the active tile for depth */
+}
 
-    // Defensive Hide: Ensure queue never bleeds into Bomb day
-    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
-    if (queue1El) queue1El.classList.remove('is-active');
-    if (queue2El) queue2El.classList.remove('is-active');
-});
+/* Emerging into the light: Step 2 (Deep in the shadows) */
+#queue-2 {
+  background-color: #94a3b8; /* Darker slate */
+  color: #334155;
+  transform: scale(0.55);
+  opacity: 0.5;
+  box-shadow:
+    inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+    inset -1px -1px 3px rgba(0, 0, 0, 0.2),
+    1px 1px 2px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  margin-left: -12px; /* Pulls it deeper behind queue 1 */
+}
 
-document.addEventListener('ws:cellClick', (e) => {
-    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+#score {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  padding: 0 15px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
+  background-color: #2b4c7e;
+  color: #ffffff;
+  border-radius: 6px;
+  box-shadow:
+    inset 2px 2px 5px rgba(255, 255, 255, 0.3),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.3),
+    2px 3px 5px rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
 
-    const index = e.detail.index;
-    const cellEl = e.detail.cellEl;
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 220px;
+  margin: 15px auto 0;
+  flex-shrink: 0;
+}
 
-    if (activeBombs.includes(index)) {
-        // Stop standard placement logic!
-        e.preventDefault(); 
+#play-again-btn {
+  animation: playAgainBling 2s infinite ease-in-out;
+  border: 1px solid #a8c2ea;
+}
 
-        activeBombs = activeBombs.filter(b => b !== index);
-        const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
+#play-again-btn:active {
+  animation: none;
+}
 
-        if (cellEl) {
-            cellEl.classList.remove('has-bomb');
-            createBombParticles(cellEl, letterToBurn);
-            setTimeout(() => {
-                if (cellEl) {
-                    cellEl.classList.remove('exploding');
-                    cellEl.innerText = '';
-                }
-            }, 1000);
-        }
+.results-area {
+  width: 100%;
+  max-width: var(--game-size);
+  margin-top: 40px;
+  font-size: clamp(14px, calc(var(--game-size) * 0.04), 20px);
+  line-height: 1.6;
+}
 
-        // Burn letter, do not place it, advance deck safely
-        if (typeof currentDeckIndex !== 'undefined') {
-            currentDeckIndex++;
-        }
-        
-        if (typeof setNextLetter === 'function') {
-            setNextLetter();
-        }
-    }
-});
+.result-row {
+  margin-bottom: 15px;
+}
 
-document.addEventListener('ws:nextLetterUpdated', () => {
-    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    
-    // Ensure queue stays dead during bomb variant
-    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
-    if (queue1El) queue1El.classList.remove('is-active');
-    if (queue2El) queue2El.classList.remove('is-active');
-});
+.result-label {
+  margin-bottom: 8px;
+}
+
+.word-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-area {
+  width: 100%;
+  max-width: var(--game-size);
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  gap: 12px;
+}
+
+.version-tag {
+  width: 100%;
+  max-width: var(--game-size);
+  text-align: right;
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--highlight);
+  opacity: 0.7;
+}
