@@ -1,0 +1,118 @@
+/* ================================
+   SCRABBLE VARIANT STYLES
+   ================================ */
+
+.scrabble-tray {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+.tray-cell {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: clamp(30px, calc(var(--game-size) * 0.11), 50px);
+  height: clamp(30px, calc(var(--game-size) * 0.11), 50px);
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
+  background-color: #fdf6e3;
+  color: #1a1a1a;
+  border-radius: 6px;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 1),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.15),
+    2px 3px 5px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+}
+
+.tray-cell.is-empty {
+  background-color: rgba(0, 0, 0, 0.15);
+  box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+
+.tray-cell.is-selected {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 1),
+    0 8px 12px rgba(0, 0, 0, 0.5),
+    0 0 15px var(--highlight);
+  border: 2px solid var(--highlight);
+}
+
+.tray-cell:active {
+  transform: scale(0.95);
+}
+
+/* Double Letter Multiplier Squares */
+.grid-cell.dl-square {
+  background-color: #a8c2ea !important;
+  color: #1a1a1a !important;
+  border: 2px solid #2b4c7e !important;
+}
+
+.grid-cell.dl-square::before {
+  content: "DL";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: clamp(10px, 1.5vw, 14px);
+  color: #2b4c7e;
+  font-weight: 900;
+  opacity: 0.8;
+}
+
+.grid-cell.dl-square:empty::before {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(16px, 3vw, 24px);
+  opacity: 0.5;
+}
+
+/* Subscript Scrabble Values (Applied to both the tray and the board) */
+.grid-cell[data-letter]::after,
+.tray-cell[data-letter]::after {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: clamp(9px, 1.2vw, 13px);
+  font-weight: bold;
+  color: inherit;
+  opacity: 0.6;
+}
+
+/* Points Dictionary */
+.grid-cell[data-letter="A"]::after, .tray-cell[data-letter="A"]::after { content: "1"; }
+.grid-cell[data-letter="B"]::after, .tray-cell[data-letter="B"]::after { content: "3"; }
+.grid-cell[data-letter="C"]::after, .tray-cell[data-letter="C"]::after { content: "3"; }
+.grid-cell[data-letter="D"]::after, .tray-cell[data-letter="D"]::after { content: "2"; }
+.grid-cell[data-letter="E"]::after, .tray-cell[data-letter="E"]::after { content: "1"; }
+.grid-cell[data-letter="F"]::after, .tray-cell[data-letter="F"]::after { content: "4"; }
+.grid-cell[data-letter="G"]::after, .tray-cell[data-letter="G"]::after { content: "2"; }
+.grid-cell[data-letter="H"]::after, .tray-cell[data-letter="H"]::after { content: "4"; }
+.grid-cell[data-letter="I"]::after, .tray-cell[data-letter="I"]::after { content: "1"; }
+.grid-cell[data-letter="J"]::after, .tray-cell[data-letter="J"]::after { content: "8"; }
+.grid-cell[data-letter="K"]::after, .tray-cell[data-letter="K"]::after { content: "5"; }
+.grid-cell[data-letter="L"]::after, .tray-cell[data-letter="L"]::after { content: "1"; }
+.grid-cell[data-letter="M"]::after, .tray-cell[data-letter="M"]::after { content: "3"; }
+.grid-cell[data-letter="N"]::after, .tray-cell[data-letter="N"]::after { content: "1"; }
+.grid-cell[data-letter="O"]::after, .tray-cell[data-letter="O"]::after { content: "1"; }
+.grid-cell[data-letter="P"]::after, .tray-cell[data-letter="P"]::after { content: "3"; }
+.grid-cell[data-letter="Q"]::after, .tray-cell[data-letter="Q"]::after { content: "10"; }
+.grid-cell[data-letter="R"]::after, .tray-cell[data-letter="R"]::after { content: "1"; }
+.grid-cell[data-letter="S"]::after, .tray-cell[data-letter="S"]::after { content: "1"; }
+.grid-cell[data-letter="T"]::after, .tray-cell[data-letter="T"]::after { content: "1"; }
+.grid-cell[data-letter="U"]::after, .tray-cell[data-letter="U"]::after { content: "1"; }
+.grid-cell[data-letter="V"]::after, .tray-cell[data-letter="V"]::after { content: "4"; }
+.grid-cell[data-letter="W"]::after, .tray-cell[data-letter="W"]::after { content: "4"; }
+.grid-cell[data-letter="X"]::after, .tray-cell[data-letter="X"]::after { content: "8"; }
+.grid-cell[data-letter="Y"]::after, .tray-cell[data-letter="Y"]::after { content: "4"; }
+.grid-cell[data-letter="Z"]::after, .tray-cell[data-letter="Z"]::after { content: "10"; }

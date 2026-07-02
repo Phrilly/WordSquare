@@ -43,6 +43,7 @@ function initGame() {
     const cell = document.createElement('div');
     cell.className = 'grid-cell';
     cell.dataset.index = i;
+    cell.style.position = 'relative'; // Required for CSS ::after placement
     cell.addEventListener('click', () => handleCellClick(i, cell));
     cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
     cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
@@ -50,7 +51,7 @@ function initGame() {
   }
 
   if (queueContainerEl) {
-      if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay) {
+      if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay && !window.GAME_CONFIG.isScrabbleDay) {
           queueContainerEl.classList.add('is-active');
       } else {
           queueContainerEl.classList.remove('is-active');
@@ -73,7 +74,7 @@ function setNextLetter() {
   
   if (nextLetterEl) nextLetterEl.innerText = gameDeck[currentDeckIndex];
 
-  const isLookahead = window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay;
+  const isLookahead = window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay && !window.GAME_CONFIG.isScrabbleDay;
 
   if (queue1El) {
       if (isLookahead && currentDeckIndex + 1 < gameDeck.length && placedCount + 1 < 25) {
@@ -104,7 +105,7 @@ function handleHoverEnter(index, cellEl) {
   if (!nextLetterEl) return;
 
   const letter = nextLetterEl.innerText;
-  if (letter === '?' || letter === '-') return;
+  if (letter === '?' || letter === '-' || letter === '') return;
 
   const currentWords = findValidWordsLocalArray(cells);
   const tempCells = [...cells];
@@ -127,17 +128,18 @@ function handleHoverLeave(cellEl) {
 
 function handleCellClick(index, cellEl) {
   if (cells[index] !== '' || placedCount >= 25) return;
-  if (!nextLetterEl) return;
-
-  // EVENT: Cell clicked. If a variant intercepts (like a bomb), it will cancel this event.
+  
+  // EVENT: Cell clicked. Variants intercepting will cancel the event.
   const clickEvent = new CustomEvent('ws:cellClick', { 
       detail: { index: index, cellEl: cellEl }, 
       cancelable: true 
   });
   
   if (!document.dispatchEvent(clickEvent)) {
-      return; // Variant handled the click and halted standard placement
+      return; 
   }
+
+  if (!nextLetterEl || nextLetterEl.innerText === '') return;
 
   const letter = nextLetterEl.innerText;
   if (letter === '?') {
@@ -158,6 +160,8 @@ function placeLetter(index, letter, cellEl, isWildcard) {
 
   if (cellEl) {
       cellEl.innerText = letter;
+      cellEl.dataset.letter = letter; // EXPOSE TO CSS FOR SCRABBLE VALUES
+
       if (isWildcard) {
         cellEl.classList.add('is-wildcard');
       }
@@ -168,7 +172,6 @@ function placeLetter(index, letter, cellEl, isWildcard) {
   }
   
   placedCount++;
-  currentDeckIndex++; // Advance the deck safely
 
   calculateRealTimeScoreLocal();
   
@@ -211,7 +214,8 @@ function placeLetter(index, letter, cellEl, isWildcard) {
       if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
     }
   } else {
-    setNextLetter();
+    // EVENT: Tell the system a tile was placed successfully
+    document.dispatchEvent(new CustomEvent('ws:tilePlaced'));
   }
 }
 
@@ -238,6 +242,12 @@ function selectWildcard(letter) {
 }
 
 function calculateRealTimeScoreLocal() {
+  const scoreEvent = new CustomEvent('ws:calculateScore', { cancelable: true });
+  if (!document.dispatchEvent(scoreEvent)) {
+      return; // A variant completely handled the scoring
+  }
+
+  // Classic Scoring Fallback
   const validWords = findValidWordsLocalArray(cells);
   const groupedData = buildGroupedWordData(validWords);
 
@@ -285,3 +295,14 @@ async function logGameToServer() {
     console.error("Failed to log game to server", e);
   }
 }
+
+// ---------------------------------------------------------
+// Core Sequence Hook
+// ---------------------------------------------------------
+document.addEventListener('ws:tilePlaced', () => {
+    // Only advance the core sequence if a variant isn't handling it
+    if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return;
+    
+    currentDeckIndex++;
+    setNextLetter();
+});

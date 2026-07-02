@@ -19,18 +19,19 @@ $epochTimestamp = strtotime('2026-05-20 00:00:00 UTC');
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // Default cycle logic
-$isBombDay = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);
-$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0);
+$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);       // Day 0
+$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 5 === 0); // Day 1
+$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0); // Day 2
 
 // DEV OVERRIDES: Strict Input Validation
 if (isset($_GET['mode'])) {
     $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
     if ($mode === 'bomb') {
-        $isBombDay = true;
-        $isLookaheadDay = false;
+        $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false;
     } elseif ($mode === 'lookahead') {
-        $isBombDay = false;
-        $isLookaheadDay = true;
+        $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false;
+    } elseif ($mode === 'scrabble') {
+        $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true;
     }
 }
 ?>
@@ -54,12 +55,17 @@ if (isset($_GET['mode'])) {
   <?php if ($isBombDay): ?>
   <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
   <?php endif; ?>
+
+  <?php if ($isScrabbleDay): ?>
+  <link rel="stylesheet" href="<?= autoVer('css/scrabble.css') ?>">
+  <?php endif; ?>
   
   <script>
-    // Pass PHP state to JS
+    // Pass PHP state to JS securely
     window.GAME_CONFIG = {
         isBombDay: <?= json_encode($isBombDay) ?>,
-        isLookaheadDay: <?= json_encode($isLookaheadDay) ?>
+        isLookaheadDay: <?= json_encode($isLookaheadDay) ?>,
+        isScrabbleDay: <?= json_encode($isScrabbleDay) ?>
     };
   </script>
 
@@ -125,11 +131,23 @@ if (isset($_GET['mode'])) {
   <div class="top-bar">
     <div id="left-header" title="Click to open wildcard picker">
       <span id="header-label">Next:</span>
+      
+      <!-- Classic / Lookahead Queue -->
       <div id="queue-container" class="queue-container">
         <span id="next-letter"></span>
         <span class="queued-letter" id="queue-1"></span>
         <span class="queued-letter" id="queue-2"></span>
       </div>
+
+      <!-- Scrabble Tray -->
+      <div id="scrabble-tray" class="scrabble-tray" style="display: none;">
+        <div class="tray-cell" data-index="0"></div>
+        <div class="tray-cell" data-index="1"></div>
+        <div class="tray-cell" data-index="2"></div>
+        <div class="tray-cell" data-index="3"></div>
+        <div class="tray-cell" data-index="4"></div>
+      </div>
+
     </div>
     <div id="score">0</div>
   </div>
@@ -192,6 +210,10 @@ if (isset($_GET['mode'])) {
   
   <?php if ($isBombDay): ?>
   <script src="<?= autoVer('js/gameplay-bomb.js') ?>" defer></script>
+  <?php endif; ?>
+
+  <?php if ($isScrabbleDay): ?>
+  <script src="<?= autoVer('js/gameplay-scrabble.js') ?>" defer></script>
   <?php endif; ?>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
