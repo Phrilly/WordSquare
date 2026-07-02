@@ -1,20 +1,31 @@
 function initGame() {
-  const existingCells = document.querySelectorAll('#grid > .grid-cell:not(.alpha-cell)');
-  existingCells.forEach(cell => cell.remove());
+  if (gridEl) {
+      const existingCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+      existingCells.forEach(cell => cell.remove());
+  }
 
   cells = Array(gridSize * gridSize).fill('');
   wildcardState = Array(gridSize * gridSize).fill(false);
 
   placedCount = 0;
+  currentDeckIndex = 0;
   pendingCellIndex = null;
   explodedWords.clear();
   currentScore = 0;
   usedWildcards.clear();
 
   isCurrentGameDaily = true;
-  if (isCurrentGameDaily) dailySeed = getDailySeed();
+  if (isCurrentGameDaily && typeof getDailySeed === 'function') {
+      dailySeed = getDailySeed();
+  }
 
-  gameDeck = generateBagSequence();
+  // Generate classic deck
+  if (typeof generateBagSequence === 'function') {
+      gameDeck = generateBagSequence();
+  }
+
+  // EVENT: Core state ready, allow variants to overwrite deck or alter state
+  document.dispatchEvent(new CustomEvent('ws:beforeInit'));
 
   if (scoreEl) scoreEl.innerText = '0';
   if (headerLabelEl) headerLabelEl.innerText = 'Next:';
@@ -38,7 +49,6 @@ function initGame() {
     if (gridEl) gridEl.appendChild(cell);
   }
 
-  // Defensive Check: Enable Lookahead Display via Class Name
   if (queueContainerEl) {
       if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay) {
           queueContainerEl.classList.add('is-active');
@@ -48,23 +58,26 @@ function initGame() {
   }
   
   if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
+  
+  // EVENT: DOM built, allow variants to inject UI
+  document.dispatchEvent(new CustomEvent('ws:afterInit'));
+  
   setNextLetter();
 }
 
 function setNextLetter() {
-  if (placedCount >= 25) {
+  if (currentDeckIndex >= gameDeck.length || placedCount >= 25) {
       if (queueContainerEl) queueContainerEl.classList.remove('is-active');
       return;
   }
   
-  if (nextLetterEl) nextLetterEl.innerText = gameDeck[placedCount];
+  if (nextLetterEl) nextLetterEl.innerText = gameDeck[currentDeckIndex];
 
   const isLookahead = window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay;
 
-  // Safely evaluate queue1
   if (queue1El) {
-      if (isLookahead && placedCount + 1 < 25) {
-          queue1El.innerText = gameDeck[placedCount + 1];
+      if (isLookahead && currentDeckIndex + 1 < gameDeck.length && placedCount + 1 < 25) {
+          queue1El.innerText = gameDeck[currentDeckIndex + 1];
           queue1El.classList.add('is-active');
       } else {
           queue1El.classList.remove('is-active');
@@ -72,16 +85,18 @@ function setNextLetter() {
       }
   }
 
-  // Safely evaluate queue2
   if (queue2El) {
-      if (isLookahead && placedCount + 2 < 25) {
-          queue2El.innerText = gameDeck[placedCount + 2];
+      if (isLookahead && currentDeckIndex + 2 < gameDeck.length && placedCount + 2 < 25) {
+          queue2El.innerText = gameDeck[currentDeckIndex + 2];
           queue2El.classList.add('is-active');
       } else {
           queue2El.classList.remove('is-active');
           queue2El.innerText = '';
       }
   }
+
+  // EVENT: Queue updated
+  document.dispatchEvent(new CustomEvent('ws:nextLetterUpdated'));
 }
 
 function handleHoverEnter(index, cellEl) {
@@ -114,6 +129,16 @@ function handleCellClick(index, cellEl) {
   if (cells[index] !== '' || placedCount >= 25) return;
   if (!nextLetterEl) return;
 
+  // EVENT: Cell clicked. If a variant intercepts (like a bomb), it will cancel this event.
+  const clickEvent = new CustomEvent('ws:cellClick', { 
+      detail: { index: index, cellEl: cellEl }, 
+      cancelable: true 
+  });
+  
+  if (!document.dispatchEvent(clickEvent)) {
+      return; // Variant handled the click and halted standard placement
+  }
+
   const letter = nextLetterEl.innerText;
   if (letter === '?') {
     pendingCellIndex = index;
@@ -138,11 +163,13 @@ function placeLetter(index, letter, cellEl, isWildcard) {
       }
       cellEl.classList.add('tile-pop');
       setTimeout(() => {
-        cellEl.classList.remove('tile-pop');
+        if (cellEl) cellEl.classList.remove('tile-pop');
       }, 300);
   }
   
   placedCount++;
+  currentDeckIndex++; // Advance the deck safely
+
   calculateRealTimeScoreLocal();
   
   if (placedCount === 25) {
@@ -151,7 +178,7 @@ function placeLetter(index, letter, cellEl, isWildcard) {
     if (leftHeaderEl) leftHeaderEl.title = '';
     if (topBarEl) topBarEl.style.opacity = '0';
 
-    logGameToServer();
+    if (typeof logGameToServer === 'function') logGameToServer();
 
     const finalScoreEl = document.getElementById('final-score-display');
     if (finalScoreEl) finalScoreEl.innerText = currentScore;

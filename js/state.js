@@ -3,6 +3,7 @@ let cells = Array(gridSize * gridSize).fill('');
 let wildcardState = Array(gridSize * gridSize).fill(false);
 
 let placedCount = 0;
+let currentDeckIndex = 0; // NEW: Decouples tiles drawn from tiles placed
 let pendingCellIndex = null;
 let explodedWords = new Set();
 let currentScore = 0;
@@ -22,7 +23,10 @@ let sessionId = '';
 
 const gridEl = document.getElementById('grid');
 const headerLabelEl = document.getElementById('header-label');
+const queueContainerEl = document.getElementById('queue-container');
 const nextLetterEl = document.getElementById('next-letter');
+const queue1El = document.getElementById('queue-1');
+const queue2El = document.getElementById('queue-2');
 const scoreEl = document.getElementById('score');
 const alphabetModal = document.getElementById('alphabet-modal');
 const leftHeaderEl = document.getElementById('left-header');

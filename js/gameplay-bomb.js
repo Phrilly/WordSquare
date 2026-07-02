@@ -2,10 +2,7 @@
 // BOMB VARIANT - FIXED DAILY DECK
 // ================================
 
-// Variant-only state
-var deckIndex = 0;
-var activeBombs = [];
-
+let activeBombs = [];
 
 // Small deterministic PRNG from a string seed
 function seededHash(str) {
@@ -30,7 +27,6 @@ function makeDailyRandom(suffix) {
   return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
-
 // Build the fixed 28-letter deck for the day
 function buildBombDailyDeck() {
   const frequencies = {
@@ -47,7 +43,6 @@ function buildBombDailyDeck() {
     }
   }
 
-  // Fisher-Yates using our own RNG
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -55,7 +50,6 @@ function buildBombDailyDeck() {
 
   return pool.slice(0, 28);
 }
-
 
 // Build the fixed bomb positions for the day
 function buildBombPositions() {
@@ -69,97 +63,6 @@ function buildBombPositions() {
 
   return positions;
 }
-
-
-// Override initGame completely for the bomb mode
-window.initGame = function() {
-  const existingCells = document.querySelectorAll('#grid > .grid-cell:not(.alpha-cell)');
-  existingCells.forEach(cell => cell.remove());
-
-  cells = Array(gridSize * gridSize).fill('');
-  wildcardState = Array(gridSize * gridSize).fill(false);
-
-  placedCount = 0;
-  pendingCellIndex = null;
-  
-  if (typeof explodedWords !== 'undefined') explodedWords.clear();
-  currentScore = 0;
-  if (typeof usedWildcards !== 'undefined') usedWildcards.clear();
-
-  deckIndex = 0;
-  activeBombs = [];
-
-  isCurrentGameDaily = true;
-  if (isCurrentGameDaily && typeof getDailySeed === 'function') {
-      dailySeed = getDailySeed();
-  }
-
-  // IMPORTANT:
-  // Build the fixed 28-letter daily deck directly from the daily seed.
-  gameDeck = buildBombDailyDeck();
-
-  if (scoreEl) scoreEl.innerText = '0';
-  if (headerLabelEl) headerLabelEl.innerText = 'Next:';
-
-  if (alphabetModal) alphabetModal.classList.remove('active');
-  if (highscoreEntryModal) highscoreEntryModal.classList.remove('active');
-  if (leaderboardModal) leaderboardModal.classList.remove('active');
-  
-  const bestBoardModal = document.getElementById('best-board-modal');
-  if (bestBoardModal) bestBoardModal.classList.remove('active');
-
-  if (topBarEl) topBarEl.style.opacity = '1';
-
-  for (let i = 0; i < 25; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'grid-cell';
-    cell.dataset.index = i;
-    
-    if (typeof handleCellClick === 'function') cell.addEventListener('click', () => handleCellClick(i, cell));
-    if (typeof handleHoverEnter === 'function') cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
-    if (typeof handleHoverLeave === 'function') cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
-    
-    if (gridEl) gridEl.appendChild(cell);
-  }
-
-  // Explicitly ensure lookahead queue is disabled for Bomb Mode
-  if (queueContainerEl) queueContainerEl.classList.remove('is-active');
-  if (queue1El) queue1El.classList.remove('is-active');
-  if (queue2El) queue2El.classList.remove('is-active');
-
-  if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
-
-  // Fixed bomb positions for the same day
-  activeBombs = buildBombPositions();
-  const gridCells = document.querySelectorAll('#grid .grid-cell');
-  activeBombs.forEach(i => {
-    if (gridCells[i]) gridCells[i].classList.add('has-bomb');
-  });
-
-  setNextLetter();
-};
-
-
-// Override next letter to read from the 28-letter deck and explicitly kill queue
-window.setNextLetter = function() {
-  if (deckIndex >= gameDeck.length || placedCount >= 25) {
-      if (queueContainerEl) queueContainerEl.classList.remove('is-active');
-      return;
-  }
-  
-  if (nextLetterEl) nextLetterEl.innerText = gameDeck[deckIndex];
-
-  // Bomb days NEVER show lookahead queue
-  if (queue1El) {
-      queue1El.classList.remove('is-active');
-      queue1El.innerText = '';
-  }
-  if (queue2El) {
-      queue2El.classList.remove('is-active');
-      queue2El.innerText = '';
-  }
-};
-
 
 // Particle engine
 function createBombParticles(cellEl, letter) {
@@ -227,106 +130,76 @@ function createBombParticles(cellEl, letter) {
   setTimeout(() => { if (container) container.remove(); }, 1500);
 }
 
+// ---------------------------------------------------------
+// EDA (Event-Driven Architecture) Hooks
+// ---------------------------------------------------------
 
-// Override click logic for bombs
-const originalHandleCellClick = window.handleCellClick;
-window.handleCellClick = function(index, cellEl) {
-  if (!cellEl) return;
-  if (cells[index] !== '' || placedCount >= 25) return;
+document.addEventListener('ws:beforeInit', () => {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+    
+    // Override the core deck with the 28-letter Bomb deck
+    gameDeck = buildBombDailyDeck();
+    activeBombs = [];
+});
 
-  if (activeBombs.includes(index)) {
-    activeBombs = activeBombs.filter(b => b !== index);
-
-    const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
-
-    cellEl.classList.remove('has-bomb');
-    createBombParticles(cellEl, letterToBurn);
-
-    setTimeout(() => {
-      if (cellEl) {
-          cellEl.classList.remove('exploding');
-          cellEl.innerText = '';
-      }
-    }, 1000);
-
-    // Burn letter, do not place it
-    deckIndex++;
-    setNextLetter();
-    return;
-  }
-
-  if (typeof originalHandleCellClick === 'function') {
-      originalHandleCellClick(index, cellEl);
-  }
-};
-
-
-// Override placement so normal placements also advance the 28-letter deck
-const originalPlaceLetter = window.placeLetter;
-window.placeLetter = function(index, letter, cellEl, isWildcard) {
-  if (cellEl) cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
-
-  cells[index] = letter;
-  wildcardState[index] = isWildcard;
-
-  if (cellEl) {
-      cellEl.innerText = letter;
-      if (isWildcard) {
-        cellEl.classList.add('is-wildcard');
-      }
-      cellEl.classList.add('tile-pop');
-      setTimeout(() => {
-        if (cellEl) cellEl.classList.remove('tile-pop');
-      }, 300);
-  }
-  
-  placedCount++;
-  deckIndex++;
-
-  if (typeof calculateRealTimeScoreLocal === 'function') calculateRealTimeScoreLocal();
-
-  if (placedCount === 25) {
-    if (headerLabelEl) headerLabelEl.innerText = 'Score:';
-    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
-    if (leftHeaderEl) leftHeaderEl.title = '';
-
-    if (topBarEl) topBarEl.style.opacity = '0';
-
-    if (typeof logGameToServer === 'function') logGameToServer();
-
-    const finalScoreEl = document.getElementById('final-score-display');
-    if (finalScoreEl) finalScoreEl.innerText = currentScore;
-
-    if (isCurrentGameDaily) {
-      const dailySect = document.getElementById('daily-save-section');
-      const nonDailySect = document.getElementById('non-daily-section');
-      
-      if (dailySect) dailySect.hidden = false;
-      if (nonDailySect) nonDailySect.hidden = true;
-
-      if (initialsInput) {
-          initialsInput.value = '';
-          initialsInput.focus();
-      }
-      
-      const t1 = document.getElementById('init-tile-1');
-      const t2 = document.getElementById('init-tile-2');
-      const t3 = document.getElementById('init-tile-3');
-      if (t1) t1.innerText = '';
-      if (t2) t2.innerText = '';
-      if (t3) t3.innerText = '';
-
-      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
-    } else {
-      const dailySect = document.getElementById('daily-save-section');
-      const nonDailySect = document.getElementById('non-daily-section');
-      
-      if (dailySect) dailySect.hidden = true;
-      if (nonDailySect) nonDailySect.hidden = false;
-      
-      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
+document.addEventListener('ws:afterInit', () => {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+    
+    // Inject the bombs into the DOM grid
+    activeBombs = buildBombPositions();
+    if (gridEl) {
+        const gridCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+        activeBombs.forEach(i => {
+            if (gridCells[i]) gridCells[i].classList.add('has-bomb');
+        });
     }
-  } else {
-    setNextLetter();
-  }
-};
+
+    // Defensive Hide: Ensure queue never bleeds into Bomb day
+    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+    if (queue1El) queue1El.classList.remove('is-active');
+    if (queue2El) queue2El.classList.remove('is-active');
+});
+
+document.addEventListener('ws:cellClick', (e) => {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+
+    const index = e.detail.index;
+    const cellEl = e.detail.cellEl;
+
+    if (activeBombs.includes(index)) {
+        // Stop standard placement logic!
+        e.preventDefault(); 
+
+        activeBombs = activeBombs.filter(b => b !== index);
+        const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
+
+        if (cellEl) {
+            cellEl.classList.remove('has-bomb');
+            createBombParticles(cellEl, letterToBurn);
+            setTimeout(() => {
+                if (cellEl) {
+                    cellEl.classList.remove('exploding');
+                    cellEl.innerText = '';
+                }
+            }, 1000);
+        }
+
+        // Burn letter, do not place it, advance deck safely
+        if (typeof currentDeckIndex !== 'undefined') {
+            currentDeckIndex++;
+        }
+        
+        if (typeof setNextLetter === 'function') {
+            setNextLetter();
+        }
+    }
+});
+
+document.addEventListener('ws:nextLetterUpdated', () => {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+    
+    // Ensure queue stays dead during bomb variant
+    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+    if (queue1El) queue1El.classList.remove('is-active');
+    if (queue2El) queue2El.classList.remove('is-active');
+});
