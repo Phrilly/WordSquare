@@ -16,15 +16,17 @@ function initGame() {
 
   gameDeck = generateBagSequence();
 
-  scoreEl.innerText = '0';
-  headerLabelEl.innerText = 'Next:';
+  if (scoreEl) scoreEl.innerText = '0';
+  if (headerLabelEl) headerLabelEl.innerText = 'Next:';
 
-  alphabetModal.classList.remove('active');
-  highscoreEntryModal.classList.remove('active');
-  leaderboardModal.classList.remove('active');
-  document.getElementById('best-board-modal').classList.remove('active');
+  if (alphabetModal) alphabetModal.classList.remove('active');
+  if (highscoreEntryModal) highscoreEntryModal.classList.remove('active');
+  if (leaderboardModal) leaderboardModal.classList.remove('active');
+  
+  const bestBoardModal = document.getElementById('best-board-modal');
+  if (bestBoardModal) bestBoardModal.classList.remove('active');
 
-  topBarEl.style.opacity = '1';
+  if (topBarEl) topBarEl.style.opacity = '1';
 
   for (let i = 0; i < 25; i++) {
     const cell = document.createElement('div');
@@ -33,21 +35,58 @@ function initGame() {
     cell.addEventListener('click', () => handleCellClick(i, cell));
     cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
     cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
-    gridEl.appendChild(cell);
+    if (gridEl) gridEl.appendChild(cell);
   }
 
-  nextLetterEl.style.display = 'inline-flex';
-  leftHeaderEl.title = 'Click to open wildcard picker';
+  // Defensive Check: Enable Lookahead Display via Class Name
+  if (queueContainerEl) {
+      if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay) {
+          queueContainerEl.classList.add('is-active');
+      } else {
+          queueContainerEl.classList.remove('is-active');
+      }
+  }
+  
+  if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
   setNextLetter();
 }
 
 function setNextLetter() {
-  if (placedCount >= 25) return;
-  nextLetterEl.innerText = gameDeck[placedCount];
+  if (placedCount >= 25) {
+      if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+      return;
+  }
+  
+  if (nextLetterEl) nextLetterEl.innerText = gameDeck[placedCount];
+
+  const isLookahead = window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay && !window.GAME_CONFIG.isBombDay;
+
+  // Safely evaluate queue1
+  if (queue1El) {
+      if (isLookahead && placedCount + 1 < 25) {
+          queue1El.innerText = gameDeck[placedCount + 1];
+          queue1El.classList.add('is-active');
+      } else {
+          queue1El.classList.remove('is-active');
+          queue1El.innerText = '';
+      }
+  }
+
+  // Safely evaluate queue2
+  if (queue2El) {
+      if (isLookahead && placedCount + 2 < 25) {
+          queue2El.innerText = gameDeck[placedCount + 2];
+          queue2El.classList.add('is-active');
+      } else {
+          queue2El.classList.remove('is-active');
+          queue2El.innerText = '';
+      }
+  }
 }
 
 function handleHoverEnter(index, cellEl) {
   if (cells[index] !== '' || placedCount >= 25) return;
+  if (!nextLetterEl) return;
 
   const letter = nextLetterEl.innerText;
   if (letter === '?' || letter === '-') return;
@@ -68,17 +107,18 @@ function handleHoverEnter(index, cellEl) {
 }
 
 function handleHoverLeave(cellEl) {
-  cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
+  if (cellEl) cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
 }
 
 function handleCellClick(index, cellEl) {
   if (cells[index] !== '' || placedCount >= 25) return;
+  if (!nextLetterEl) return;
 
   const letter = nextLetterEl.innerText;
   if (letter === '?') {
     pendingCellIndex = index;
-    updateWildcardModal();
-    alphabetModal.classList.add('active');
+    if (typeof updateWildcardModal === 'function') updateWildcardModal();
+    if (alphabetModal) alphabetModal.classList.add('active');
     return;
   }
 
@@ -86,52 +126,62 @@ function handleCellClick(index, cellEl) {
 }
 
 function placeLetter(index, letter, cellEl, isWildcard) {
-  cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
+  if (cellEl) cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
 
   cells[index] = letter;
   wildcardState[index] = isWildcard;
 
-  cellEl.innerText = letter;
-  placedCount++;
-
-  if (isWildcard) {
-    cellEl.classList.add('is-wildcard');
+  if (cellEl) {
+      cellEl.innerText = letter;
+      if (isWildcard) {
+        cellEl.classList.add('is-wildcard');
+      }
+      cellEl.classList.add('tile-pop');
+      setTimeout(() => {
+        cellEl.classList.remove('tile-pop');
+      }, 300);
   }
-
-  cellEl.classList.add('tile-pop');
-  setTimeout(() => {
-    cellEl.classList.remove('tile-pop');
-  }, 300);
-
+  
+  placedCount++;
   calculateRealTimeScoreLocal();
   
-
   if (placedCount === 25) {
-    headerLabelEl.innerText = 'Score:';
-    nextLetterEl.style.display = 'none';
-    leftHeaderEl.title = '';
-
-    topBarEl.style.opacity = '0';
+    if (headerLabelEl) headerLabelEl.innerText = 'Score:';
+    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+    if (leftHeaderEl) leftHeaderEl.title = '';
+    if (topBarEl) topBarEl.style.opacity = '0';
 
     logGameToServer();
 
-    document.getElementById('final-score-display').innerText = currentScore;
+    const finalScoreEl = document.getElementById('final-score-display');
+    if (finalScoreEl) finalScoreEl.innerText = currentScore;
 
     if (isCurrentGameDaily) {
-      document.getElementById('daily-save-section').hidden = false;
-      document.getElementById('non-daily-section').hidden = true;
+      const dailySect = document.getElementById('daily-save-section');
+      const nonDailySect = document.getElementById('non-daily-section');
+      if (dailySect) dailySect.hidden = false;
+      if (nonDailySect) nonDailySect.hidden = true;
 
-      initialsInput.value = '';
-      document.getElementById('init-tile-1').innerText = '';
-      document.getElementById('init-tile-2').innerText = '';
-      document.getElementById('init-tile-3').innerText = '';
+      if (initialsInput) {
+          initialsInput.value = '';
+          initialsInput.focus();
+      }
+      
+      const t1 = document.getElementById('init-tile-1');
+      const t2 = document.getElementById('init-tile-2');
+      const t3 = document.getElementById('init-tile-3');
+      if (t1) t1.innerText = '';
+      if (t2) t2.innerText = '';
+      if (t3) t3.innerText = '';
 
-      highscoreEntryModal.classList.add('active');
-      initialsInput.focus();
+      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
     } else {
-      document.getElementById('daily-save-section').hidden = true;
-      document.getElementById('non-daily-section').hidden = false;
-      highscoreEntryModal.classList.add('active');
+      const dailySect = document.getElementById('daily-save-section');
+      const nonDailySect = document.getElementById('non-daily-section');
+      if (dailySect) dailySect.hidden = true;
+      if (nonDailySect) nonDailySect.hidden = false;
+      
+      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
     }
   } else {
     setNextLetter();
@@ -141,7 +191,7 @@ function placeLetter(index, letter, cellEl, isWildcard) {
 function selectWildcard(letter) {
   if (usedWildcards.has(letter) && letter !== 'Cancel') return;
 
-  alphabetModal.classList.remove('active');
+  if (alphabetModal) alphabetModal.classList.remove('active');
 
   if (letter === 'Cancel') {
     pendingCellIndex = null;
@@ -151,7 +201,7 @@ function selectWildcard(letter) {
   usedWildcards.add(letter);
 
   if (pendingCellIndex === -1) {
-    nextLetterEl.innerText = letter;
+    if (nextLetterEl) nextLetterEl.innerText = letter;
   } else {
     const cellEl = document.querySelector(`.grid-cell[data-index='${pendingCellIndex}']`);
     placeLetter(pendingCellIndex, letter, cellEl, true);
@@ -162,7 +212,6 @@ function selectWildcard(letter) {
 
 function calculateRealTimeScoreLocal() {
   const validWords = findValidWordsLocalArray(cells);
-
   const groupedData = buildGroupedWordData(validWords);
 
   currentScore = (groupedData.display[3].length * 1) + 
@@ -171,14 +220,16 @@ function calculateRealTimeScoreLocal() {
 
   groupedData.display[5].forEach(displayStr => {
     if (!explodedWords.has(displayStr)) {
-      triggerExplosion(false);
+      if (typeof triggerExplosion === 'function') triggerExplosion(false);
       explodedWords.add(displayStr);
     }
   });
 
-  scoreEl.innerText = currentScore;
-  renderWordListsForBoard(groupedData);
-  applyColorsToSpecificGrid(groupedData.rawScoringWords, cells, gridEl);
+  if (scoreEl) scoreEl.innerText = currentScore;
+  if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
+  if (typeof applyColorsToSpecificGrid === 'function' && gridEl) {
+      applyColorsToSpecificGrid(groupedData.rawScoringWords, cells, gridEl);
+  }
 }
 
 async function logGameToServer() {
@@ -195,10 +246,10 @@ async function logGameToServer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'log_game',
-        session_id: sessionId,
-        game_seed: dailySeed,
+        session_id: typeof sessionId !== 'undefined' ? sessionId : '',
+        game_seed: typeof dailySeed !== 'undefined' ? dailySeed : 0,
         is_daily: isCurrentGameDaily,
-        daily_offset: dailyOffset,
+        daily_offset: typeof dailyOffset !== 'undefined' ? dailyOffset : 0,
         final_score: currentScore,
         grid: gridString
       })

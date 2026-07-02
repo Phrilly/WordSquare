@@ -27,7 +27,7 @@ function mulberry32(seed) {
 }
 
 function makeDailyRandom(suffix) {
-  return mulberry32(seededHash(String(dailySeed) + ':' + suffix));
+  return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
 
@@ -81,42 +81,53 @@ window.initGame = function() {
 
   placedCount = 0;
   pendingCellIndex = null;
-  explodedWords.clear();
+  
+  if (typeof explodedWords !== 'undefined') explodedWords.clear();
   currentScore = 0;
-  usedWildcards.clear();
+  if (typeof usedWildcards !== 'undefined') usedWildcards.clear();
 
   deckIndex = 0;
   activeBombs = [];
 
   isCurrentGameDaily = true;
-  if (isCurrentGameDaily) dailySeed = getDailySeed();
+  if (isCurrentGameDaily && typeof getDailySeed === 'function') {
+      dailySeed = getDailySeed();
+  }
 
   // IMPORTANT:
   // Build the fixed 28-letter daily deck directly from the daily seed.
   gameDeck = buildBombDailyDeck();
 
-  scoreEl.innerText = '0';
-  headerLabelEl.innerText = 'Next:';
+  if (scoreEl) scoreEl.innerText = '0';
+  if (headerLabelEl) headerLabelEl.innerText = 'Next:';
 
-  alphabetModal.classList.remove('active');
-  highscoreEntryModal.classList.remove('active');
-  leaderboardModal.classList.remove('active');
-  document.getElementById('best-board-modal').classList.remove('active');
+  if (alphabetModal) alphabetModal.classList.remove('active');
+  if (highscoreEntryModal) highscoreEntryModal.classList.remove('active');
+  if (leaderboardModal) leaderboardModal.classList.remove('active');
+  
+  const bestBoardModal = document.getElementById('best-board-modal');
+  if (bestBoardModal) bestBoardModal.classList.remove('active');
 
-  topBarEl.style.opacity = '1';
+  if (topBarEl) topBarEl.style.opacity = '1';
 
   for (let i = 0; i < 25; i++) {
     const cell = document.createElement('div');
     cell.className = 'grid-cell';
     cell.dataset.index = i;
-    cell.addEventListener('click', () => handleCellClick(i, cell));
-    cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
-    cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
-    gridEl.appendChild(cell);
+    
+    if (typeof handleCellClick === 'function') cell.addEventListener('click', () => handleCellClick(i, cell));
+    if (typeof handleHoverEnter === 'function') cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
+    if (typeof handleHoverLeave === 'function') cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
+    
+    if (gridEl) gridEl.appendChild(cell);
   }
 
-  nextLetterEl.style.display = 'inline-flex';
-  leftHeaderEl.title = 'Click to open wildcard picker';
+  // Explicitly ensure lookahead queue is disabled for Bomb Mode
+  if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+  if (queue1El) queue1El.classList.remove('is-active');
+  if (queue2El) queue2El.classList.remove('is-active');
+
+  if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
 
   // Fixed bomb positions for the same day
   activeBombs = buildBombPositions();
@@ -129,15 +140,31 @@ window.initGame = function() {
 };
 
 
-// Override next letter to read from the 28-letter deck
+// Override next letter to read from the 28-letter deck and explicitly kill queue
 window.setNextLetter = function() {
-  if (deckIndex >= gameDeck.length || placedCount >= 25) return;
-  nextLetterEl.innerText = gameDeck[deckIndex];
+  if (deckIndex >= gameDeck.length || placedCount >= 25) {
+      if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+      return;
+  }
+  
+  if (nextLetterEl) nextLetterEl.innerText = gameDeck[deckIndex];
+
+  // Bomb days NEVER show lookahead queue
+  if (queue1El) {
+      queue1El.classList.remove('is-active');
+      queue1El.innerText = '';
+  }
+  if (queue2El) {
+      queue2El.classList.remove('is-active');
+      queue2El.innerText = '';
+  }
 };
 
 
 // Particle engine
 function createBombParticles(cellEl, letter) {
+  if (!cellEl) return;
+  
   const rect = cellEl.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
@@ -197,26 +224,29 @@ function createBombParticles(cellEl, letter) {
     container.appendChild(p);
   }
 
-  setTimeout(() => container.remove(), 1500);
+  setTimeout(() => { if (container) container.remove(); }, 1500);
 }
 
 
 // Override click logic for bombs
 const originalHandleCellClick = window.handleCellClick;
 window.handleCellClick = function(index, cellEl) {
+  if (!cellEl) return;
   if (cells[index] !== '' || placedCount >= 25) return;
 
   if (activeBombs.includes(index)) {
     activeBombs = activeBombs.filter(b => b !== index);
 
-    const letterToBurn = nextLetterEl.innerText;
+    const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
 
     cellEl.classList.remove('has-bomb');
     createBombParticles(cellEl, letterToBurn);
 
     setTimeout(() => {
-      cellEl.classList.remove('exploding');
-      cellEl.innerText = '';
+      if (cellEl) {
+          cellEl.classList.remove('exploding');
+          cellEl.innerText = '';
+      }
     }, 1000);
 
     // Burn letter, do not place it
@@ -225,59 +255,76 @@ window.handleCellClick = function(index, cellEl) {
     return;
   }
 
-  originalHandleCellClick(index, cellEl);
+  if (typeof originalHandleCellClick === 'function') {
+      originalHandleCellClick(index, cellEl);
+  }
 };
 
 
 // Override placement so normal placements also advance the 28-letter deck
 const originalPlaceLetter = window.placeLetter;
 window.placeLetter = function(index, letter, cellEl, isWildcard) {
-  cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
+  if (cellEl) cellEl.classList.remove('hover-3', 'hover-4', 'hover-5');
 
   cells[index] = letter;
   wildcardState[index] = isWildcard;
 
-  cellEl.innerText = letter;
+  if (cellEl) {
+      cellEl.innerText = letter;
+      if (isWildcard) {
+        cellEl.classList.add('is-wildcard');
+      }
+      cellEl.classList.add('tile-pop');
+      setTimeout(() => {
+        if (cellEl) cellEl.classList.remove('tile-pop');
+      }, 300);
+  }
+  
   placedCount++;
   deckIndex++;
 
-  if (isWildcard) {
-    cellEl.classList.add('is-wildcard');
-  }
-
-  cellEl.classList.add('tile-pop');
-  setTimeout(() => {
-    cellEl.classList.remove('tile-pop');
-  }, 300);
-
-  calculateRealTimeScoreLocal();
+  if (typeof calculateRealTimeScoreLocal === 'function') calculateRealTimeScoreLocal();
 
   if (placedCount === 25) {
-    headerLabelEl.innerText = 'Score:';
-    nextLetterEl.style.display = 'none';
-    leftHeaderEl.title = '';
+    if (headerLabelEl) headerLabelEl.innerText = 'Score:';
+    if (queueContainerEl) queueContainerEl.classList.remove('is-active');
+    if (leftHeaderEl) leftHeaderEl.title = '';
 
-    topBarEl.style.opacity = '0';
+    if (topBarEl) topBarEl.style.opacity = '0';
 
-    logGameToServer();
+    if (typeof logGameToServer === 'function') logGameToServer();
 
-    document.getElementById('final-score-display').innerText = currentScore;
+    const finalScoreEl = document.getElementById('final-score-display');
+    if (finalScoreEl) finalScoreEl.innerText = currentScore;
 
     if (isCurrentGameDaily) {
-      document.getElementById('daily-save-section').hidden = false;
-      document.getElementById('non-daily-section').hidden = true;
+      const dailySect = document.getElementById('daily-save-section');
+      const nonDailySect = document.getElementById('non-daily-section');
+      
+      if (dailySect) dailySect.hidden = false;
+      if (nonDailySect) nonDailySect.hidden = true;
 
-      initialsInput.value = '';
-      document.getElementById('init-tile-1').innerText = '';
-      document.getElementById('init-tile-2').innerText = '';
-      document.getElementById('init-tile-3').innerText = '';
+      if (initialsInput) {
+          initialsInput.value = '';
+          initialsInput.focus();
+      }
+      
+      const t1 = document.getElementById('init-tile-1');
+      const t2 = document.getElementById('init-tile-2');
+      const t3 = document.getElementById('init-tile-3');
+      if (t1) t1.innerText = '';
+      if (t2) t2.innerText = '';
+      if (t3) t3.innerText = '';
 
-      highscoreEntryModal.classList.add('active');
-      initialsInput.focus();
+      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
     } else {
-      document.getElementById('daily-save-section').hidden = true;
-      document.getElementById('non-daily-section').hidden = false;
-      highscoreEntryModal.classList.add('active');
+      const dailySect = document.getElementById('daily-save-section');
+      const nonDailySect = document.getElementById('non-daily-section');
+      
+      if (dailySect) dailySect.hidden = true;
+      if (nonDailySect) nonDailySect.hidden = false;
+      
+      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
     }
   } else {
     setNextLetter();

@@ -1,23 +1,38 @@
 <?php
+declare(strict_types=1);
+
 // Prevent the browser and CDN from caching the main page structure
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
 // Function to append the file's exact last-modified timestamp
-function autoVer($url) {
+function autoVer(string $url): string {
     if (file_exists(__DIR__ . '/' . $url)) {
         return $url . '?v=' . filemtime(__DIR__ . '/' . $url);
     }
     return $url . '?v=' . time(); // Fallback if file isn't found
 }
 
-// VARIANT SCHEDULER: Calculate if today is a "Bomb Day" (1 day in every 5)
-// Anchored strictly to UTC. Midnight UTC = 1:00 AM BST. 
-// May 25, 2026 UTC is exactly Day 5 in this cycle.
+// VARIANT SCHEDULER: 5-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-20 00:00:00 UTC'); 
-$daysSinceEpoch = floor((time() - $epochTimestamp) / 86400);
+$daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
+
+// Default cycle logic
 $isBombDay = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);
+$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0);
+
+// DEV OVERRIDES: Strict Input Validation
+if (isset($_GET['mode'])) {
+    $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
+    if ($mode === 'bomb') {
+        $isBombDay = true;
+        $isLookaheadDay = false;
+    } elseif ($mode === 'lookahead') {
+        $isBombDay = false;
+        $isLookaheadDay = true;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -40,6 +55,14 @@ $isBombDay = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);
   <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
   <?php endif; ?>
   
+  <script>
+    // Pass PHP state to JS
+    window.GAME_CONFIG = {
+        isBombDay: <?= json_encode($isBombDay) ?>,
+        isLookaheadDay: <?= json_encode($isLookaheadDay) ?>
+    };
+  </script>
+
   <style>
     .back-arrow {
       position: absolute;
@@ -102,7 +125,11 @@ $isBombDay = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);
   <div class="top-bar">
     <div id="left-header" title="Click to open wildcard picker">
       <span id="header-label">Next:</span>
-      <span id="next-letter"></span>
+      <div id="queue-container" class="queue-container">
+        <span id="next-letter"></span>
+        <span class="queued-letter" id="queue-1"></span>
+        <span class="queued-letter" id="queue-2"></span>
+      </div>
     </div>
     <div id="score">0</div>
   </div>
