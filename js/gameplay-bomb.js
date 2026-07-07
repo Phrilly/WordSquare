@@ -3,6 +3,7 @@
 // ================================
 
 let activeBombs = [];
+let defusedBombs = new Set();
 
 // Small deterministic PRNG from a string seed
 function seededHash(str) {
@@ -131,21 +132,19 @@ function createBombParticles(cellEl, letter) {
 }
 
 // ---------------------------------------------------------
-// EDA (Event-Driven Architecture) Hooks
+// EDA Hooks
 // ---------------------------------------------------------
 
 document.addEventListener('ws:beforeInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    
-    // Override the core deck with the 28-letter Bomb deck
     gameDeck = buildBombDailyDeck();
     activeBombs = [];
+    defusedBombs.clear();
 });
 
 document.addEventListener('ws:afterInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
     
-    // Inject the bombs into the DOM grid
     activeBombs = buildBombPositions();
     if (gridEl) {
         const gridCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
@@ -154,7 +153,10 @@ document.addEventListener('ws:afterInit', () => {
         });
     }
 
-    // Defensive Hide: Ensure queue never bleeds into Bomb day
+    const queueContainerEl = document.getElementById('queue-container');
+    const queue1El = document.getElementById('queue-1');
+    const queue2El = document.getElementById('queue-2');
+
     if (queueContainerEl) queueContainerEl.classList.remove('is-active');
     if (queue1El) queue1El.classList.remove('is-active');
     if (queue2El) queue2El.classList.remove('is-active');
@@ -163,42 +165,44 @@ document.addEventListener('ws:afterInit', () => {
 document.addEventListener('ws:cellClick', (e) => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
 
-    const index = e.detail.index;
+    const idx = e.detail.index;
     const cellEl = e.detail.cellEl;
 
-    if (activeBombs.includes(index)) {
-        // Stop standard placement logic!
+    if (activeBombs.includes(idx) && !defusedBombs.has(idx)) {
         e.preventDefault(); 
 
-        activeBombs = activeBombs.filter(b => b !== index);
+        defusedBombs.add(idx);
+        const nextLetterEl = document.getElementById('next-letter');
         const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
 
         if (cellEl) {
             cellEl.classList.remove('has-bomb');
+            cellEl.classList.add('bomb-exploded');
             createBombParticles(cellEl, letterToBurn);
+            
             setTimeout(() => {
                 if (cellEl) {
-                    cellEl.classList.remove('exploding');
-                    cellEl.innerText = '';
+                    cellEl.classList.remove('bomb-exploded', 'exploding');
                 }
             }, 1000);
         }
 
-        // Burn letter, do not place it, advance deck safely
-        if (typeof currentDeckIndex !== 'undefined') {
-            currentDeckIndex++;
+        if (typeof lastPlacedInfo !== 'undefined') {
+            lastPlacedInfo = null;
+            const glowingCells = document.querySelectorAll('.is-undoable');
+            glowingCells.forEach(c => c.classList.remove('is-undoable'));
         }
-        
-        if (typeof setNextLetter === 'function') {
-            setNextLetter();
-        }
+
+        document.dispatchEvent(new CustomEvent('ws:tilePlaced'));
     }
 });
 
 document.addEventListener('ws:nextLetterUpdated', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
     
-    // Ensure queue stays dead during bomb variant
+    const queueContainerEl = document.getElementById('queue-container');
+    const queue1El = document.getElementById('queue-1');
+    const queue2El = document.getElementById('queue-2');
     if (queueContainerEl) queueContainerEl.classList.remove('is-active');
     if (queue1El) queue1El.classList.remove('is-active');
     if (queue2El) queue2El.classList.remove('is-active');

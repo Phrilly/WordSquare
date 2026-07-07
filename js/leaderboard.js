@@ -56,7 +56,7 @@ function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
 }
 
 async function submitHighscore() {
-  const initialsInput = document.getElementById('initials-input');
+  const initialsInput = document.getElementById('hidden-initials');
   let initials = initialsInput ? initialsInput.value.trim().toUpperCase() : "---";
   if (initials.length === 0) initials = "---";
 
