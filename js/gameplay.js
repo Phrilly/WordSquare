@@ -1,7 +1,3 @@
-let dailySect = null;
-let nonDailySect = null;
-let lastPlacedInfo = null;
-let isGameOver = false;
 window.addEventListener('error', function(event) {
     const errorPayload = {
         action: 'log_client_error',
