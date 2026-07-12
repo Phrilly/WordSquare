@@ -91,22 +91,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: actionName })
   });
+  
   let dictData = { words: [] };
   let winnerData = { winner_initials: null };
   let hsData = { highscores: [] };
 
+  // FIX: Isolate the promises so a 400 on historical data doesn't kill the game engine
   try {
-    const [dictRes, winnerRes, hsRes] = await Promise.all([
-      fetch('validate.php', fetchOpts('get_dict')).then(r => r.json()).catch(() => ({ words: [] })),
-      fetch('validate.php', fetchOpts('get_yesterdays_winner')).then(r => r.json()).catch(() => ({ winner_initials: null })),
-      fetch('validate.php', fetchOpts('get_highscores')).then(r => r.json()).catch(() => ({ highscores: [] }))
-    ]);
-    dictData = dictRes;
-    winnerData = winnerRes;
-    hsData = hsRes;
-  } catch (err) {
-    console.error("Fetch phase failed:", err);
-  }
+      const res = await fetch('validate.php', fetchOpts('get_dict'));
+      if (res.ok) dictData = await res.json();
+  } catch(e) { console.warn("Dictionary fetch failed securely."); }
+
+  try {
+      const res = await fetch('validate.php', fetchOpts('get_yesterdays_winner'));
+      if (res.ok) winnerData = await res.json();
+  } catch(e) { console.warn("Yesterday winner fetch failed securely."); }
+
+  try {
+      const res = await fetch('validate.php', fetchOpts('get_highscores'));
+      if (res.ok) hsData = await res.json();
+  } catch(e) { console.warn("Highscore fetch failed securely."); }
 
   // 4. Safely populate the global dictionary for scoring logic
   if (dictData && dictData.words && dictData.words.length > 0) {

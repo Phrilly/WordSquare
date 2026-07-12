@@ -1,6 +1,6 @@
-// =========================================================
-// BOMB VARIANT - FULL FILE SYSTEM IMPLEMENTATION
-// =========================================================
+// ================================
+// BOMB VARIANT - DYNAMIC RESTOCK
+// ================================
 
 let activeBombs = [];
 let defusedBombs = new Set();
@@ -27,29 +27,15 @@ function makeDailyRandom(suffix) {
   return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
-function buildBombDailyDeck() {
-  const frequencies = {
-    A:9, B:2, C:2, D:4, E:12, F:2, G:3, H:2, I:9, J:1, K:1, L:4,
-    M:2, N:6, O:8, P:2, Q:1, R:6, S:4, T:6, U:4, V:2, W:2, X:1, Y:2, Z:1
-  };
-  const rnd = makeDailyRandom('bomb-deck');
-  let pool = [];
-
-  for (const [letter, count] of Object.entries(frequencies)) {
-    for (let i = 0; i < count; i++) {
-      pool.push(letter);
-    }
-  }
-
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-
-  // FIXED: Restocks the pool boundary up to 28 characters to guarantee structural padding for 3 deletions
-  return pool.slice(0, 28);
+// FIX: Dynamic Queue Restock Logic
+// Rather than overwriting the 25-tile array, we dynamically generate a single replacement tile when a bomb is defused.
+function getRestockLetter() {
+  const masterBag = "AAAAAAAEEEEEEEEEEIIIIIOOOOOUUUSSSSRRRRRRRRTTTTTTTTNNNNNNNLLLLLLDDDDDBBCCCCFFGGGHHHJKMMMMPPPQVVWWXYYZ";
+  const rnd = makeDailyRandom('restock-' + defusedBombs.size);
+  return masterBag[Math.floor(rnd() * masterBag.length)];
 }
 
+// Build the fixed bomb positions for the day
 function buildBombPositions() {
   const rnd = makeDailyRandom('bomb-positions');
   const positions = [];
@@ -60,6 +46,7 @@ function buildBombPositions() {
   return positions;
 }
 
+// Particle engine
 function createBombParticles(cellEl, letter) {
   if (!cellEl) return;
   
@@ -123,12 +110,11 @@ function createBombParticles(cellEl, letter) {
 }
 
 // ---------------------------------------------------------
-// Hooks
+// EDA Hooks
 // ---------------------------------------------------------
 
 document.addEventListener('ws:beforeInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    gameDeck = buildBombDailyDeck();
     activeBombs = [];
     defusedBombs.clear();
 });
@@ -163,6 +149,10 @@ document.addEventListener('ws:cellClick', (e) => {
         e.preventDefault(); 
 
         defusedBombs.add(idx);
+        
+        // FIX: The core issue resolution. Directly restock the queue length to prevent 'EEE' freezing at 25.
+        gameDeck.push(getRestockLetter());
+        
         const nextLetterEl = document.getElementById('next-letter');
         const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
 
@@ -184,7 +174,6 @@ document.addEventListener('ws:cellClick', (e) => {
             glowingCells.forEach(c => c.classList.remove('is-undoable'));
         }
 
-        // Broadcast to main thread to safely discard the consumed letter from hand
         document.dispatchEvent(new CustomEvent('ws:tilePlaced'));
     }
 });

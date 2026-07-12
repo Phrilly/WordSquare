@@ -26,6 +26,7 @@ function normaliseInitials(?string $initials): string
 function normaliseGridString(?string $grid): string
 {
     $grid = trim((string)$grid);
+    // FIX: Safely permit hyphens for burnt bomb tiles
     $grid = preg_replace('/[^A-Za-z\-]/', '', $grid) ?? '';
     return substr($grid, 0, 25);
 }
@@ -162,6 +163,18 @@ if (!is_array($input)) {
     $input = [];
 }
 
+// FIX: Global Telemetry Interceptor to catch client-side UI crashes
+if (isset($input['action']) && $input['action'] === 'log_client_error') {
+    try {
+        $gridMsg = str_pad(substr($input['error_type'] ?? 'ERR', 0, 25), 25, '-');
+        $stmt = $pdo->prepare("INSERT INTO game_log (session_id, game_seed, is_daily, daily_offset, final_score, grid, created_at) VALUES ('SYS_ERROR', 0, 0, 0, -1, :grid, NOW())");
+        $stmt->execute([':grid' => $gridMsg]);
+        jsonResponse(['status' => 'error_logged']);
+    } catch (PDOException $e) {
+        jsonResponse(['error' => 'Database write failure'], 500);
+    }
+}
+
 if (isset($input['action'])) {
     $action = (string)$input['action'];
 
@@ -200,7 +213,7 @@ if (isset($input['action'])) {
             jsonResponse(['error' => 'Invalid grid.'], 400);
         }
 
-            $score = calculateGridScore($grid, $pdo);
+        $score = calculateGridScore($grid, $pdo);
 
         try {
             $stmt = $pdo->prepare("

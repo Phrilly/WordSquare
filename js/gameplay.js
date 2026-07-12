@@ -8,7 +8,7 @@ window.addEventListener('error', function(event) {
         stack_trace: event.error ? event.error.stack : 'No stack trace available',
         url: window.location.href
     };
-    fetch('audit.php', {
+    fetch('validate.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(errorPayload)
@@ -144,13 +144,8 @@ function triggerEndGame() {
 }
 
 function setNextLetter() {
-  // TEST SAFEGUARD GUARD CLAUSE: Intercepts exhausted array configurations safely
   if (currentDeckIndex >= gameDeck.length) {
-      if (placedCount < 25) {
-          console.warn("Telemetry Intervention: Structural array boundary fault managed. Executing early termination.");
-          triggerEndGame();
-          return;
-      }
+      triggerEndGame();
       return;
   }
   
@@ -164,7 +159,6 @@ function setNextLetter() {
       nextLetterEl.innerText = gameDeck[currentDeckIndex];
   }
 
-  // FIXED: Synchronizes lookahead elements safely if alternative game modes shift pointers
   const q1El = document.getElementById('queue-1');
   const q2El = document.getElementById('queue-2');
   if (q1El) q1El.innerText = gameDeck[currentDeckIndex + 1] || '';
