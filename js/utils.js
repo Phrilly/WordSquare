@@ -1,48 +1,62 @@
+'use strict';
+
+const MAX_RNG_ITERATIONS = 10000;
+
 function getDailySeed() {
-  const today = new Date();
-  const dateStr = today.getUTCFullYear() + "-" + (today.getUTCMonth() + 1) + "-" + today.getUTCDate();
-  let s = 0;
-  for (let i = 0; i < dateStr.length; i++) s += dateStr.charCodeAt(i) * (i + 1);
-  return (s + dailyOffset) * 12345;
+  try {
+    const today = new Date();
+    const dateStr = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}-${today.getUTCDate()}`;
+    let s = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+      s += dateStr.charCodeAt(i) * (i + 1);
+    }
+    const offset = GameState.getDailyOffset();
+    const seed = (s + offset) * 12345;
+    if (!Number.isFinite(seed)) {
+      throw new RangeError('Computed daily seed is not finite.');
+    }
+    return seed;
+  } catch (err) {
+    console.error('getDailySeed failed, falling back to Date.now() seed.', err);
+    return Date.now();
+  }
 }
 
 function getSeededRandom() {
-  let t = dailySeed += 0x6D2B79F5;
-  t = Math.imul(t ^ t >>> 15, t | 1);
-  t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  let t = GameState.mutateDailySeed(0x6D2B79F5);
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
 function generateBagSequence() {
-  const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
-  const isNewLogicActive = true;
-
-  if (!isNewLogicActive) {
-    const bagString = "EEEEEEEEEEEAAAAAAAAIIIIIIIOOOOOOOUUUSSSSSRRRRRTTTTTNNNNNLLLLDDDDGGCCMMBBPPHHFFWWYYVKXJQZ????????????";
-    const initialBag = bagString.split('');
-    let sequence = [];
-    for (let i = 0; i < 25; i++) {
-      const index = Math.floor(rng() * initialBag.length);
-      sequence.push(initialBag.splice(index, 1)[0]);
-    }
-    return sequence;
-  }
-
+  const rng = GameState.isDaily() ? getSeededRandom : Math.random;
   const masterBagString = "AAAAAAAEEEEEEEEEEIIIIIOOOOOUUUSSSSRRRRRRRRTTTTTTTTNNNNNNNLLLLLLDDDDDBBCCCCFFGGGHHHJKMMMMPPPQVVWWXYYZ";
   const initialBag = masterBagString.split('');
   const vowels = ['A', 'E', 'I', 'O', 'U'];
+
   let sequence = [];
   let isValid = false;
   let vowelCount = 0;
   let sCount = 0;
+  let iterations = 0;
 
   while (!isValid) {
+    iterations++;
+    if (iterations > MAX_RNG_ITERATIONS) {
+      console.error('generateBagSequence: exceeded max iterations, using best-effort sequence.');
+      break;
+    }
+
     sequence = [];
     let tempBag = [...initialBag];
     vowelCount = 0;
     sCount = 0;
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < GameState.CELL_COUNT; i++) {
+      if (tempBag.length === 0) {
+        throw new Error('generateBagSequence: letter bag exhausted before filling grid.');
+      }
       const index = Math.floor(rng() * tempBag.length);
       const selected = tempBag.splice(index, 1)[0];
       sequence.push(selected);
@@ -57,7 +71,6 @@ function generateBagSequence() {
 
   const wcRoll = rng() * 100;
   let wcCount = 0;
-
   if (wcRoll < 5) wcCount = 0;
   else if (wcRoll < 30) wcCount = 1;
   else if (wcRoll < 70) wcCount = 2;
@@ -65,7 +78,7 @@ function generateBagSequence() {
   else wcCount = 4;
 
   let safeIndices = [];
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < GameState.CELL_COUNT; i++) {
     if (sequence[i] !== 'S' && sequence[i] !== 'Q') {
       safeIndices.push(i);
     }
@@ -76,23 +89,24 @@ function generateBagSequence() {
     minVowels: 6
   };
 
+  let wcSafetyCounter = 0;
   for (let i = 0; i < wcCount && safeIndices.length > 0; i++) {
+    wcSafetyCounter++;
+    if (wcSafetyCounter > MAX_RNG_ITERATIONS) {
+      console.warn('generateBagSequence: wildcard placement loop exceeded max iterations.');
+      break;
+    }
+
     const randSafeIdx = Math.floor(rng() * safeIndices.length);
     const replaceIdx = safeIndices.splice(randSafeIdx, 1)[0];
     const charToReplace = sequence[replaceIdx];
 
     if (activeRules.enforceWildcardLimits) {
-      let isEssential = false;
-
-      if (vowels.includes(charToReplace) && vowelCount <= activeRules.minVowels) {
-        isEssential = true;
-      }
-
+      const isEssential = vowels.includes(charToReplace) && vowelCount <= activeRules.minVowels;
       if (isEssential) {
         i--;
         continue;
       }
-      
       if (vowels.includes(charToReplace)) vowelCount--;
       if (charToReplace === 'S') sCount--;
     }
@@ -104,30 +118,28 @@ function generateBagSequence() {
 }
 
 function buildGroupedWordData(validWords) {
-  let grouped = {};
-  let result = {
+  if (!Array.isArray(validWords)) {
+    throw new TypeError('buildGroupedWordData: validWords must be an array.');
+  }
+
+  const grouped = {};
+  const result = {
     rawScoringWords: [],
-    display: {
-      3: [],
-      4: [],
-      5: []
-    }
+    display: { 3: [], 4: [], 5: [] }
   };
 
   validWords.forEach(w => {
-    let rev = w.split('').reverse().join('');
-    let key = w < rev ? w : rev;
+    if (typeof w !== 'string' || w.length < 3) return;
+    const rev = w.split('').reverse().join('');
+    const key = w < rev ? w : rev;
     if (!grouped[key]) grouped[key] = new Set();
     grouped[key].add(w);
   });
 
   Object.keys(grouped).forEach(key => {
-    let wArr = [...grouped[key]];
-    wArr.sort();
-
+    const wArr = [...grouped[key]].sort();
     result.rawScoringWords.push(...wArr);
-
-    let len = key.length;
+    const len = key.length;
     if (result.display[len]) {
       result.display[len].push(wArr.join('/'));
     }
@@ -141,25 +153,35 @@ function buildGroupedWordData(validWords) {
 }
 
 function findValidWordsLocalArray(gridArray) {
-  let found = [];
-  const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1]];
+  if (!Array.isArray(gridArray) || gridArray.length !== GameState.CELL_COUNT) {
+    console.error('findValidWordsLocalArray: invalid gridArray, returning empty result.');
+    return [];
+  }
 
-  for (let r = 0; r < 5; r++) {
-    for (let c = 0; c < 5; c++) {
-      for (let [dr, dc] of dirs) {
+  const dictionary = GameState.getDictionary();
+  if (!(dictionary instanceof Set) || dictionary.size === 0) {
+    console.warn('findValidWordsLocalArray: dictionary is empty; no words can be found.');
+    return [];
+  }
+
+  const found = [];
+  const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1]];
+  const size = GameState.GRID_SIZE;
+
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      for (const [dr, dc] of dirs) {
         let currentWord = "";
-        for (let step = 0; step < 5; step++) {
-          let nr = r + (dr * step);
-          let nc = c + (dc * step);
+        for (let step = 0; step < size; step++) {
+          const nr = r + (dr * step);
+          const nc = c + (dc * step);
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
 
-          if (nr < 0 || nr >= 5 || nc < 0 || nc >= 5) break;
-
-          let letter = gridArray[nr * 5 + nc];
+          const letter = gridArray[nr * size + nc];
           if (!letter) break;
 
           currentWord += letter;
-
-          if (currentWord.length >= 3 && gameDictionary.has(currentWord)) {
+          if (currentWord.length >= 3 && dictionary.has(currentWord)) {
             found.push(currentWord);
           }
         }
@@ -171,18 +193,21 @@ function findValidWordsLocalArray(gridArray) {
 }
 
 function getScoreForPureGrid(charArray) {
-  let found = findValidWordsLocalArray(charArray);
+  if (!Array.isArray(charArray) || charArray.length !== GameState.CELL_COUNT) {
+    console.error('getScoreForPureGrid: invalid charArray, returning score 0.');
+    return 0;
+  }
+
+  const found = findValidWordsLocalArray(charArray);
   let score = 0;
-  let grouped = {};
+  const grouped = {};
 
-  for (let i = 0; i < found.length; i++) {
-    let w = found[i];
-    let rev = w.split('').reverse().join('');
-    let key = w < rev ? w : rev;
-
+  for (const w of found) {
+    const rev = w.split('').reverse().join('');
+    const key = w < rev ? w : rev;
     if (!grouped[key]) {
       grouped[key] = true;
-      let len = key.length;
+      const len = key.length;
       if (len === 3) score += 1;
       else if (len === 4) score += 5;
       else if (len === 5) score += 20;
@@ -190,4 +215,30 @@ function getScoreForPureGrid(charArray) {
   }
 
   return score;
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Request to ${url} timed out after ${timeoutMs}ms.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

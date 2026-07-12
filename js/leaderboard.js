@@ -1,163 +1,218 @@
+'use strict';
+
 function showLeaderboardFromBest() {
-  document.getElementById('best-board-modal').classList.remove('active');
-  document.getElementById('leaderboard-modal').classList.add('active');
-  if (typeof topBarEl !== 'undefined' && topBarEl) topBarEl.style.opacity = '0';
+  const bestBoardModal = document.getElementById('best-board-modal');
+  const leaderboardModal = DomRefs.leaderboardModal;
+
+  if (bestBoardModal) bestBoardModal.classList.remove('active');
+  else console.warn('showLeaderboardFromBest: #best-board-modal not found.');
+
+  if (leaderboardModal) leaderboardModal.classList.add('active');
+  else console.error('showLeaderboardFromBest: leaderboard modal not found.');
+
+  if (DomRefs.topBarEl) DomRefs.topBarEl.style.opacity = '0';
 }
 
 function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
-  if (!gridChars || gridChars.length !== 25) return;
+  if (!gridChars || gridChars.length !== GameState.CELL_COUNT) {
+    console.error(`showBoardViewer: gridChars invalid or wrong length (${gridChars ? gridChars.length : 'null'}).`);
+    return;
+  }
+  if (typeof titleText !== 'string') {
+    console.error('showBoardViewer: titleText must be a string.');
+    return;
+  }
 
-  document.getElementById('leaderboard-modal').classList.remove('active');
-  if (typeof topBarEl !== 'undefined' && topBarEl) topBarEl.style.opacity = '0';
+  const leaderboardModal = DomRefs.leaderboardModal;
+  if (leaderboardModal) leaderboardModal.classList.remove('active');
+  if (DomRefs.topBarEl) DomRefs.topBarEl.style.opacity = '0';
 
   if (typeof setBoardViewerTheme === 'function') setBoardViewerTheme(themeClass);
-  
+
   const boardViewerTitleEl = document.getElementById('board-viewer-title');
   if (boardViewerTitleEl) boardViewerTitleEl.innerHTML = titleText;
-  
+
   const scoreEl = document.getElementById('best-board-score');
-  if (scoreEl) scoreEl.innerText = score;
-  
+  if (scoreEl) scoreEl.innerText = String(score);
+
   const initialsEl = document.getElementById('best-board-initials');
-  if (initialsEl) initialsEl.innerText = initials;
+  if (initialsEl) initialsEl.innerText = escapeHtml(String(initials));
 
   const bg = document.getElementById('best-grid');
-  if (bg) {
-      bg.innerHTML = '';
-      let chars = typeof gridChars === 'string' ? gridChars.split('') : gridChars;
-      let normalizedChars = chars.map(c => c.toUpperCase());
-    
-      for (let i = 0; i < 25; i++) {
-        let c = document.createElement('div');
-        c.className = 'grid-cell';
-        
-        if (normalizedChars[i] !== '-') {
-            if (chars[i] && chars[i] !== chars[i].toUpperCase()) {
-              c.classList.add('is-wildcard');
-            }
-            c.innerText = normalizedChars[i];
-        } else {
-            c.classList.add('is-empty');
-        }
-        bg.appendChild(c);
-      }
-    
-      if (typeof findValidWordsLocalArray === 'function') {
-          const bValid = findValidWordsLocalArray(normalizedChars);
-          const groupedData = buildGroupedWordData(bValid);
-        
-          applyColorsToSpecificGrid(groupedData.rawScoringWords, normalizedChars, bg);
-          if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
-      }
+  if (!bg) {
+    console.error('showBoardViewer: #best-grid element not found.');
+    return;
   }
-  
+
+  try {
+    bg.innerHTML = '';
+    const chars = typeof gridChars === 'string' ? gridChars.split('') : gridChars;
+    const normalizedChars = chars.map(c => (typeof c === 'string' ? c.toUpperCase() : '-'));
+    const fragment = document.createDocumentFragment();
+
+    for (let i = 0; i < GameState.CELL_COUNT; i++) {
+      const c = document.createElement('div');
+      c.className = 'grid-cell';
+
+      if (normalizedChars[i] !== '-') {
+        if (chars[i] && typeof chars[i] === 'string' && chars[i] !== chars[i].toUpperCase()) {
+          c.classList.add('is-wildcard');
+        }
+        c.innerText = normalizedChars[i];
+      } else {
+        c.classList.add('is-empty');
+      }
+      fragment.appendChild(c);
+    }
+    bg.appendChild(fragment);
+
+    if (typeof findValidWordsLocalArray === 'function') {
+      const bValid = findValidWordsLocalArray(normalizedChars);
+      const groupedData = buildGroupedWordData(bValid);
+
+      if (typeof applyColorsToSpecificGrid === 'function') {
+        applyColorsToSpecificGrid(groupedData.rawScoringWords, normalizedChars, bg);
+      }
+      if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
+    }
+  } catch (err) {
+    console.error('showBoardViewer: failed to render board grid.', err);
+    return;
+  }
+
   const bestBoardModal = document.getElementById('best-board-modal');
   if (bestBoardModal) bestBoardModal.classList.add('active');
 }
 
+function sanitizeInitials(raw) {
+  if (typeof raw !== 'string') return '---';
+  const cleaned = raw.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  return cleaned.length > 0 ? cleaned : '---';
+}
+
 async function submitHighscore() {
-  const initialsInput = document.getElementById('hidden-initials');
-  let initials = initialsInput ? initialsInput.value.trim().toUpperCase() : "---";
-  if (initials.length === 0) initials = "---";
+  const initials = sanitizeInitials(DomRefs.initialsInput ? DomRefs.initialsInput.value : '');
+
+  let gridString;
+  try {
+    gridString = buildCurrentGridString();
+  } catch (err) {
+    console.error('submitHighscore: failed to build grid string, aborting submission.', err);
+    gridString = '-'.repeat(GameState.CELL_COUNT);
+  }
 
   let isNewTopScore = false;
-  let gridString = "";
-  
-  if (typeof cells !== 'undefined') {
-      for (let i = 0; i < 25; i++) {
-        let char = cells[i];
-        if (!char || char === '') char = '-';
-        if (typeof wildcardState !== 'undefined' && wildcardState[i] && char !== '-') {
-            gridString += char.toLowerCase();
-        } else {
-            gridString += char;
-        }
-      }
+
+  try {
+    const res = await fetchWithTimeout('validate.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_score',
+        initials,
+        score: GameState.getCurrentScore(),
+        grid: gridString
+      })
+    }, 8000);
+
+    if (!res.ok) {
+      throw new Error(`Server responded with status ${res.status}.`);
+    }
+
+    const data = await res.json();
+    isNewTopScore = Boolean(data && data.is_top_score);
+  } catch (err) {
+    console.error('submitHighscore: error saving score.', err);
+  }
+
+  if (DomRefs.highscoreEntryModal) DomRefs.highscoreEntryModal.classList.remove('active');
+
+  const lbTitle = document.getElementById('leaderboard-title');
+  if (lbTitle) {
+    if (isNewTopScore) {
+      lbTitle.innerText = '🏆 NEW DAILY HIGH SCORE! 🏆';
+      lbTitle.style.color = '#FFD700';
+      if (typeof triggerExplosion === 'function') triggerExplosion(true);
+    } else {
+      lbTitle.innerText = "TODAY'S HIGH SCORES";
+      lbTitle.style.color = 'var(--highlight)';
+    }
   }
 
   try {
-    const res = await fetch('validate.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-          action: 'save_score', 
-          initials: initials, 
-          score: typeof currentScore !== 'undefined' ? currentScore : 0, 
-          grid: gridString 
-      })
-    });
-    const data = await res.json();
-    isNewTopScore = data.is_top_score;
-  } catch (e) {
-    console.error("Error saving score", e);
+    await loadLeaderboard();
+  } catch (err) {
+    console.error('submitHighscore: failed to refresh leaderboard.', err);
   }
-
-  const highscoreEntryModal = document.getElementById('highscore-entry-modal');
-  if (highscoreEntryModal) highscoreEntryModal.classList.remove('active');
-
-  const lbTitle = document.getElementById('leaderboard-title');
-  if (lbTitle) {
-      if (isNewTopScore) {
-        lbTitle.innerText = "🏆 NEW DAILY HIGH SCORE! 🏆";
-        lbTitle.style.color = "#FFD700";
-        if (typeof triggerExplosion === 'function') triggerExplosion(true);
-      } else {
-        lbTitle.innerText = "TODAY'S HIGH SCORES";
-        lbTitle.style.color = "var(--highlight)";
-      }
-  }
-
-  loadLeaderboard();
 }
 
 function skipToLeaderboard() {
-  const highscoreEntryModal = document.getElementById('highscore-entry-modal');
-  if (highscoreEntryModal) highscoreEntryModal.classList.remove('active');
+  if (DomRefs.highscoreEntryModal) DomRefs.highscoreEntryModal.classList.remove('active');
+
   const lbTitle = document.getElementById('leaderboard-title');
   if (lbTitle) {
-      lbTitle.innerText = "TODAY'S HIGH SCORES";
-      lbTitle.style.color = "var(--highlight)";
+    lbTitle.innerText = "TODAY'S HIGH SCORES";
+    lbTitle.style.color = 'var(--highlight)';
   }
-  loadLeaderboard();
+
+  loadLeaderboard().catch(err => console.error('skipToLeaderboard: failed to load leaderboard.', err));
 }
 
 async function loadLeaderboard() {
   const listEl = document.getElementById('leaderboard-list');
-  if (!listEl) return;
-  
+  if (!listEl) {
+    console.error('loadLeaderboard: #leaderboard-list not found.');
+    return;
+  }
+
   listEl.innerHTML = '<li style="border:none; justify-content:center;">Loading...</li>';
-  const leaderboardModal = document.getElementById('leaderboard-modal');
-  if (leaderboardModal) leaderboardModal.classList.add('active');
-  if (typeof topBarEl !== 'undefined' && topBarEl) topBarEl.style.opacity = '0';
+  if (DomRefs.leaderboardModal) DomRefs.leaderboardModal.classList.add('active');
+  if (DomRefs.topBarEl) DomRefs.topBarEl.style.opacity = '0';
 
   try {
-    const res = await fetch('validate.php', {
+    const res = await fetchWithTimeout('validate.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_highscores' })
-    });
-    const data = await res.json();
+    }, 8000);
 
+    if (!res.ok) {
+      throw new Error(`Server responded with status ${res.status}.`);
+    }
+
+    const data = await res.json();
     listEl.innerHTML = '';
+
     const viewAiBtn = document.getElementById('view-ai-btn');
     if (viewAiBtn) viewAiBtn.style.display = 'none';
 
-    if (data.highscores && data.highscores.length > 0) {
-      const bestDailyData = data.highscores[0];
+    const highscores = Array.isArray(data && data.highscores) ? data.highscores : [];
+
+    if (highscores.length > 0) {
+      const bestDailyData = highscores[0];
+      GameState.setBestDailyData(bestDailyData);
 
       const viewWinningBtn = document.getElementById('view-winning-btn');
-      if (bestDailyData && bestDailyData.grid && bestDailyData.grid.length === 25) {
+      if (bestDailyData && typeof bestDailyData.grid === 'string' && bestDailyData.grid.length === GameState.CELL_COUNT) {
         if (viewWinningBtn) viewWinningBtn.style.display = 'block';
-        if (typeof runAIOptimizerOnBestGrid === 'function') runAIOptimizerOnBestGrid(bestDailyData.grid);
-      } else {
-        if (viewWinningBtn) viewWinningBtn.style.display = 'none';
+        if (typeof runAIOptimizerOnBestGrid === 'function') {
+          runAIOptimizerOnBestGrid(bestDailyData.grid).catch(err =>
+            console.error('loadLeaderboard: AI optimizer failed.', err)
+          );
+        }
+      } else if (viewWinningBtn) {
+        viewWinningBtn.style.display = 'none';
       }
 
-      data.highscores.forEach((entry, index) => {
-        let initials = (entry.initials || '---').padEnd(3, '-').substring(0, 3);
+      const fragment = document.createDocumentFragment();
+
+      highscores.forEach((entry, index) => {
+        const safeInitials = sanitizeInitials(entry && entry.initials).padEnd(3, '-').substring(0, 3);
+        const safeScore = entry && Number.isFinite(entry.score) ? entry.score : 0;
+
         let initialsHtml = '';
         for (let i = 0; i < 3; i++) {
-          initialsHtml += `<div class="lb-initial-tile">${initials[i]}</div>`;
+          initialsHtml += `<div class="lb-initial-tile">${escapeHtml(safeInitials[i] || '-')}</div>`;
         }
 
         const li = document.createElement('li');
@@ -169,27 +224,35 @@ async function loadLeaderboard() {
               <div class="lb-rank">${index + 1}.</div>
               <div class="lb-initials-group">${initialsHtml}</div>
             </div>
-            <div class="lb-score-tile">${entry.score}</div>
+            <div class="lb-score-tile">${escapeHtml(String(safeScore))}</div>
           </div>
         `;
+
         li.addEventListener('click', () => {
+          if (!entry || typeof entry.grid !== 'string' || entry.grid.length !== GameState.CELL_COUNT) {
+            console.warn(`loadLeaderboard: entry ${index} has invalid grid, skipping viewer.`);
+            return;
+          }
           showBoardViewer(
-            index === 0 ? "👑 #1 BOARD 👑" : `BOARD BY ${initials}`,
-            entry.score,
-            initials,
+            index === 0 ? '👑 #1 BOARD 👑' : `BOARD BY ${escapeHtml(safeInitials)}`,
+            safeScore,
+            safeInitials,
             entry.grid,
             index === 0 ? 'top' : 'default'
           );
         });
-        listEl.appendChild(li);
+
+        fragment.appendChild(li);
       });
+
+      listEl.appendChild(fragment);
     } else {
       const viewWinningBtn = document.getElementById('view-winning-btn');
       if (viewWinningBtn) viewWinningBtn.style.display = 'none';
       listEl.innerHTML = '<li style="border:none; justify-content:center;">No scores today!</li>';
     }
-  } catch (e) {
-    console.error("Error loading scores", e);
+  } catch (err) {
+    console.error('loadLeaderboard: failed to load scores.', err);
     listEl.innerHTML = '<li style="border:none; justify-content:center;">Error loading leaderboard.</li>';
   }
 }
