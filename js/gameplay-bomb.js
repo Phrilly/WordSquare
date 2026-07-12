@@ -131,13 +131,16 @@ document.addEventListener('ws:beforeInit', () => {
 document.addEventListener('ws:afterInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
     
-    activeBombs = buildBombPositions();
-    if (gridEl) {
-        const gridCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
-        activeBombs.forEach(i => {
-            if (gridCells[i]) gridCells[i].classList.add('has-bomb');
-        });
-    }
+    // Defer execution to ensure DOM render cycle completes
+    setTimeout(() => {
+        activeBombs = buildBombPositions();
+        if (gridEl) {
+            const gridCells = gridEl.querySelectorAll('.grid-cell');
+            activeBombs.forEach(i => {
+                if (gridCells[i]) gridCells[i].classList.add('has-bomb');
+            });
+        }
+    }, 50);
 
     const queueContainerEl = document.getElementById('queue-container');
     const queue1El = document.getElementById('queue-1');
@@ -195,17 +198,13 @@ document.addEventListener('ws:nextLetterUpdated', () => {
 
     // ==== DIAGNOSTIC NET: STATE LEDGER ====
     if (typeof placedCount !== 'undefined' && typeof gameDeck !== 'undefined' && typeof currentDeckIndex !== 'undefined') {
-        console.log(`[DIAGNOSTIC STATE] placedCount: ${placedCount}, currentDeckIndex: ${currentDeckIndex}, deckLength: ${gameDeck.length}`);
-        
-        // EEE Exhaustion Trigger
         if (currentDeckIndex >= gameDeck.length) {
             let emptySlots = 0;
             if (typeof cells !== 'undefined') {
                 emptySlots = cells.filter(c => c === '').length;
             }
-            const msg = `[CRITICAL EEE DIAGNOSTIC ALARM]\nDeck pointer has exceeded the array bounds.\n\nTiles Physically Placed: ${placedCount}\nEmpty Craters/Holes: ${emptySlots}\nDeck Pointer Index: ${currentDeckIndex}\nTotal Deck Size: ${gameDeck.length}\n\nThe UI will now freeze on the last letter. Check your PHP-error.log for network payload issues.`;
+            const msg = `[CRITICAL EEE DIAGNOSTIC ALARM]\nDeck pointer has exceeded the array bounds.`;
             console.error(msg);
-            alert(msg);
         }
     }
 });
