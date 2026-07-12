@@ -26,7 +26,7 @@ function normaliseInitials(?string $initials): string
 function normaliseGridString(?string $grid): string
 {
     $grid = trim((string)$grid);
-    $grid = preg_replace('/[^A-Za-z]/', '', $grid) ?? '';
+    $grid = preg_replace('/[^A-Za-z\-]/', '', $grid) ?? '';
     return substr($grid, 0, 25);
 }
 
