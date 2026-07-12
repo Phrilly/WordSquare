@@ -144,7 +144,18 @@ function triggerEndGame() {
 }
 
 function setNextLetter() {
-  if (currentDeckIndex >= gameDeck.length || placedCount >= 25) {
+  // TEST SAFEGUARD GUARD CLAUSE: Intercepts exhausted array configurations safely
+  if (currentDeckIndex >= gameDeck.length) {
+      if (placedCount < 25) {
+          console.warn("Telemetry Intervention: Structural array boundary fault managed. Executing early termination.");
+          triggerEndGame();
+          return;
+      }
+      return;
+  }
+  
+  if (placedCount >= 25) {
+      triggerEndGame();
       return;
   }
   
@@ -152,6 +163,12 @@ function setNextLetter() {
   if (nextLetterEl) {
       nextLetterEl.innerText = gameDeck[currentDeckIndex];
   }
+
+  // FIXED: Synchronizes lookahead elements safely if alternative game modes shift pointers
+  const q1El = document.getElementById('queue-1');
+  const q2El = document.getElementById('queue-2');
+  if (q1El) q1El.innerText = gameDeck[currentDeckIndex + 1] || '';
+  if (q2El) q2El.innerText = gameDeck[currentDeckIndex + 2] || '';
 
   document.dispatchEvent(new CustomEvent('ws:nextLetterUpdated'));
 }
@@ -253,11 +270,7 @@ function placeLetter(index, letter, cellEl, isWildcard) {
   placedCount++;
 
   calculateRealTimeScoreLocal();
-  if (placedCount === 25) {
-    triggerEndGame();
-  } else {
-    document.dispatchEvent(new CustomEvent('ws:tilePlaced'));
-  }
+  document.dispatchEvent(new CustomEvent('ws:tilePlaced'));
 }
 
 function undoLastMove() {
@@ -367,11 +380,7 @@ async function logGameToServer() {
 document.addEventListener('ws:tilePlaced', () => {
     if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return;
     currentDeckIndex++;
-    if (currentDeckIndex >= gameDeck.length) {
-        triggerEndGame();
-    } else {
-        setNextLetter();
-    }
+    setNextLetter();
 });
 
 document.addEventListener('ws:tileUndone', () => {

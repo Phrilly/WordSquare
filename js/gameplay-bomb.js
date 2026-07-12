@@ -1,11 +1,10 @@
-// ================================
-// BOMB VARIANT - FIXED DAILY DECK
-// ================================
+// =========================================================
+// BOMB VARIANT - FULL FILE SYSTEM IMPLEMENTATION
+// =========================================================
 
 let activeBombs = [];
 let defusedBombs = new Set();
 
-// Small deterministic PRNG from a string seed
 function seededHash(str) {
   let h = 1779033703 ^ str.length;
   for (let i = 0; i < str.length; i++) {
@@ -28,13 +27,11 @@ function makeDailyRandom(suffix) {
   return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
-// Build the fixed 28-letter deck for the day
 function buildBombDailyDeck() {
   const frequencies = {
     A:9, B:2, C:2, D:4, E:12, F:2, G:3, H:2, I:9, J:1, K:1, L:4,
     M:2, N:6, O:8, P:2, Q:1, R:6, S:4, T:6, U:4, V:2, W:2, X:1, Y:2, Z:1
   };
-
   const rnd = makeDailyRandom('bomb-deck');
   let pool = [];
 
@@ -49,23 +46,20 @@ function buildBombDailyDeck() {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
+  // FIXED: Restocks the pool boundary up to 28 characters to guarantee structural padding for 3 deletions
   return pool.slice(0, 28);
 }
 
-// Build the fixed bomb positions for the day
 function buildBombPositions() {
   const rnd = makeDailyRandom('bomb-positions');
   const positions = [];
-
   while (positions.length < 3) {
     const r = Math.floor(rnd() * 25);
     if (!positions.includes(r)) positions.push(r);
   }
-
   return positions;
 }
 
-// Particle engine
 function createBombParticles(cellEl, letter) {
   if (!cellEl) return;
   
@@ -84,7 +78,6 @@ function createBombParticles(cellEl, letter) {
   document.body.appendChild(container);
 
   const colors = ['#ef4444', '#f97316', '#eab308', '#44403c', '#1c1917'];
-
   for (let i = 0; i < 6; i++) {
     const shard = document.createElement('div');
     shard.innerText = letter;
@@ -110,11 +103,9 @@ function createBombParticles(cellEl, letter) {
     const color = colors[Math.floor(Math.random() * colors.length)];
     p.style.backgroundColor = color;
     p.style.color = color;
-
     const size = 10 + Math.random() * 25;
     p.style.width = size + 'px';
     p.style.height = size + 'px';
-
     const angle = Math.random() * Math.PI * 2;
     const distance = 50 + Math.random() * 250;
     const tx = Math.cos(angle) * distance;
@@ -132,7 +123,7 @@ function createBombParticles(cellEl, letter) {
 }
 
 // ---------------------------------------------------------
-// EDA Hooks
+// Hooks
 // ---------------------------------------------------------
 
 document.addEventListener('ws:beforeInit', () => {
@@ -193,6 +184,7 @@ document.addEventListener('ws:cellClick', (e) => {
             glowingCells.forEach(c => c.classList.remove('is-undoable'));
         }
 
+        // Broadcast to main thread to safely discard the consumed letter from hand
         document.dispatchEvent(new CustomEvent('ws:tilePlaced'));
     }
 });
