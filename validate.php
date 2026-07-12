@@ -26,7 +26,6 @@ function normaliseInitials(?string $initials): string
 function normaliseGridString(?string $grid): string
 {
     $grid = trim((string)$grid);
-    // FIX: Safely permit hyphens for burnt bomb tiles
     $grid = preg_replace('/[^A-Za-z\-]/', '', $grid) ?? '';
     return substr($grid, 0, 25);
 }
@@ -156,24 +155,22 @@ try {
     jsonResponse(['error' => 'Database connection failed.'], 500);
 }
 
+// ==== DIAGNOSTIC NET START ====
 $rawInput = file_get_contents('php://input');
+error_log("--- DIAGNOSTIC INBOUND PAYLOAD ---: " . $rawInput);
+
 $input = json_decode($rawInput, true);
+
+if (json_last_error() !== JSON_ERROR_NONE && !empty($rawInput)) {
+    $jsonErrorMsg = "JSON Decode Error: " . json_last_error_msg();
+    error_log($jsonErrorMsg);
+    jsonResponse(['error' => $jsonErrorMsg], 400);
+}
 
 if (!is_array($input)) {
     $input = [];
 }
-
-// FIX: Global Telemetry Interceptor to catch client-side UI crashes
-if (isset($input['action']) && $input['action'] === 'log_client_error') {
-    try {
-        $gridMsg = str_pad(substr($input['error_type'] ?? 'ERR', 0, 25), 25, '-');
-        $stmt = $pdo->prepare("INSERT INTO game_log (session_id, game_seed, is_daily, daily_offset, final_score, grid, created_at) VALUES ('SYS_ERROR', 0, 0, 0, -1, :grid, NOW())");
-        $stmt->execute([':grid' => $gridMsg]);
-        jsonResponse(['status' => 'error_logged']);
-    } catch (PDOException $e) {
-        jsonResponse(['error' => 'Database write failure'], 500);
-    }
-}
+// ==== DIAGNOSTIC NET END ====
 
 if (isset($input['action'])) {
     $action = (string)$input['action'];
@@ -209,8 +206,11 @@ if (isset($input['action'])) {
         $initials = normaliseInitials($input['initials'] ?? null);
         $grid = normaliseGridString($input['grid'] ?? '');
 
+        // DIAGNOSTIC FIX: Explicit length reporting
         if (strlen($grid) !== 25) {
-            jsonResponse(['error' => 'Invalid grid.'], 400);
+            $errMsg = 'Invalid grid. Expected 25, got ' . strlen($grid) . '. Grid string: [' . $grid . ']';
+            error_log("DIAGNOSTIC REJECTION save_score: " . $errMsg);
+            jsonResponse(['error' => $errMsg], 400);
         }
 
         $score = calculateGridScore($grid, $pdo);
@@ -256,8 +256,14 @@ if (isset($input['action'])) {
         $finalScore = isset($input['final_score']) ? (int)$input['final_score'] : 0;
         $grid = normaliseGridString($input['grid'] ?? '');
 
-        if (empty($sessionId) || strlen($grid) !== 25) {
-            jsonResponse(['error' => 'Invalid audit data.'], 400);
+        // DIAGNOSTIC FIX: Explicit error reporting
+        if (empty($sessionId)) {
+             jsonResponse(['error' => 'Invalid audit data: missing session id.'], 400);
+        }
+        if (strlen($grid) !== 25) {
+            $errMsg = 'Invalid audit data: grid length is ' . strlen($grid) . ' instead of 25. String: [' . $grid . ']';
+            error_log("DIAGNOSTIC REJECTION log_game: " . $errMsg);
+            jsonResponse(['error' => $errMsg], 400);
         }
 
         try {
@@ -318,5 +324,7 @@ if (isset($input['action'])) {
         }
     }
 
-    jsonResponse(['error' => 'Unknown action.'], 400);
+    $unknownMsg = 'Unknown action: ' . $action;
+    error_log("DIAGNOSTIC 400: " . $unknownMsg);
+    jsonResponse(['error' => $unknownMsg], 400);
 }

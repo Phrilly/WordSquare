@@ -91,26 +91,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: actionName })
   });
-  
   let dictData = { words: [] };
   let winnerData = { winner_initials: null };
   let hsData = { highscores: [] };
 
-  // FIX: Isolate the promises so a 400 on historical data doesn't kill the game engine
   try {
-      const res = await fetch('validate.php', fetchOpts('get_dict'));
-      if (res.ok) dictData = await res.json();
-  } catch(e) { console.warn("Dictionary fetch failed securely."); }
+    const [dictRes, winnerRes, hsRes] = await Promise.all([
+      fetch('validate.php', fetchOpts('get_dict')),
+      fetch('validate.php', fetchOpts('get_yesterdays_winner')),
+      fetch('validate.php', fetchOpts('get_highscores'))
+    ]);
+    
+    // DIAGNOSTIC FIX: Extract raw payload text on failure before UI deadlocks
+    if (!dictRes.ok) {
+        const txt = await dictRes.text();
+        console.error("DIAGNOSTIC 400 get_dict:", txt);
+        alert("API ERROR: get_dict returned " + dictRes.status + "\n" + txt);
+    } else {
+        dictData = await dictRes.json();
+    }
 
-  try {
-      const res = await fetch('validate.php', fetchOpts('get_yesterdays_winner'));
-      if (res.ok) winnerData = await res.json();
-  } catch(e) { console.warn("Yesterday winner fetch failed securely."); }
+    if (!winnerRes.ok) {
+        const txt = await winnerRes.text();
+        console.error("DIAGNOSTIC 400 get_yesterdays_winner:", txt);
+        alert("API ERROR: get_yesterdays_winner returned " + winnerRes.status + "\n" + txt);
+    } else {
+        winnerData = await winnerRes.json();
+    }
 
-  try {
-      const res = await fetch('validate.php', fetchOpts('get_highscores'));
-      if (res.ok) hsData = await res.json();
-  } catch(e) { console.warn("Highscore fetch failed securely."); }
+    if (!hsRes.ok) {
+        const txt = await hsRes.text();
+        console.error("DIAGNOSTIC 400 get_highscores:", txt);
+        alert("API ERROR: get_highscores returned " + hsRes.status + "\n" + txt);
+    } else {
+        hsData = await hsRes.json();
+    }
+
+  } catch (err) {
+    console.error("Fetch phase failed:", err);
+    alert("Network Fetch Phase crashed completely. Check console.");
+  }
 
   // 4. Safely populate the global dictionary for scoring logic
   if (dictData && dictData.words && dictData.words.length > 0) {

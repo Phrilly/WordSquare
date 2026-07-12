@@ -1,6 +1,6 @@
-// ================================
-// BOMB VARIANT - DYNAMIC RESTOCK
-// ================================
+// ==========================================
+// BOMB VARIANT - DIAGNOSTIC EEE TRAP BUILD
+// ==========================================
 
 let activeBombs = [];
 let defusedBombs = new Set();
@@ -27,15 +27,28 @@ function makeDailyRandom(suffix) {
   return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
-// FIX: Dynamic Queue Restock Logic
-// Rather than overwriting the 25-tile array, we dynamically generate a single replacement tile when a bomb is defused.
-function getRestockLetter() {
-  const masterBag = "AAAAAAAEEEEEEEEEEIIIIIOOOOOUUUSSSSRRRRRRRRTTTTTTTTNNNNNNNLLLLLLDDDDDBBCCCCFFGGGHHHJKMMMMPPPQVVWWXYYZ";
-  const rnd = makeDailyRandom('restock-' + defusedBombs.size);
-  return masterBag[Math.floor(rnd() * masterBag.length)];
+function buildBombDailyDeck() {
+  const frequencies = {
+    A:9, B:2, C:2, D:4, E:12, F:2, G:3, H:2, I:9, J:1, K:1, L:4,
+    M:2, N:6, O:8, P:2, Q:1, R:6, S:4, T:6, U:4, V:2, W:2, X:1, Y:2, Z:1
+  };
+  const rnd = makeDailyRandom('bomb-deck');
+  let pool = [];
+
+  for (const [letter, count] of Object.entries(frequencies)) {
+    for (let i = 0; i < count; i++) {
+      pool.push(letter);
+    }
+  }
+
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  return pool.slice(0, 25);
 }
 
-// Build the fixed bomb positions for the day
 function buildBombPositions() {
   const rnd = makeDailyRandom('bomb-positions');
   const positions = [];
@@ -46,7 +59,6 @@ function buildBombPositions() {
   return positions;
 }
 
-// Particle engine
 function createBombParticles(cellEl, letter) {
   if (!cellEl) return;
   
@@ -109,12 +121,9 @@ function createBombParticles(cellEl, letter) {
   setTimeout(() => { if (container) container.remove(); }, 1500);
 }
 
-// ---------------------------------------------------------
-// EDA Hooks
-// ---------------------------------------------------------
-
 document.addEventListener('ws:beforeInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+    gameDeck = buildBombDailyDeck();
     activeBombs = [];
     defusedBombs.clear();
 });
@@ -149,10 +158,6 @@ document.addEventListener('ws:cellClick', (e) => {
         e.preventDefault(); 
 
         defusedBombs.add(idx);
-        
-        // FIX: The core issue resolution. Directly restock the queue length to prevent 'EEE' freezing at 25.
-        gameDeck.push(getRestockLetter());
-        
         const nextLetterEl = document.getElementById('next-letter');
         const letterToBurn = nextLetterEl ? nextLetterEl.innerText : '';
 
@@ -187,4 +192,20 @@ document.addEventListener('ws:nextLetterUpdated', () => {
     if (queueContainerEl) queueContainerEl.classList.remove('is-active');
     if (queue1El) queue1El.classList.remove('is-active');
     if (queue2El) queue2El.classList.remove('is-active');
+
+    // ==== DIAGNOSTIC NET: STATE LEDGER ====
+    if (typeof placedCount !== 'undefined' && typeof gameDeck !== 'undefined' && typeof currentDeckIndex !== 'undefined') {
+        console.log(`[DIAGNOSTIC STATE] placedCount: ${placedCount}, currentDeckIndex: ${currentDeckIndex}, deckLength: ${gameDeck.length}`);
+        
+        // EEE Exhaustion Trigger
+        if (currentDeckIndex >= gameDeck.length) {
+            let emptySlots = 0;
+            if (typeof cells !== 'undefined') {
+                emptySlots = cells.filter(c => c === '').length;
+            }
+            const msg = `[CRITICAL EEE DIAGNOSTIC ALARM]\nDeck pointer has exceeded the array bounds.\n\nTiles Physically Placed: ${placedCount}\nEmpty Craters/Holes: ${emptySlots}\nDeck Pointer Index: ${currentDeckIndex}\nTotal Deck Size: ${gameDeck.length}\n\nThe UI will now freeze on the last letter. Check your PHP-error.log for network payload issues.`;
+            console.error(msg);
+            alert(msg);
+        }
+    }
 });
