@@ -93,7 +93,20 @@ function autoVer($url) {
   <div class="top-bar">
     <div id="left-header" title="Click to open wildcard picker">
       <span id="header-label">Next:</span>
-      <span id="next-letter"></span>
+      
+      <div id="queue-container" class="queue-container">
+        <span id="next-letter"></span>
+        <span class="queued-letter" id="queue-1"></span>
+        <span class="queued-letter" id="queue-2"></span>
+      </div>
+
+      <div id="scrabble-tray" class="scrabble-tray" style="display: none;">
+        <div class="tray-cell" data-index="0"></div>
+        <div class="tray-cell" data-index="1"></div>
+        <div class="tray-cell" data-index="2"></div>
+        <div class="tray-cell" data-index="3"></div>
+        <div class="tray-cell" data-index="4"></div>
+      </div>
     </div>
     <div id="score">0</div>
   </div>
@@ -152,11 +165,8 @@ function autoVer($url) {
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>
   <script src="<?= autoVer('js/render.js') ?>" defer></script>
-  
   <script src="<?= autoVer('js/gameplay.js') ?>" defer></script>
-  
   <script src="<?= autoVer('js/gameplay-bomb.js') ?>" defer></script>
-  
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
   <script src="<?= autoVer('js/ai.js') ?>" defer></script>
   <script src="<?= autoVer('js/startup.js') ?>" defer></script>

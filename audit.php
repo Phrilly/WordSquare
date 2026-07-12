@@ -5,6 +5,30 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 ini_set('error_log', __DIR__ . '/php-error.log');
 
+// NEW: Catch Client-Side Telemetry Errors
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput ?: '', true);
+if (is_array($input) && isset($input['action']) && $input['action'] === 'log_client_error') {
+    if (file_exists(__DIR__ . '/config.php')) {
+        require_once __DIR__ . '/config.php';
+        if (isset($host, $dbname, $user, $pass)) {
+            try {
+                $pdo = new PDO("mysql:host={$host};dbname={$dbname};charset=utf8mb4", $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                // Safely pad/truncate the error payload to fit within the 25-character grid column limitation
+                $gridMsg = str_pad(substr($input['error_type'] ?? 'ERR', 0, 25), 25, '-');
+                
+                $stmt = $pdo->prepare("INSERT INTO game_log (session_id, game_seed, is_daily, daily_offset, final_score, grid, created_at) VALUES (:session_id, 0, 0, 0, -1, :grid, NOW())");
+                $stmt->execute([':session_id' => 'SYS_ERROR', ':grid' => $gridMsg]);
+            } catch (PDOException $e) {
+                error_log("Telemetry Insertion Failed: " . $e->getMessage());
+            }
+        }
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error_logged']);
+    exit;
+}
+
 $logs = [];
 $error = null;
 
@@ -12,7 +36,6 @@ if (!file_exists(__DIR__ . '/config.php')) {
     $error = 'Configuration file (config.php) is missing.';
 } else {
     require_once __DIR__ . '/config.php';
-
     if (!isset($host, $dbname, $user, $pass)) {
         $error = 'Database configuration variables are missing in config.php.';
     } else {
@@ -26,7 +49,6 @@ if (!file_exists(__DIR__ . '/config.php')) {
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 ]
             );
-
             $stmt = $pdo->query("
                 SELECT session_id, game_seed, is_daily, daily_offset, final_score, grid, created_at
                 FROM game_log

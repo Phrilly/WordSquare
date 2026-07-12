@@ -6,7 +6,6 @@ function triggerMiniWinnerBurst() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const maxDim = Math.max(window.innerWidth, window.innerHeight);
   const fragment = document.createDocumentFragment();
-  
   for (let i = 0; i < 150; i++) {
     const p = document.createElement('div');
     p.className = 'particle mega-burst' + (Math.random() > 0.5 ? ' alt' : '');
@@ -29,14 +28,12 @@ function showWinnerOverlay(initials) {
   const initialsBox = document.getElementById('winner-initials');
   
   if (!overlay || !initialsBox) return;
-  
   initialsBox.textContent = initials;
   overlay.style.display = 'flex';
   
   // Force a browser reflow to guarantee CSS transitions fire
   void overlay.offsetWidth; 
   overlay.classList.add('active');
-  
   triggerMiniWinnerBurst();
   
   setTimeout(() => {
@@ -87,14 +84,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Unconditional assignment for session ID
   sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
+  
   // 3. Perform concurrent API fetches securely
   const fetchOpts = (actionName) => ({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: actionName })
   });
-
   let dictData = { words: [] };
   let winnerData = { winner_initials: null };
   let hsData = { highscores: [] };
@@ -122,13 +118,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.warn("Word Square Engine: Dictionary returned empty.");
   }
 
-  // 5. Initialize the main game state
+  // 5. Pre-fetch and render leaderboard values inside the UI before unveiling screens
+  if (typeof loadLeaderboard === 'function') {
+      await loadLeaderboard();
+  }
+
+  // 6. Initialize the main game state safely
   try {
     if (typeof initGame === 'function') initGame();
   } catch (e) {
     console.error("initGame failed:", e);
   }
   
+  // SEQUENCE ENFORCEMENT: Only drop the loading mask here
   const loadingScreen = document.getElementById('loading-screen');
   if (loadingScreen) {
     loadingScreen.style.display = 'none';
@@ -138,10 +140,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     showWinnerOverlay(winnerData.winner_initials);
   }
 
-  // 6. Build the Opening Screen safely
+  // 7. Build the Opening Screen safely
   const openingScreen = document.getElementById('opening-screen');
   const openingGrid = document.getElementById('opening-grid');
-  
   if (openingScreen && openingGrid) {
     openingGrid.innerHTML = '';
     let highscores = (hsData && Array.isArray(hsData.highscores)) ? hsData.highscores : [];
@@ -155,7 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (r === 0 && scoreData) rankCell.classList.add('top-rank');
         rankCell.textContent = scoreData ? (r + 1).toString() : '';
         openingGrid.appendChild(rankCell);
-        
         let initials = scoreData ? String(scoreData.initials || '---').substring(0,3).padEnd(3, ' ') : '   ';
         for (let i = 0; i < 3; i++) {
           let c = document.createElement('div');
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     } else {
-      // 7. Render "NO SCORES YET" fallback grid
+      // 8. Render "NO SCORES YET" fallback grid
       const noScoresGrid = [
         " ", " ", " ", " ", " ", " ", " ", " ",
         " ", " ", " ", " ", "S", " ", " ", " ",
@@ -197,7 +197,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     openingScreen.style.display = 'flex';
-    
     const playBtn = document.getElementById('play-btn-tiles');
     if (playBtn) {
       playBtn.addEventListener('click', () => {

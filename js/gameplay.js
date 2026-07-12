@@ -1,3 +1,22 @@
+window.addEventListener('error', function(event) {
+    const errorPayload = {
+        action: 'log_client_error',
+        error_type: event.error ? event.error.name : 'UnknownError',
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        stack_trace: event.error ? event.error.stack : 'No stack trace available',
+        url: window.location.href
+    };
+    fetch('audit.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorPayload)
+    }).catch(e => console.error('Silent Telemetry Failure:', e));
+});
+
+let dailySect = null;
+let nonDailySect = null;
 let lastPlacedInfo = null;
 let isGameOver = false;
 
@@ -29,7 +48,6 @@ function initGame() {
   }
 
   document.dispatchEvent(new CustomEvent('ws:beforeInit'));
-
   if (scoreEl) scoreEl.innerText = '0';
   const headerLabelEl = document.getElementById('header-label');
   if (headerLabelEl) headerLabelEl.innerText = 'Next:';
@@ -42,7 +60,6 @@ function initGame() {
   if (bestBoardModal) bestBoardModal.classList.remove('active');
 
   if (topBarEl) topBarEl.style.opacity = '1';
-
   for (let i = 0; i < 25; i++) {
     const cell = document.createElement('div');
     cell.className = 'grid-cell';
@@ -58,14 +75,12 @@ function initGame() {
   if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
   
   document.dispatchEvent(new CustomEvent('ws:afterInit'));
-  
   setNextLetter();
 }
 
 function triggerEndGame() {
     if (isGameOver) return;
     isGameOver = true;
-
     if (lastPlacedInfo) {
         const oldCell = document.querySelector(`.grid-cell[data-index='${lastPlacedInfo.index}']`);
         if (oldCell) oldCell.classList.remove('is-undoable');
@@ -78,20 +93,26 @@ function triggerEndGame() {
     const leftHeaderEl = document.getElementById('left-header');
     if (leftHeaderEl) leftHeaderEl.title = '';
     
-    if (topBarEl) topBarEl.style.opacity = '0';
+    if (typeof topBarEl !== 'undefined' && topBarEl) topBarEl.style.opacity = '0';
 
     if (typeof logGameToServer === 'function') logGameToServer();
 
     const finalScoreEl = document.getElementById('final-score-display');
     if (finalScoreEl) finalScoreEl.innerText = currentScore;
 
-    if (isCurrentGameDaily) {
-      const dailySect = document.getElementById('daily-save-section');
-      const nonDailySect = document.getElementById('non-daily-section');
-      if (dailySect) dailySect.hidden = false;
-      if (nonDailySect) nonDailySect.hidden = true;
+    dailySect = document.getElementById('daily-save-section');
+    nonDailySect = document.getElementById('non-daily-section');
 
-      if (initialsInput) {
+    if (isCurrentGameDaily) {
+      if (dailySect) {
+          dailySect.hidden = false;
+          dailySect.style.display = 'block';
+      }
+      if (nonDailySect) {
+          nonDailySect.hidden = true;
+          nonDailySect.style.display = 'none';
+      }
+      if (typeof initialsInput !== 'undefined' && initialsInput) {
           initialsInput.value = '';
           initialsInput.focus();
       }
@@ -102,15 +123,23 @@ function triggerEndGame() {
       if (t1) t1.innerText = '';
       if (t2) t2.innerText = '';
       if (t3) t3.innerText = '';
-
-      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
     } else {
-      const dailySect = document.getElementById('daily-save-section');
-      const nonDailySect = document.getElementById('non-daily-section');
-      if (dailySect) dailySect.hidden = true;
-      if (nonDailySect) nonDailySect.hidden = false;
-      
-      if (highscoreEntryModal) highscoreEntryModal.classList.add('active');
+      if (dailySect) {
+          dailySect.hidden = true;
+          dailySect.style.display = 'none';
+      }
+      if (nonDailySect) {
+          nonDailySect.hidden = false;
+          nonDailySect.style.display = 'block';
+      }
+    }
+    
+    if (typeof highscoreEntryModal !== 'undefined' && highscoreEntryModal) {
+        highscoreEntryModal.classList.add('active');
+    }
+
+    if (typeof loadLeaderboard === 'function') {
+        loadLeaderboard();
     }
 }
 
@@ -129,12 +158,10 @@ function setNextLetter() {
 
 function handleHoverEnter(index, cellEl) {
   if (cells[index] !== '' || placedCount >= 25 || isGameOver) return;
-  
   let letter = '';
   
   const previewEvent = new CustomEvent('ws:getHoverLetter', { detail: { letter: '' } });
   document.dispatchEvent(previewEvent);
-  
   if (previewEvent.detail.letter !== '') {
       letter = previewEvent.detail.letter;
   } else {
@@ -153,12 +180,10 @@ function handleHoverEnter(index, cellEl) {
   newWords.forEach(w => {
     if (w.length > maxLen) maxLen = w.length;
   });
-
   const hoverEvent = new CustomEvent('ws:applyHover', {
       detail: { cellEl: cellEl, maxLen: maxLen, newWords: newWords },
       cancelable: true
   });
-
   if (!document.dispatchEvent(hoverEvent)) return;
 
   if (maxLen === 3) cellEl.classList.add('hover-3');
@@ -172,7 +197,6 @@ function handleHoverLeave(cellEl) {
 
 function handleCellClick(index, cellEl) {
   if (isGameOver || placedCount >= 25) return;
-  
   if (cells[index] !== '') {
       if (lastPlacedInfo && lastPlacedInfo.index === index) {
           undoLastMove();
@@ -184,7 +208,6 @@ function handleCellClick(index, cellEl) {
       detail: { index: index, cellEl: cellEl }, 
       cancelable: true 
   });
-  
   if (!document.dispatchEvent(clickEvent)) {
       return; 
   }
@@ -213,11 +236,9 @@ function placeLetter(index, letter, cellEl, isWildcard) {
 
   cells[index] = letter;
   wildcardState[index] = isWildcard;
-
   if (cellEl) {
       cellEl.innerText = letter;
-      cellEl.dataset.letter = letter; 
-
+      cellEl.dataset.letter = letter;
       if (isWildcard) {
         cellEl.classList.add('is-wildcard');
       }
@@ -232,7 +253,6 @@ function placeLetter(index, letter, cellEl, isWildcard) {
   placedCount++;
 
   calculateRealTimeScoreLocal();
-  
   if (placedCount === 25) {
     triggerEndGame();
   } else {
@@ -251,7 +271,6 @@ function undoLastMove() {
     cells[index] = '';
     wildcardState[index] = false;
     placedCount--;
-
     if (isWildcard) {
         usedWildcards.delete(letter);
     }
@@ -276,14 +295,12 @@ function selectWildcard(letter) {
   if (usedWildcards.has(letter) && letter !== 'Cancel') return;
 
   if (alphabetModal) alphabetModal.classList.remove('active');
-
   if (letter === 'Cancel') {
     pendingCellIndex = null;
     return;
   }
 
   usedWildcards.add(letter);
-
   if (pendingCellIndex === -1) {
     const nextLetterEl = document.getElementById('next-letter');
     if (nextLetterEl) nextLetterEl.innerText = letter;
@@ -303,18 +320,15 @@ function calculateRealTimeScoreLocal() {
 
   const validWords = findValidWordsLocalArray(cells);
   const groupedData = buildGroupedWordData(validWords);
-
   currentScore = (groupedData.display[3].length * 1) + 
                  (groupedData.display[4].length * 5) + 
                  (groupedData.display[5].length * 20);
-
   groupedData.display[5].forEach(displayStr => {
     if (!explodedWords.has(displayStr)) {
       if (typeof triggerExplosion === 'function') triggerExplosion(false);
       explodedWords.add(displayStr);
     }
   });
-
   if (scoreEl) scoreEl.innerText = currentScore;
   if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
   if (typeof applyColorsToSpecificGrid === 'function' && gridEl) {
