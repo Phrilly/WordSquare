@@ -30,6 +30,14 @@ function autoVer($url) {
   <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
   
   <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
+
+  <script>
+    window.GAME_CONFIG = {
+      isBombDay: true,
+      isLookaheadDay: false,
+      isScrabbleDay: false
+    };
+  </script>
   
   <style>
     .back-arrow {
