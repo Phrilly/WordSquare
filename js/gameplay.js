@@ -1,5 +1,8 @@
 'use strict';
-
+let dailySect = null;
+let nonDailySect = null;
+let lastPlacedInfo = null;
+let isGameOver = false;
 const MAX_TELEMETRY_ERRORS_PER_SESSION = 5;
 let _telemetryErrorCount = 0;
 let _cellElements = [];
