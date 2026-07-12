@@ -138,9 +138,6 @@ function triggerEndGame() {
         highscoreEntryModal.classList.add('active');
     }
 
-    if (typeof loadLeaderboard === 'function') {
-        loadLeaderboard();
-    }
 }
 
 function setNextLetter() {
