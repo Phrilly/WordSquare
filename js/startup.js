@@ -214,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof gameDictionary !== 'undefined') {
       gameDictionary.clear();
       dictData.words.forEach(w => gameDictionary.add(w));
+      document.dispatchEvent(new CustomEvent('ws:dictionaryLoaded'));
     }
   } else {
     console.warn("Word Square Engine: Dictionary returned empty.");

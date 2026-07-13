@@ -69,6 +69,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   <link rel="stylesheet" href="<?= autoVer('css/effects.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/opening.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/tryit.css') ?>">
   
   <?php if ($isBombDay): ?>
   <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
@@ -237,6 +238,30 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
     </div>
   </div>
 
+  <div id="try-it-panel" class="try-it-panel" role="group" aria-label="Try words">
+    <div class="try-it-header">TRY IT!</div>
+
+    <div class="try-row" id="try-forward-row">
+      <div class="try-row-head">
+        <span class="try-row-label">Forward</span>
+        <span id="try-forward-status" class="try-row-status">Type 3-5 letters</span>
+      </div>
+      <div class="try-tiles" id="try-forward-tiles" aria-label="Forward word preview"></div>
+    </div>
+
+    <div class="try-row" id="try-reverse-row">
+      <div class="try-row-head">
+        <span class="try-row-label">Mirror (Reverse)</span>
+        <span id="try-reverse-status" class="try-row-status">Type 3-5 letters</span>
+      </div>
+      <div class="try-tiles" id="try-reverse-tiles" aria-label="Reverse word preview"></div>
+    </div>
+
+    <div class="try-it-hint" id="try-it-hint">Type letters on your keyboard. Backspace deletes.</div>
+
+    <input id="try-it-input" class="try-it-input" type="text" inputmode="latin" autocomplete="off" maxlength="5" aria-label="Type up to 5 letters to test dictionary words">
+  </div>
+
   <div class="version-tag">Version Dynamic Auto-Versioning</div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
@@ -263,6 +288,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
   <script src="<?= autoVer('js/ai.js') ?>" defer></script>
   <script src="<?= autoVer('js/startup.js') ?>" defer></script>
+  <script src="<?= autoVer('js/try-it.js') ?>" defer></script>
   <script src="<?= autoVer('js/events.js') ?>" defer></script>
 </body>
 </html>
