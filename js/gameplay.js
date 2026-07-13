@@ -20,6 +20,30 @@ let nonDailySect = null;
 let lastPlacedInfo = null;
 let isGameOver = false;
 
+function syncDefaultQueueUI() {
+  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isLookaheadDay)) {
+    return;
+  }
+
+  const nextLetterEl = document.getElementById('next-letter');
+  const queueContainerEl = document.getElementById('queue-container');
+  const queue1El = document.getElementById('queue-1');
+  const queue2El = document.getElementById('queue-2');
+
+  if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
+  if (queueContainerEl) queueContainerEl.classList.add('is-active');
+
+  if (queue1El) {
+    if ((queue1El.innerText || '').trim() !== '') queue1El.classList.add('is-active');
+    else queue1El.classList.remove('is-active');
+  }
+
+  if (queue2El) {
+    if ((queue2El.innerText || '').trim() !== '') queue2El.classList.add('is-active');
+    else queue2El.classList.remove('is-active');
+  }
+}
+
 function initGame() {
   if (gridEl) {
       const existingCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
@@ -185,6 +209,8 @@ function setNextLetter() {
   const q2El = document.getElementById('queue-2');
   if (q1El) q1El.innerText = gameDeck[currentDeckIndex + 1] || '';
   if (q2El) q2El.innerText = gameDeck[currentDeckIndex + 2] || '';
+
+  syncDefaultQueueUI();
 
   document.dispatchEvent(new CustomEvent('ws:nextLetterUpdated'));
 }
