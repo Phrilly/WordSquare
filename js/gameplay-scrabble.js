@@ -213,6 +213,16 @@ document.addEventListener('ws:tilePlaced', () => {
     }
 
     renderScrabbleTray();
+
+    if (placedCount >= 25) {
+        if (typeof triggerEndGame === 'function') triggerEndGame();
+        return;
+    }
+
+    const hasRemainingTrayLetters = scrabbleTray.some(letter => letter !== '');
+    if (!hasRemainingTrayLetters && typeof triggerEndGame === 'function') {
+        triggerEndGame();
+    }
 });
 
 // Rewind Scrabble Hand
