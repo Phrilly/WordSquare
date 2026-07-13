@@ -103,6 +103,9 @@ function initGame() {
 
   const leftHeaderEl = document.getElementById('left-header');
   if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
+
+  if (topBarEl) topBarEl.classList.remove('scrabble-mode');
+  if (headerLabelEl) headerLabelEl.style.display = '';
   
   document.dispatchEvent(new CustomEvent('ws:afterInit'));
   setNextLetter();

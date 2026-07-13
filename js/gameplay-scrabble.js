@@ -129,9 +129,16 @@ document.addEventListener('ws:afterInit', () => {
 
     const scrabbleTrayEl = document.getElementById('scrabble-tray');
     if (scrabbleTrayEl) scrabbleTrayEl.style.display = 'flex';
+
+    if (typeof topBarEl !== 'undefined' && topBarEl) {
+        topBarEl.classList.add('scrabble-mode');
+    }
     
     const headerLabelEl = document.getElementById('header-label');
-    if (headerLabelEl) headerLabelEl.innerText = 'Hand:';
+    if (headerLabelEl) {
+        headerLabelEl.innerText = '';
+        headerLabelEl.style.display = 'none';
+    }
 
     if (gridEl) {
         const gridCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');

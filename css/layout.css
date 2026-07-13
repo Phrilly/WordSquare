@@ -82,8 +82,8 @@
 #queue-1 {
   background-color: #cbd5e1; /* Dimmer silver */
   color: #475569;
-  transform: scale(0.75);
-  opacity: 0.85;
+  transform: scale(0.9);
+  opacity: 0.95;
   box-shadow:
     inset 2px 2px 4px rgba(255, 255, 255, 0.6),
     inset -2px -2px 4px rgba(0, 0, 0, 0.15),
@@ -96,8 +96,8 @@
 #queue-2 {
   background-color: #94a3b8; /* Darker slate */
   color: #334155;
-  transform: scale(0.55);
-  opacity: 0.75;
+  transform: scale(0.82);
+  opacity: 0.9;
   box-shadow:
     inset 1px 1px 3px rgba(255, 255, 255, 0.4),
     inset -1px -1px 3px rgba(0, 0, 0, 0.2),

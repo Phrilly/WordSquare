@@ -5,9 +5,23 @@
 .scrabble-tray {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 12px;
+  gap: 8px;
+  margin-left: 0;
   position: relative;
+}
+
+.top-bar.scrabble-mode {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.top-bar.scrabble-mode #left-header {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-bar.scrabble-mode #score {
+  margin-left: auto;
 }
 
 .scrabble-tray.needs-selection {
@@ -37,11 +51,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: clamp(30px, calc(var(--game-size) * 0.11), 50px);
-  height: clamp(30px, calc(var(--game-size) * 0.11), 50px);
+  width: clamp(34px, calc(var(--game-size) * 0.12), 56px);
+  height: clamp(34px, calc(var(--game-size) * 0.12), 56px);
   font-family: Arial, sans-serif;
   font-weight: bold;
-  font-size: clamp(20px, calc(var(--game-size) * 0.08), 36px);
+  font-size: clamp(22px, calc(var(--game-size) * 0.085), 38px);
   background-color: #fdf6e3;
   color: #1a1a1a;
   border-radius: 6px;
@@ -156,3 +170,23 @@
 .grid-cell[data-letter="X"]::after, .tray-cell[data-letter="X"]::after { content: "8"; }
 .grid-cell[data-letter="Y"]::after, .tray-cell[data-letter="Y"]::after { content: "4"; }
 .grid-cell[data-letter="Z"]::after, .tray-cell[data-letter="Z"]::after { content: "10"; }
+
+@media (max-width: 700px) {
+  .top-bar.scrabble-mode {
+    gap: 6px;
+  }
+
+  .top-bar.scrabble-mode #score {
+    padding: 0 10px;
+  }
+
+  .top-bar.scrabble-mode .scrabble-tray {
+    gap: 6px;
+  }
+
+  .top-bar.scrabble-mode .tray-cell {
+    width: clamp(30px, 9.2vw, 42px);
+    height: clamp(30px, 9.2vw, 42px);
+    font-size: clamp(20px, 5.8vw, 30px);
+  }
+}
