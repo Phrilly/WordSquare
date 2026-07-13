@@ -7,7 +7,10 @@ async function runAIOptimizerOnBestGrid(localGridString) {
     const response = await fetch('validate.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_highscores' })
+      body: JSON.stringify({
+        action: 'get_highscores',
+        mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic'
+      })
     });
     const data = await response.json();
     

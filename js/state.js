@@ -21,6 +21,13 @@ let dailyOffset = 0;
 let dailySeed = 0;
 let sessionId = '';
 
+function getCurrentGameMode() {
+	if (window.GAME_CONFIG && window.GAME_CONFIG.isBombDay) return 'bomb';
+	if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return 'scrabble';
+	if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay) return 'lookahead';
+	return 'classic';
+}
+
 const gridEl = document.getElementById('grid');
 const headerLabelEl = document.getElementById('header-label');
 const queueContainerEl = document.getElementById('queue-container');

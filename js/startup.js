@@ -162,7 +162,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const [dictRes, winnerRes, hsRes] = await Promise.all([
       fetch('validate.php', fetchOpts('get_dict')),
       fetch('validate.php', fetchOpts('get_yesterdays_winner')),
-      fetch('validate.php', fetchOpts('get_highscores'))
+      fetch('validate.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_highscores',
+          mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic'
+        })
+      })
     ]);
     
     // DIAGNOSTIC FIX: Extract raw payload text on failure before UI deadlocks

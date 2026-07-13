@@ -82,6 +82,7 @@ async function submitHighscore() {
       body: JSON.stringify({ 
           action: 'save_score', 
           initials: initials, 
+          mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic',
           score: typeof currentScore !== 'undefined' ? currentScore : 0, 
           grid: gridString 
       })
@@ -134,7 +135,10 @@ async function loadLeaderboard() {
     const res = await fetch('validate.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_highscores' })
+      body: JSON.stringify({
+        action: 'get_highscores',
+        mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic'
+      })
     });
     const data = await res.json();
 

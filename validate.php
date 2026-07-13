@@ -30,6 +30,13 @@ function normaliseGridString(?string $grid): string
     return substr($grid, 0, 25);
 }
 
+function normaliseMode(?string $mode): string
+{
+    $mode = strtolower(trim((string)$mode));
+    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble'];
+    return in_array($mode, $allowedModes, true) ? $mode : 'classic';
+}
+
 function getLetterAt(int $r, int $c, array $cells, int $gridSize): ?string
 {
     if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) {
@@ -39,11 +46,38 @@ function getLetterAt(int $r, int $c, array $cells, int $gridSize): ?string
     return null;
 }
 
-function calculateGridScore(string $gridString, PDO $pdo): int {
+function buildGridCells(string $gridString): array
+{
     $cells = str_split(strtoupper(trim($gridString)));
     $cells = array_map(function ($cell) {
         return preg_match('/^[A-Z]$/', $cell) ? $cell : '';
     }, $cells);
+
+    return $cells;
+}
+
+function fetchValidWords(array $candidateWords, PDO $pdo): array
+{
+    if (empty($candidateWords)) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($candidateWords), '?'));
+
+    try {
+        $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
+        $stmt->execute($candidateWords);
+        $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return array_map('strtoupper', array_filter($validWords, 'is_string'));
+    } catch (PDOException $e) {
+        error_log('validate.php scoring dictionary lookup failed: ' . $e->getMessage());
+        return [];
+    }
+}
+
+function calculateClassicGridScore(string $gridString, PDO $pdo): int
+{
+    $cells = buildGridCells($gridString);
 
     if (count($cells) !== 25) return 0;
 
@@ -84,16 +118,8 @@ function calculateGridScore(string $gridString, PDO $pdo): int {
         return 0;
     }
 
-    $placeholders = implode(',', array_fill(0, count($uniquePotentialWords), '?'));
-
-    try {
-        $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
-        $stmt->execute($uniquePotentialWords);
-        $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        $validWords = array_map('strtoupper', array_filter($validWords, 'is_string'));
-    } catch (PDOException $e) {
-        error_log('validate.php scoring dictionary lookup failed: ' . $e->getMessage());
+    $validWords = fetchValidWords($uniquePotentialWords, $pdo);
+    if (empty($validWords)) {
         return 0;
     }
 
@@ -127,6 +153,144 @@ function calculateGridScore(string $gridString, PDO $pdo): int {
     }
     
     return $score;
+}
+
+function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
+{
+    $cells = buildGridCells($gridString);
+
+    if (count($cells) !== 25) {
+        return 0;
+    }
+
+    $gridSize = 5;
+    $directions = [
+        [0, 1], [0, -1], [1, 0], [-1, 0],
+        [1, 1], [-1, -1], [-1, 1], [1, -1]
+    ];
+    $scrabbleValues = [
+        'A' => 1, 'B' => 3, 'C' => 3, 'D' => 2, 'E' => 1, 'F' => 4, 'G' => 2,
+        'H' => 4, 'I' => 1, 'J' => 8, 'K' => 5, 'L' => 1, 'M' => 3, 'N' => 1,
+        'O' => 1, 'P' => 3, 'Q' => 10, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1,
+        'V' => 4, 'W' => 4, 'X' => 8, 'Y' => 4, 'Z' => 10,
+    ];
+    $doubleLetterIndices = [5, 9, 15, 19];
+
+    $foundPaths = [];
+    $candidateWords = [];
+
+    for ($r = 0; $r < $gridSize; $r++) {
+        for ($c = 0; $c < $gridSize; $c++) {
+            foreach ($directions as $dir) {
+                $path = [];
+                $word = '';
+
+                for ($step = 0; $step < 5; $step++) {
+                    $nextRow = $r + ($dir[0] * $step);
+                    $nextCol = $c + ($dir[1] * $step);
+                    $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
+
+                    if (!$letter) {
+                        break;
+                    }
+
+                    $path[] = ($nextRow * $gridSize) + $nextCol;
+                    $word .= $letter;
+
+                    if (strlen($word) === 5) {
+                        $candidateWords[] = $word;
+                        $foundPaths[] = ['word' => $word, 'path' => $path];
+                    }
+                }
+            }
+        }
+    }
+
+    $validWords = array_flip(fetchValidWords(array_values(array_unique($candidateWords)), $pdo));
+    if (empty($validWords)) {
+        return 0;
+    }
+
+    $bestScoreForWord = [];
+
+    foreach ($foundPaths as $item) {
+        if (!isset($validWords[$item['word']])) {
+            continue;
+        }
+
+        $reversed = strrev($item['word']);
+        $key = strcmp($item['word'], $reversed) < 0 ? $item['word'] : $reversed;
+
+        $pathScore = 0;
+        foreach ($item['path'] as $idx) {
+            $letter = $cells[$idx];
+            $value = $scrabbleValues[$letter] ?? 0;
+            if (in_array($idx, $doubleLetterIndices, true)) {
+                $value *= 2;
+            }
+            $pathScore += $value;
+        }
+
+        if (!isset($bestScoreForWord[$key]) || $pathScore > $bestScoreForWord[$key]) {
+            $bestScoreForWord[$key] = $pathScore;
+        }
+    }
+
+    return array_sum($bestScoreForWord);
+}
+
+function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo): int
+{
+    if ($mode === 'scrabble') {
+        return calculateScrabbleGridScore($gridString, $pdo);
+    }
+
+    return calculateClassicGridScore($gridString, $pdo);
+}
+
+function getModeForDate(DateTimeImmutable $date): string
+{
+    $epoch = new DateTimeImmutable('2026-05-20 00:00:00', new DateTimeZone('UTC'));
+    $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
+    $daysSinceEpoch = (int) floor(($target->getTimestamp() - $epoch->getTimestamp()) / 86400);
+
+    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0) {
+        return 'bomb';
+    }
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 5 === 0) {
+        return 'scrabble';
+    }
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0) {
+        return 'lookahead';
+    }
+
+    return 'classic';
+}
+
+function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
+{
+    foreach ($rows as &$row) {
+        $grid = normaliseGridString($row['grid'] ?? '');
+        $row['score'] = calculateGridScoreForMode($grid, $mode, $pdo);
+    }
+    unset($row);
+
+    usort($rows, function (array $left, array $right): int {
+        $scoreComparison = (int)($right['score'] ?? 0) <=> (int)($left['score'] ?? 0);
+        if ($scoreComparison !== 0) {
+            return $scoreComparison;
+        }
+
+        $leftCreated = strtotime((string)($left['created_at'] ?? '')) ?: 0;
+        $rightCreated = strtotime((string)($right['created_at'] ?? '')) ?: 0;
+        if ($leftCreated !== $rightCreated) {
+            return $leftCreated <=> $rightCreated;
+        }
+
+        return ((int)($left['id'] ?? 0)) <=> ((int)($right['id'] ?? 0));
+    });
+
+    return $rows;
 }
 
 if (!file_exists(__DIR__ . '/config.php')) {
@@ -205,6 +369,7 @@ if (isset($input['action'])) {
     if ($action === 'save_score') {
         $initials = normaliseInitials($input['initials'] ?? null);
         $grid = normaliseGridString($input['grid'] ?? '');
+        $mode = normaliseMode($input['mode'] ?? null);
 
         // DIAGNOSTIC FIX: Explicit length reporting
         if (strlen($grid) !== 25) {
@@ -213,7 +378,7 @@ if (isset($input['action'])) {
             jsonResponse(['error' => $errMsg], 400);
         }
 
-        $score = calculateGridScore($grid, $pdo);
+        $score = calculateGridScoreForMode($grid, $mode, $pdo);
 
         try {
             $stmt = $pdo->prepare("
@@ -229,13 +394,13 @@ if (isset($input['action'])) {
             $newId = (int)$pdo->lastInsertId();
 
             $stmtTop = $pdo->query("
-                SELECT id
+                SELECT id, initials, score, grid, created_at
                 FROM highscores
                 WHERE DATE(created_at) = CURDATE()
-                ORDER BY score DESC, created_at ASC, id ASC
-                LIMIT 1
             ");
-            $topRow = $stmtTop->fetch();
+            $rows = $stmtTop->fetchAll();
+            $rankedRows = sortRowsByModeScore($rows, $mode, $pdo);
+            $topRow = $rankedRows[0] ?? null;
             $isTopScore = ($topRow && (int)$topRow['id'] === $newId);
 
             jsonResponse([
@@ -287,15 +452,16 @@ if (isset($input['action'])) {
     }
 
     if ($action === 'get_highscores') {
+        $mode = normaliseMode($input['mode'] ?? null);
+
         try {
             $stmt = $pdo->query("
                 SELECT id, initials, score, grid, created_at
                 FROM highscores
                 WHERE DATE(created_at) = CURDATE()
-                ORDER BY score DESC, created_at ASC, id ASC
-                LIMIT 8
             ");
             $scores = $stmt->fetchAll();
+            $scores = array_slice(sortRowsByModeScore($scores, $mode, $pdo), 0, 8);
 
             jsonResponse(['highscores' => $scores]);
         } catch (PDOException $e) {
@@ -306,14 +472,16 @@ if (isset($input['action'])) {
 
     if ($action === 'get_yesterdays_winner') {
         try {
+            $yesterday = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-1 day');
+            $mode = getModeForDate($yesterday);
             $stmt = $pdo->query("
-                SELECT initials, score, grid, created_at
+                SELECT id, initials, score, grid, created_at
                 FROM highscores
                 WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                ORDER BY score DESC, created_at ASC, id ASC
-                LIMIT 1
             ");
-            $row = $stmt->fetch();
+            $rows = $stmt->fetchAll();
+            $rankedRows = sortRowsByModeScore($rows, $mode, $pdo);
+            $row = $rankedRows[0] ?? null;
 
             jsonResponse([
                 'winner_initials' => $row ? $row['initials'] : null
