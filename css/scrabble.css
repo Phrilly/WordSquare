@@ -80,14 +80,14 @@
       inset 2px 2px 4px rgba(255, 255, 255, 1),
       inset -2px -2px 4px rgba(0, 0, 0, 0.15),
       2px 3px 5px rgba(0, 0, 0, 0.4);
-    transform: translateY(0);
+    transform: none;
   }
   50% {
     box-shadow:
       inset 2px 2px 4px rgba(255, 255, 255, 1),
       inset -2px -2px 4px rgba(0, 0, 0, 0.15),
       0 0 10px rgba(168, 194, 234, 0.7);
-    transform: translateY(-1px);
+    transform: none;
   }
 }
 
