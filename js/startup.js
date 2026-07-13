@@ -42,21 +42,84 @@ function showWinnerOverlay(initials) {
   }, BURST_DURATION - 500);
 }
 
+function updateInitialTiles(value) {
+  const normalized = String(value).toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3);
+  const t1 = document.getElementById('init-tile-1');
+  const t2 = document.getElementById('init-tile-2');
+  const t3 = document.getElementById('init-tile-3');
+  if (t1) t1.textContent = normalized[0] || '';
+  if (t2) t2.textContent = normalized[1] || '';
+  if (t3) t3.textContent = normalized[2] || '';
+}
+
+function focusInitialsInput() {
+  const initialsInput = document.getElementById('hidden-initials');
+  if (!initialsInput) return;
+  initialsInput.focus();
+  setTimeout(() => {
+    if (initialsInput) initialsInput.focus();
+  }, 50);
+}
+
 // Wrap the entire boot sequence to guarantee DOM and State are 100% loaded
 document.addEventListener('DOMContentLoaded', async () => {
   
   // 1. Safely bind event listeners by fetching elements directly
   const localInitialsInput = document.getElementById('hidden-initials');
+  const initialsWrapper = document.querySelector('.initials-wrapper');
+
+  const setWrapperFocusState = (isFocused) => {
+    if (!initialsWrapper) return;
+    initialsWrapper.classList.toggle('focused', isFocused);
+  };
+
   if (localInitialsInput) {
     localInitialsInput.addEventListener('input', (e) => {
-      const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+      const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3);
       e.target.value = val;
-      const t1 = document.getElementById('init-tile-1');
-      const t2 = document.getElementById('init-tile-2');
-      const t3 = document.getElementById('init-tile-3');
-      if (t1) t1.textContent = val[0] || '';
-      if (t2) t2.textContent = val[1] || '';
-      if (t3) t3.textContent = val[2] || '';
+      updateInitialTiles(val);
+    });
+
+    localInitialsInput.addEventListener('focus', () => setWrapperFocusState(true));
+    localInitialsInput.addEventListener('blur', () => setWrapperFocusState(false));
+    localInitialsInput.addEventListener('paste', (event) => {
+      event.preventDefault();
+      const pasted = (event.clipboardData || window.clipboardData).getData('text').toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3);
+      localInitialsInput.value = pasted;
+      localInitialsInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    if (initialsWrapper) {
+      initialsWrapper.setAttribute('tabindex', '0');
+      initialsWrapper.setAttribute('role', 'textbox');
+      initialsWrapper.setAttribute('aria-label', 'Enter your initials');
+      initialsWrapper.addEventListener('click', focusInitialsInput);
+      initialsWrapper.addEventListener('touchstart', focusInitialsInput);
+      initialsWrapper.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          focusInitialsInput();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const highscoreModal = document.getElementById('highscore-entry-modal');
+      if (!highscoreModal || !highscoreModal.classList.contains('active')) return;
+      if (!localInitialsInput) return;
+
+      if (/^[a-zA-Z]$/.test(event.key)) {
+        event.preventDefault();
+        const nextValue = (localInitialsInput.value + event.key.toUpperCase()).substring(0, 3);
+        localInitialsInput.value = nextValue;
+        localInitialsInput.dispatchEvent(new Event('input', { bubbles: true }));
+        focusInitialsInput();
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        localInitialsInput.value = localInitialsInput.value.slice(0, -1);
+        localInitialsInput.dispatchEvent(new Event('input', { bubbles: true }));
+        focusInitialsInput();
+      }
     });
   }
 

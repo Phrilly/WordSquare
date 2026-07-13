@@ -46,7 +46,9 @@ function buildBombDailyDeck() {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  return pool.slice(0, 25);
+  // Bombs consume upcoming letters without filling a grid cell, so bomb mode
+  // needs three extra draws to guarantee 25 placed letters.
+  return pool.slice(0, 28);
 }
 
 function buildBombPositions() {

@@ -115,6 +115,9 @@ function triggerEndGame() {
       if (typeof initialsInput !== 'undefined' && initialsInput) {
           initialsInput.value = '';
           initialsInput.focus();
+          setTimeout(() => {
+            if (initialsInput) initialsInput.focus();
+          }, 50);
       }
       
       const t1 = document.getElementById('init-tile-1');
@@ -136,6 +139,14 @@ function triggerEndGame() {
     
     if (typeof highscoreEntryModal !== 'undefined' && highscoreEntryModal) {
         highscoreEntryModal.classList.add('active');
+        if (typeof focusInitialsInput === 'function') {
+            focusInitialsInput();
+        } else if (typeof initialsInput !== 'undefined' && initialsInput) {
+            initialsInput.focus();
+            setTimeout(() => {
+                if (initialsInput) initialsInput.focus();
+            }, 50);
+        }
     }
 
 }

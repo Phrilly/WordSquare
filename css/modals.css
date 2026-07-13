@@ -78,6 +78,32 @@
     inset 3px 3px 5px rgba(255, 255, 255, 1),
     inset -3px -3px 5px rgba(0, 0, 0, 0.15),
     2px 3px 5px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.initial-tile.empty::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.initial-tile.active::after {
+  content: '|';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(26, 26, 26, 0.75);
+  animation: blink-caret 1.2s steps(1) infinite;
+}
+
+.initials-wrapper.focused .initial-tile.empty.active {
+  background-color: #fff9d6;
+}
+
+@keyframes blink-caret {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 /* NEW WINNER OVERLAY STYLES */
