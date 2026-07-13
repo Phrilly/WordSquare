@@ -176,6 +176,30 @@
 .grid-cell[data-letter="Y"]::after, .tray-cell[data-letter="Y"]::after { content: "4"; }
 .grid-cell[data-letter="Z"]::after, .tray-cell[data-letter="Z"]::after { content: "10"; }
 
+/* Blank wildcard tiles score 0 in Scrabble. */
+.grid-cell.is-wildcard[data-letter]::after {
+  content: "0";
+  color: #c7d7ee;
+  opacity: 0.95;
+  font-weight: 900;
+}
+
+.grid-cell.is-wildcard[data-letter]::before {
+  content: "BL";
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  font-size: clamp(8px, 1.1vw, 10px);
+  letter-spacing: 0.03em;
+  color: #dbeafe;
+  opacity: 0.9;
+  font-weight: 800;
+}
+
+.tray-cell[data-letter="?"]::after {
+  content: "0";
+}
+
 @media (max-width: 700px) {
   .top-bar.scrabble-mode {
     gap: 6px;

@@ -27,6 +27,15 @@ function makeDailyRandom(suffix) {
   return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
+function getOption1WildcardCount(rnd) {
+  const wcRoll = rnd() * 100;
+  if (wcRoll < 5) return 0;
+  if (wcRoll < 30) return 1;
+  if (wcRoll < 70) return 2;
+  if (wcRoll < 95) return 3;
+  return 4;
+}
+
 function buildBombDailyDeck() {
   const frequencies = {
     A:9, B:2, C:2, D:4, E:12, F:2, G:3, H:2, I:9, J:1, K:1, L:4,
@@ -48,7 +57,24 @@ function buildBombDailyDeck() {
 
   // Bombs consume upcoming letters without filling a grid cell, so bomb mode
   // needs three extra draws to guarantee 25 placed letters.
-  return pool.slice(0, 28);
+  const sequence = pool.slice(0, 28);
+
+  // Option 1: keep Bomb wildcard policy aligned with the base game.
+  const wildcardCount = getOption1WildcardCount(rnd);
+  const safeIndices = [];
+  for (let i = 0; i < sequence.length; i++) {
+    if (sequence[i] !== 'S' && sequence[i] !== 'Q') {
+      safeIndices.push(i);
+    }
+  }
+
+  for (let i = 0; i < wildcardCount && safeIndices.length > 0; i++) {
+    const pick = Math.floor(rnd() * safeIndices.length);
+    const idx = safeIndices.splice(pick, 1)[0];
+    sequence[idx] = '?';
+  }
+
+  return sequence;
 }
 
 function buildBombPositions() {

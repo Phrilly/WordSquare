@@ -59,6 +59,31 @@ function buildGridCells(string $gridString): array
     return $cells;
 }
 
+function buildGridCellsWithWildcardInfo(string $gridString): array
+{
+    $rawCells = str_split(trim($gridString));
+    $cells = array_map(function ($cell) {
+        if (preg_match('/^[A-Z]$/', $cell)) {
+            return ['letter' => $cell, 'is_wildcard' => false];
+        }
+        if (preg_match('/^[a-z]$/', $cell)) {
+            return ['letter' => strtoupper($cell), 'is_wildcard' => true];
+        }
+        return ['letter' => '', 'is_wildcard' => false];
+    }, $rawCells);
+
+    return $cells;
+}
+
+function getScrabbleCellAt(int $r, int $c, array $cells, int $gridSize): ?array
+{
+    if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) {
+        $idx = ($r * $gridSize) + $c;
+        return isset($cells[$idx]) && is_array($cells[$idx]) ? $cells[$idx] : null;
+    }
+    return null;
+}
+
 function fetchValidWords(array $candidateWords, PDO $pdo): array
 {
     if (empty($candidateWords)) {
@@ -160,7 +185,7 @@ function calculateClassicGridScore(string $gridString, PDO $pdo): int
 
 function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
 {
-    $cells = buildGridCells($gridString);
+    $cells = buildGridCellsWithWildcardInfo($gridString);
 
     if (count($cells) !== 25) {
         return 0;
@@ -191,7 +216,8 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
                 for ($step = 0; $step < 5; $step++) {
                     $nextRow = $r + ($dir[0] * $step);
                     $nextCol = $c + ($dir[1] * $step);
-                    $letter = getLetterAt($nextRow, $nextCol, $cells, $gridSize);
+                    $cellInfo = getScrabbleCellAt($nextRow, $nextCol, $cells, $gridSize);
+                    $letter = ($cellInfo && isset($cellInfo['letter'])) ? (string)$cellInfo['letter'] : '';
 
                     if (!$letter) {
                         break;
@@ -226,9 +252,12 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
 
         $pathScore = 0;
         foreach ($item['path'] as $idx) {
-            $letter = $cells[$idx];
-            $value = $scrabbleValues[$letter] ?? 0;
-            if (in_array($idx, $doubleLetterIndices, true)) {
+            $cellInfo = $cells[$idx] ?? ['letter' => '', 'is_wildcard' => false];
+            $letter = (string)($cellInfo['letter'] ?? '');
+            $isWildcard = (bool)($cellInfo['is_wildcard'] ?? false);
+
+            $value = $isWildcard ? 0 : ($scrabbleValues[$letter] ?? 0);
+            if (!$isWildcard && in_array($idx, $doubleLetterIndices, true)) {
                 $value *= 2;
             }
             $pathScore += $value;

@@ -37,6 +37,15 @@ function makeDailyRandom(suffix) {
   return mulberry32(seededHash(String(typeof dailySeed !== 'undefined' ? dailySeed : 0) + ':' + suffix));
 }
 
+function getOption1WildcardCount(rnd) {
+        const wcRoll = rnd() * 100;
+        if (wcRoll < 5) return 0;
+        if (wcRoll < 30) return 1;
+        if (wcRoll < 70) return 2;
+        if (wcRoll < 95) return 3;
+        return 4;
+}
+
 function buildScrabbleDeck() {
     const poolString = "AAAAAAAAABBCCODDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ";
     const pool = poolString.split('');
@@ -61,6 +70,20 @@ function buildScrabbleDeck() {
             isValid = true;
         }
     }
+    const wildcardCount = getOption1WildcardCount(rnd);
+    const safeIndices = [];
+    for (let i = 0; i < sequence.length; i++) {
+        if (sequence[i] !== 'S' && sequence[i] !== 'Q') {
+            safeIndices.push(i);
+        }
+    }
+
+    for (let i = 0; i < wildcardCount && safeIndices.length > 0; i++) {
+        const pick = Math.floor(rnd() * safeIndices.length);
+        const idx = safeIndices.splice(pick, 1)[0];
+        sequence[idx] = '?';
+    }
+
     return sequence;
 }
 
@@ -205,11 +228,14 @@ document.addEventListener('ws:cellClick', (e) => {
 
     e.preventDefault();
 
-    // Record the exact state BEFORE the tile is physically placed and refilled
-    scrabbleLastMove = {
-        trayIndex: selectedTrayIndex,
-        potAdvanced: (currentPotIndex < scrabblePot.length)
-    };
+    if (letterToPlace === '?') {
+        pendingCellIndex = e.detail.index;
+        if (typeof updateWildcardModal === 'function') updateWildcardModal();
+        if (typeof alphabetModal !== 'undefined' && alphabetModal) {
+            alphabetModal.classList.add('active');
+        }
+        return;
+    }
 
     if (typeof placeLetter === 'function') {
         placeLetter(e.detail.index, letterToPlace, e.detail.cellEl, false);
@@ -223,6 +249,12 @@ document.addEventListener('ws:tilePlaced', () => {
     if (placedTrayIndex < 0 || placedTrayIndex >= scrabbleTray.length) {
         return;
     }
+
+    // Record hand state before refill, so undo can restore exactly.
+    scrabbleLastMove = {
+        trayIndex: placedTrayIndex,
+        potAdvanced: (currentPotIndex < scrabblePot.length)
+    };
 
     if (currentPotIndex < scrabblePot.length) {
         scrabbleTray[placedTrayIndex] = scrabblePot[currentPotIndex];
@@ -314,8 +346,9 @@ document.addEventListener('ws:calculateScore', (e) => {
         let pathScore = 0;
         item.path.forEach(idx => {
             let letter = cells[idx].toUpperCase();
-            let val = SCRABBLE_VALUES[letter] || 0;
-            if (DL_INDICES.includes(idx)) {
+            const isWildcardTile = (typeof wildcardState !== 'undefined' && wildcardState[idx]);
+            let val = isWildcardTile ? 0 : (SCRABBLE_VALUES[letter] || 0);
+            if (!isWildcardTile && DL_INDICES.includes(idx)) {
                 val *= 2; 
             }
             pathScore += val;
