@@ -160,7 +160,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const [dictRes, winnerRes, hsRes] = await Promise.all([
-      fetch('validate.php', fetchOpts('get_dict')),
+      fetch('validate.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_dict',
+          mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic'
+        })
+      }),
       fetch('validate.php', fetchOpts('get_yesterdays_winner')),
       fetch('validate.php', {
         method: 'POST',
@@ -216,6 +223,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof loadLeaderboard === 'function') {
       await loadLeaderboard();
   }
+
+    const openingTitleEl = document.getElementById('opening-title');
+    if (openingTitleEl && typeof getLeaderboardTitleText === 'function') {
+      openingTitleEl.innerText = getLeaderboardTitleText();
+    }
 
   // 6. Initialize the main game state safely
   try {

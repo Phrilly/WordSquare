@@ -252,11 +252,7 @@ function handleHoverLeave(cellEl) {
 function handleCellClick(index, cellEl) {
   if (isGameOver || placedCount >= 25) return;
   if (cells[index] !== '') {
-    const isMFDMode = Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isCommonDay);
-    if (isMFDMode && lastPlacedInfo && lastPlacedInfo.index === index) {
-          undoLastMove();
-      }
-      return;
+    return;
   }
   
   const clickEvent = new CustomEvent('ws:cellClick', { 

@@ -5,16 +5,9 @@
 document.addEventListener('ws:beforeInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isCommonDay) return;
 
-    // Verify the common dictionary file loaded successfully
-    if (typeof commonDictionary !== 'undefined') {
-        
-        // Swap the global pointer. 
-        // The core engine will now automatically only recognize, highlight, and score these common words!
-        gameDictionary = commonDictionary;
-        
-        console.log("My First Dictionary Variant Active: Dictionary heavily constrained to " + gameDictionary.size + " words.");
-    } else {
-        console.warn("commonDictionary not found. Falling back to the standard global dictionary.");
+    // Dictionary is filtered server-side for mode=mfd.
+    if (typeof gameDictionary !== 'undefined' && gameDictionary && gameDictionary.size > 0) {
+        console.log("My First Dictionary Variant Active: " + gameDictionary.size + " words loaded.");
     }
 });
 

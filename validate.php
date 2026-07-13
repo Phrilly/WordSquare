@@ -33,7 +33,10 @@ function normaliseGridString(?string $grid): string
 function normaliseMode(?string $mode): string
 {
     $mode = strtolower(trim((string)$mode));
-    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble'];
+    if ($mode === 'common') {
+        $mode = 'mfd';
+    }
+    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd'];
     return in_array($mode, $allowedModes, true) ? $mode : 'classic';
 }
 
@@ -263,6 +266,9 @@ function getModeForDate(DateTimeImmutable $date): string
     if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0) {
         return 'lookahead';
     }
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 5 === 0) {
+        return 'mfd';
+    }
 
     return 'classic';
 }
@@ -340,8 +346,13 @@ if (isset($input['action'])) {
     $action = (string)$input['action'];
 
     if ($action === 'get_dict') {
+        $mode = normaliseMode($input['mode'] ?? null);
         try {
-            $stmt = $pdo->query("SELECT word FROM dictionary");
+            if ($mode === 'mfd') {
+                $stmt = $pdo->query("SELECT word FROM dictionary WHERE is_mfd = 1");
+            } else {
+                $stmt = $pdo->query("SELECT word FROM dictionary");
+            }
             $words = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
             $words = array_values(array_filter($words, function ($word) {

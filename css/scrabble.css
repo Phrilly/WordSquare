@@ -24,6 +24,11 @@
   margin-left: auto;
 }
 
+.top-bar.scrabble-mode .score-stack {
+  margin-left: auto;
+  align-items: flex-end;
+}
+
 .scrabble-tray.needs-selection {
   box-shadow: 0 0 0 2px rgba(168, 194, 234, 0.45);
   border-radius: 8px;

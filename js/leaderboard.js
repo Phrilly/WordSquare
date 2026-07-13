@@ -4,6 +4,13 @@ function showLeaderboardFromBest() {
   if (typeof topBarEl !== 'undefined' && topBarEl) topBarEl.style.opacity = '0';
 }
 
+function getModeAwareLeaderboardTitle() {
+  if (typeof getLeaderboardTitleText === 'function') {
+    return getLeaderboardTitleText();
+  }
+  return "TODAY'S HIGH SCORES";
+}
+
 function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
   if (!gridChars || gridChars.length !== 25) return;
 
@@ -103,7 +110,7 @@ async function submitHighscore() {
         lbTitle.style.color = "#FFD700";
         if (typeof triggerExplosion === 'function') triggerExplosion(true);
       } else {
-        lbTitle.innerText = "TODAY'S HIGH SCORES";
+        lbTitle.innerText = getModeAwareLeaderboardTitle();
         lbTitle.style.color = "var(--highlight)";
       }
   }
@@ -116,7 +123,7 @@ function skipToLeaderboard() {
   if (highscoreEntryModal) highscoreEntryModal.classList.remove('active');
   const lbTitle = document.getElementById('leaderboard-title');
   if (lbTitle) {
-      lbTitle.innerText = "TODAY'S HIGH SCORES";
+      lbTitle.innerText = getModeAwareLeaderboardTitle();
       lbTitle.style.color = "var(--highlight)";
   }
   loadLeaderboard();

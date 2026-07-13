@@ -22,27 +22,43 @@ $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 $isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);       // Day 0
 $isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 5 === 0); // Day 1
 $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0); // Day 2
+$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 5 === 0); // Day 3 (MFD)
 
 // DEV OVERRIDES: Strict Input Validation
 if (isset($_GET['mode'])) {
     $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
   if ($mode === 'classic') {
-    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false;
+    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false;
   } elseif ($mode === 'bomb') {
-        $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false;
+        $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false;
     } elseif ($mode === 'lookahead') {
-        $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false;
+        $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false;
     } elseif ($mode === 'scrabble') {
-        $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true;
+        $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false;
+    } elseif ($mode === 'mfd' || $mode === 'common') {
+        $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true;
     }
 }
+
+$modeDisplayName = 'Classic';
+if ($isBombDay) {
+    $modeDisplayName = 'Bomb';
+} elseif ($isScrabbleDay) {
+    $modeDisplayName = 'Scrabble';
+} elseif ($isLookaheadDay) {
+    $modeDisplayName = 'Lookahead';
+} elseif ($isCommonDay) {
+    $modeDisplayName = 'My First Dictionary';
+}
+
+$leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH SCORES";
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Word Square Classic</title>
+  <title>Word Square - <?= htmlspecialchars($modeDisplayName, ENT_QUOTES, 'UTF-8') ?></title>
   <link rel="icon" href="data:,">
 
   <link rel="stylesheet" href="<?= autoVer('css/base.css') ?>">
@@ -67,7 +83,9 @@ if (isset($_GET['mode'])) {
     window.GAME_CONFIG = {
         isBombDay: <?= json_encode($isBombDay) ?>,
         isLookaheadDay: <?= json_encode($isLookaheadDay) ?>,
-        isScrabbleDay: <?= json_encode($isScrabbleDay) ?>
+      isScrabbleDay: <?= json_encode($isScrabbleDay) ?>,
+      isCommonDay: <?= json_encode($isCommonDay) ?>,
+      modeDisplayName: <?= json_encode($modeDisplayName) ?>
     };
   </script>
 
@@ -118,8 +136,10 @@ if (isset($_GET['mode'])) {
     <div id="winner-initials" class="winner-initials"></div>
   </div>
 
+  <button class="arcade-btn mini-btn help-fab" id="open-help-btn" data-help-open="1" type="button" aria-label="Open help">HELP</button>
+
   <div id="opening-screen" class="opening-screen" style="display:none;">
-    <h1 style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;">TODAY'S HIGH SCORES</h1>
+    <h1 id="opening-title" style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;"><?= htmlspecialchars($leaderboardHeading, ENT_QUOTES, 'UTF-8') ?></h1>
     <div class="grid-container opening-grid" id="opening-grid">
       </div>
     <div class="play-button-container" id="play-btn-tiles">
@@ -151,7 +171,13 @@ if (isset($_GET['mode'])) {
       </div>
 
     </div>
-    <div id="score">0</div>
+    <div class="score-stack">
+      <div class="score-meta-row">
+        <div id="mode-badge" class="mode-badge"><?= htmlspecialchars(strtoupper($modeDisplayName), ENT_QUOTES, 'UTF-8') ?></div>
+        <button class="top-help-btn" id="open-help-btn-top" data-help-open="1" type="button" aria-label="Open help">?</button>
+      </div>
+      <div id="score">0</div>
+    </div>
   </div>
 
   <div class="grid-container" id="grid">
@@ -182,7 +208,7 @@ if (isset($_GET['mode'])) {
     </div>
 
     <div class="overlay-modal" id="leaderboard-modal">
-      <h3 id="leaderboard-title" style="margin-top:0; color:var(--highlight);">TODAY'S HIGH SCORES</h3>
+      <h3 id="leaderboard-title" style="margin-top:0; color:var(--highlight);"><?= htmlspecialchars($leaderboardHeading, ENT_QUOTES, 'UTF-8') ?></h3>
       <ul class="leaderboard-list" id="leaderboard-list"></ul>
       <div class="audit-link-container" style="text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); width: 100%;">
         <a href="audit.php" target="_blank" style="color: var(--highlight); opacity: 0.8; text-decoration: none; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.8'">View Today's Game Log</a>
@@ -200,6 +226,14 @@ if (isset($_GET['mode'])) {
         <strong id="best-board-initials" style="color:var(--highlight)"></strong>
       </div>
       <div class="grid-container" id="best-grid" style="pointer-events:none; opacity:1;"></div>
+    </div>
+
+    <div class="overlay-modal" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+      <h2 id="help-modal-title" style="margin-top:0; color:var(--highlight);">HOW TO PLAY</h2>
+      <div id="help-content" class="help-content"></div>
+      <div class="overlay-actions">
+        <button class="arcade-btn" id="close-help-btn" type="button">CLOSE</button>
+      </div>
     </div>
   </div>
 
@@ -220,6 +254,10 @@ if (isset($_GET['mode'])) {
 
   <?php if ($isLookaheadDay): ?>
   <script src="<?= autoVer('js/gameplay-lookahead.js') ?>" defer></script>
+  <?php endif; ?>
+
+  <?php if ($isCommonDay): ?>
+  <script src="<?= autoVer('js/gameplay-common.js') ?>" defer></script>
   <?php endif; ?>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
