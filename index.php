@@ -239,7 +239,10 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   </div>
 
   <div id="try-it-panel" class="try-it-panel" role="group" aria-label="Try words">
-    <div class="try-it-header">TRY IT!</div>
+    <div class="try-it-top">
+      <div class="try-it-header">TRY IT!</div>
+      <button id="try-it-clear-btn" class="try-it-clear-btn" type="button" aria-label="Clear TRY IT letters">CLEAR</button>
+    </div>
 
     <div class="try-row" id="try-forward-row">
       <div class="try-row-head">

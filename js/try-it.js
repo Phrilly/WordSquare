@@ -7,8 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const reverseRow = document.getElementById('try-reverse-row');
   const forwardStatus = document.getElementById('try-forward-status');
   const reverseStatus = document.getElementById('try-reverse-status');
+  const clearBtn = document.getElementById('try-it-clear-btn');
 
-  if (!panel || !input || !forwardTiles || !reverseTiles || !forwardRow || !reverseRow || !forwardStatus || !reverseStatus) {
+  if (!panel || !input || !forwardTiles || !reverseTiles || !forwardRow || !reverseRow || !forwardStatus || !reverseStatus || !clearBtn) {
     return;
   }
 
@@ -85,6 +86,13 @@ document.addEventListener('DOMContentLoaded', () => {
   render();
 
   input.addEventListener('input', render);
+
+  clearBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    input.value = '';
+    render();
+    input.focus();
+  });
 
   panel.addEventListener('click', () => {
     input.focus();
