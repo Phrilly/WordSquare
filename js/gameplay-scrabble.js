@@ -107,6 +107,20 @@ document.addEventListener('ws:beforeInit', () => {
 
 document.addEventListener('ws:afterInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
+
+    const queueContainer = document.getElementById('queue-container');
+    if (queueContainer) queueContainer.classList.remove('is-active');
+
+    const queue1El = document.getElementById('queue-1');
+    const queue2El = document.getElementById('queue-2');
+    if (queue1El) queue1El.classList.remove('is-active');
+    if (queue2El) queue2El.classList.remove('is-active');
+
+    const nextLetterEl = document.getElementById('next-letter');
+    if (nextLetterEl) nextLetterEl.style.display = 'none';
+
+    const scrabbleTrayEl = document.getElementById('scrabble-tray');
+    if (scrabbleTrayEl) scrabbleTrayEl.style.display = 'flex';
     
     const headerLabelEl = document.getElementById('header-label');
     if (headerLabelEl) headerLabelEl.innerText = 'Hand:';
@@ -131,6 +145,21 @@ document.addEventListener('ws:afterInit', () => {
     }
 
     renderScrabbleTray();
+});
+
+document.addEventListener('ws:nextLetterUpdated', () => {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
+
+    const queueContainer = document.getElementById('queue-container');
+    const queue1El = document.getElementById('queue-1');
+    const queue2El = document.getElementById('queue-2');
+
+    if (queueContainer) queueContainer.classList.remove('is-active');
+    if (queue1El) queue1El.classList.remove('is-active');
+    if (queue2El) queue2El.classList.remove('is-active');
+
+    const nextLetterEl = document.getElementById('next-letter');
+    if (nextLetterEl) nextLetterEl.style.display = 'none';
 });
 
 document.addEventListener('ws:getHoverLetter', (e) => {

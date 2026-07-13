@@ -215,6 +215,10 @@ if (isset($_GET['mode'])) {
   <?php if ($isScrabbleDay): ?>
   <script src="<?= autoVer('js/gameplay-scrabble.js') ?>" defer></script>
   <?php endif; ?>
+
+  <?php if ($isLookaheadDay): ?>
+  <script src="<?= autoVer('js/gameplay-lookahead.js') ?>" defer></script>
+  <?php endif; ?>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
   <script src="<?= autoVer('js/ai.js') ?>" defer></script>
