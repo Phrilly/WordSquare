@@ -5,7 +5,7 @@
 let scrabblePot = [];
 let scrabbleTray = ['', '', '', '', ''];
 let currentPotIndex = 0;
-let selectedTrayIndex = 0;
+let selectedTrayIndex = -1;
 let scrabbleLastMove = null;
 
 const SCRABBLE_VALUES = {
@@ -65,8 +65,16 @@ function buildScrabbleDeck() {
 }
 
 function renderScrabbleTray() {
+    const scrabbleTrayEl = document.getElementById('scrabble-tray');
     const trayCells = document.querySelectorAll('.scrabble-tray .tray-cell');
     if (!trayCells || trayCells.length === 0) return;
+
+    const hasPlayableTile = scrabbleTray.some(letter => letter !== '');
+    const needsSelection = hasPlayableTile && selectedTrayIndex === -1;
+
+    if (scrabbleTrayEl) {
+        scrabbleTrayEl.classList.toggle('needs-selection', needsSelection);
+    }
 
     trayCells.forEach((cell, i) => {
         const letter = scrabbleTray[i];
@@ -102,7 +110,7 @@ document.addEventListener('ws:beforeInit', () => {
         scrabbleTray[i] = scrabblePot[currentPotIndex];
         currentPotIndex++;
     }
-    selectedTrayIndex = 0;
+    selectedTrayIndex = -1;
 });
 
 document.addEventListener('ws:afterInit', () => {
@@ -181,6 +189,10 @@ document.addEventListener('ws:applyHover', (e) => {
 document.addEventListener('ws:cellClick', (e) => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
 
+    if (selectedTrayIndex < 0 || selectedTrayIndex >= scrabbleTray.length) {
+        return;
+    }
+
     const letterToPlace = scrabbleTray[selectedTrayIndex];
     if (!letterToPlace || letterToPlace === '') return;
 
@@ -200,17 +212,20 @@ document.addEventListener('ws:cellClick', (e) => {
 document.addEventListener('ws:tilePlaced', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
 
-    if (currentPotIndex < scrabblePot.length) {
-        scrabbleTray[selectedTrayIndex] = scrabblePot[currentPotIndex];
-        currentPotIndex++;
-    } else {
-        scrabbleTray[selectedTrayIndex] = '';
+    const placedTrayIndex = selectedTrayIndex;
+    if (placedTrayIndex < 0 || placedTrayIndex >= scrabbleTray.length) {
+        return;
     }
 
-    if (scrabbleTray[selectedTrayIndex] === '') {
-        const nextValid = scrabbleTray.findIndex(l => l !== '');
-        if (nextValid !== -1) selectedTrayIndex = nextValid;
+    if (currentPotIndex < scrabblePot.length) {
+        scrabbleTray[placedTrayIndex] = scrabblePot[currentPotIndex];
+        currentPotIndex++;
+    } else {
+        scrabbleTray[placedTrayIndex] = '';
     }
+
+    // Require explicit tray click before every placement.
+    selectedTrayIndex = -1;
 
     renderScrabbleTray();
 
@@ -239,9 +254,9 @@ document.addEventListener('ws:tileUndone', (e) => {
 
     // 2. Put the letter exactly back where it came from
     scrabbleTray[scrabbleLastMove.trayIndex] = undoneLetter;
-    
-    // 3. Re-select that slot for UX continuity
-    selectedTrayIndex = scrabbleLastMove.trayIndex;
+
+    // Undo does not auto-select; player must click a tray tile before placing.
+    selectedTrayIndex = -1;
 
     // Clean up
     scrabbleLastMove = null;
