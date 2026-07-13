@@ -26,7 +26,9 @@ $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0); // D
 // DEV OVERRIDES: Strict Input Validation
 if (isset($_GET['mode'])) {
     $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
-    if ($mode === 'bomb') {
+  if ($mode === 'classic') {
+    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false;
+  } elseif ($mode === 'bomb') {
         $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false;
     } elseif ($mode === 'lookahead') {
         $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false;
