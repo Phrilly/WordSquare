@@ -21,7 +21,7 @@ let lastPlacedInfo = null;
 let isGameOver = false;
 
 function syncDefaultQueueUI() {
-  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isLookaheadDay)) {
+  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isLookaheadDay || window.GAME_CONFIG.isBombDay)) {
     return;
   }
 
@@ -32,16 +32,8 @@ function syncDefaultQueueUI() {
 
   if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
   if (queueContainerEl) queueContainerEl.classList.add('is-active');
-
-  if (queue1El) {
-    if ((queue1El.innerText || '').trim() !== '') queue1El.classList.add('is-active');
-    else queue1El.classList.remove('is-active');
-  }
-
-  if (queue2El) {
-    if ((queue2El.innerText || '').trim() !== '') queue2El.classList.add('is-active');
-    else queue2El.classList.remove('is-active');
-  }
+  if (queue1El) queue1El.classList.remove('is-active');
+  if (queue2El) queue2El.classList.remove('is-active');
 }
 
 function initGame() {

@@ -168,6 +168,20 @@ function setupBombVariant() {
   }
 }
 
+function syncBombQueueUI() {
+  if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+
+  const queueContainerEl = document.getElementById('queue-container');
+  const nextLetterEl = document.getElementById('next-letter');
+  const queue1El = document.getElementById('queue-1');
+  const queue2El = document.getElementById('queue-2');
+
+  if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
+  if (queueContainerEl) queueContainerEl.classList.add('is-active');
+  if (queue1El) queue1El.classList.remove('is-active');
+  if (queue2El) queue2El.classList.remove('is-active');
+}
+
 document.addEventListener('ws:beforeInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
     gameDeck = buildBombDailyDeck();
@@ -179,16 +193,7 @@ document.addEventListener('ws:afterInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
 
     setupBombVariant();
-
-    const queueContainerEl = document.getElementById('queue-container');
-  const nextLetterEl = document.getElementById('next-letter');
-    const queue1El = document.getElementById('queue-1');
-    const queue2El = document.getElementById('queue-2');
-
-  if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
-  if (queueContainerEl) queueContainerEl.classList.add('is-active');
-    if (queue1El) queue1El.classList.remove('is-active');
-    if (queue2El) queue2El.classList.remove('is-active');
+  syncBombQueueUI();
 });
 
 document.addEventListener('ws:cellClick', (e) => {
@@ -228,15 +233,8 @@ document.addEventListener('ws:cellClick', (e) => {
 
 document.addEventListener('ws:nextLetterUpdated', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    
-    const queueContainerEl = document.getElementById('queue-container');
-  const nextLetterEl = document.getElementById('next-letter');
-    const queue1El = document.getElementById('queue-1');
-    const queue2El = document.getElementById('queue-2');
-  if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
-  if (queueContainerEl) queueContainerEl.classList.add('is-active');
-    if (queue1El) queue1El.classList.remove('is-active');
-    if (queue2El) queue2El.classList.remove('is-active');
+
+  syncBombQueueUI();
 
     // ==== DIAGNOSTIC NET: STATE LEDGER ====
     if (typeof placedCount !== 'undefined' && typeof gameDeck !== 'undefined' && typeof currentDeckIndex !== 'undefined') {
