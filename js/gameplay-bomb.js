@@ -121,6 +121,51 @@ function createBombParticles(cellEl, letter) {
   setTimeout(() => { if (container) container.remove(); }, 1500);
 }
 
+function setupBombVariant() {
+  try {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
+    if (!gridEl) {
+      console.error('Bomb setup failed: gridEl is not available.');
+      return;
+    }
+
+    const gridCells = gridEl.querySelectorAll('.grid-cell');
+    if (gridCells.length !== 25) {
+      console.error('Bomb setup failed: expected 25 grid cells, found', gridCells.length);
+      return;
+    }
+
+    const positions = buildBombPositions();
+    if (!Array.isArray(positions) || positions.length !== 3) {
+      console.error('Bomb setup failed: unexpected bomb positions output', positions);
+      return;
+    }
+
+    activeBombs = positions;
+    defusedBombs.clear();
+    gridCells.forEach(cell => cell.classList.remove('has-bomb'));
+    positions.forEach(i => {
+      const cell = gridCells[i];
+      if (cell) {
+        cell.classList.add('has-bomb');
+      } else {
+        console.error('Bomb setup failed: missing grid cell for position', i);
+      }
+    });
+
+    const appliedCount = positions.reduce((count, idx) => {
+      const cell = gridCells[idx];
+      return count + (cell && cell.classList.contains('has-bomb') ? 1 : 0);
+    }, 0);
+
+    if (appliedCount !== 3) {
+      console.error('Bomb setup failed: only applied', appliedCount, 'bomb markers instead of 3', positions);
+    }
+  } catch (error) {
+    console.error('Bomb setup threw an unexpected error:', error);
+  }
+}
+
 document.addEventListener('ws:beforeInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
     gameDeck = buildBombDailyDeck();
@@ -130,17 +175,8 @@ document.addEventListener('ws:beforeInit', () => {
 
 document.addEventListener('ws:afterInit', () => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isBombDay) return;
-    
-    // Defer execution to ensure DOM render cycle completes
-    setTimeout(() => {
-        activeBombs = buildBombPositions();
-        if (gridEl) {
-            const gridCells = gridEl.querySelectorAll('.grid-cell');
-            activeBombs.forEach(i => {
-                if (gridCells[i]) gridCells[i].classList.add('has-bomb');
-            });
-        }
-    }, 50);
+
+    setupBombVariant();
 
     const queueContainerEl = document.getElementById('queue-container');
     const queue1El = document.getElementById('queue-1');
