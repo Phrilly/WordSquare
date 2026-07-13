@@ -219,14 +219,15 @@ document.addEventListener('ws:applyHover', (e) => {
 document.addEventListener('ws:cellClick', (e) => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
 
+    // Scrabble fully owns tile placement. Always suppress shared fallback placement.
+    e.preventDefault();
+
     if (selectedTrayIndex < 0 || selectedTrayIndex >= scrabbleTray.length) {
         return;
     }
 
     const letterToPlace = scrabbleTray[selectedTrayIndex];
     if (!letterToPlace || letterToPlace === '') return;
-
-    e.preventDefault();
 
     if (letterToPlace === '?') {
         pendingCellIndex = e.detail.index;
