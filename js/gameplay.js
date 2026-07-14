@@ -353,6 +353,14 @@ function selectWildcard(letter) {
     if (nextLetterEl) nextLetterEl.innerText = letter;
   } else {
     const cellEl = document.querySelector(`.grid-cell[data-index='${pendingCellIndex}']`);
+    const wildcardPlaceEvent = new CustomEvent('ws:beforeWildcardPlaced', {
+      detail: { index: pendingCellIndex, letter: letter, cellEl: cellEl },
+      cancelable: true
+    });
+    if (!document.dispatchEvent(wildcardPlaceEvent)) {
+      pendingCellIndex = null;
+      return;
+    }
     placeLetter(pendingCellIndex, letter, cellEl, true);
   }
 

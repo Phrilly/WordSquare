@@ -48,6 +48,93 @@
   content: 'FULL';
 }
 
+.tetris-falling-tile {
+  position: fixed;
+  z-index: 9999;
+  width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+  background-color: #fdf6e3;
+  color: #1a1a1a;
+  border-radius: 6px;
+  box-shadow:
+    inset 3px 3px 5px rgba(255, 255, 255, 1),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.15),
+    2px 3px 5px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation-name: tetrisDropTile;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+.grid-cell.tetris-clear-preview {
+  animation: tetrisMatchedPulse 0.24s ease-in-out infinite alternate;
+}
+
+.tetris-combo-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e4a7a;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+  animation: tetrisComboRise 0.9s ease-out forwards;
+}
+
+@keyframes tetrisDropTile {
+  from {
+    transform: translate(-50%, -50%);
+  }
+  to {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y)));
+  }
+}
+
+@keyframes tetrisMatchedPulse {
+  from {
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 0.45),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.2),
+      0 0 0 rgba(255, 255, 255, 0);
+  }
+  to {
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 0.65),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+      0 0 14px rgba(255, 255, 255, 0.45);
+  }
+}
+
+@keyframes tetrisComboRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.92);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(1.02);
+  }
+}
+
 @media (max-width: 700px) {
   .tetris-drop-row {
     margin-bottom: 6px;
@@ -55,5 +142,10 @@
 
   .drop-slot {
     font-size: 10px;
+  }
+
+  .tetris-combo-banner {
+    font-size: 13px;
+    padding: 7px 12px;
   }
 }

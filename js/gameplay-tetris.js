@@ -3,6 +3,10 @@
 // ================================
 
 let pendingDropColumn = null;
+let tetrisBusy = false;
+
+const TETRIS_CLEAR_PREVIEW_MS = 380;
+const TETRIS_DROP_MS = 180;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -15,6 +19,10 @@ function getDropRowEl() {
 function getDropSlots() {
   const row = getDropRowEl();
   return row ? Array.from(row.querySelectorAll('.drop-slot')) : [];
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function findDropTargetIndex(col) {
@@ -52,8 +60,8 @@ function syncDropSlots() {
   const slots = getDropSlots();
   slots.forEach((slot, col) => {
     const topIdx = col;
-    const blocked = Boolean(cells[topIdx]);
-    slot.classList.toggle('is-blocked', blocked);
+    const blocked = Boolean(cells[topIdx]) || tetrisBusy;
+    slot.classList.toggle('is-blocked', Boolean(cells[topIdx]));
     slot.disabled = blocked;
   });
 }
@@ -67,7 +75,7 @@ function refreshBoardFromState() {
     if (!cellEl) continue;
 
     const letter = cells[i] || '';
-    cellEl.classList.remove('hover-3', 'hover-4', 'hover-5', 'word-3', 'word-4', 'word-5', 'is-undoable', 'tile-pop');
+    cellEl.classList.remove('hover-3', 'hover-4', 'hover-5', 'word-3', 'word-4', 'word-5', 'is-undoable', 'tile-pop', 'tetris-clear-preview');
 
     if (letter) {
       cellEl.innerText = letter;
@@ -85,9 +93,9 @@ function refreshBoardFromState() {
   }
 }
 
-function collectMatchedWordIndices() {
+function createMatchedWordMap() {
   const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1]];
-  const matched = new Set();
+  const matchedMap = new Map();
 
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
@@ -108,14 +116,21 @@ function collectMatchedWordIndices() {
           path.push(idx);
 
           if (word.length >= 3 && gameDictionary.has(word)) {
-            path.forEach((pIdx) => matched.add(pIdx));
+            path.forEach((pIdx) => {
+              const existing = matchedMap.get(pIdx) || 0;
+              matchedMap.set(pIdx, Math.max(existing, word.length));
+            });
           }
         }
       }
     }
   }
 
-  return Array.from(matched);
+  return matchedMap;
+}
+
+function collectMatchedWordIndices() {
+  return Array.from(createMatchedWordMap().keys());
 }
 
 function applyGravity() {
@@ -142,20 +157,82 @@ function applyGravity() {
   }
 }
 
-function resolveTetrisClears() {
+function showComboFeedback(comboCount) {
+  if (!gridEl || comboCount <= 1) return;
+
+  const label = document.createElement('div');
+  label.className = 'tetris-combo-banner';
+  label.textContent = `COMBO x${comboCount}`;
+  gridEl.appendChild(label);
+  setTimeout(() => label.remove(), 900);
+}
+
+async function animateDropToCell(col, targetIdx, letter) {
+  const slots = getDropSlots();
+  const sourceSlot = slots[col];
+  const targetCell = document.querySelector(`.grid-cell[data-index='${targetIdx}']`);
+  if (!sourceSlot || !targetCell) return;
+
+  const sourceRect = sourceSlot.getBoundingClientRect();
+  const targetRect = targetCell.getBoundingClientRect();
+  const animTile = document.createElement('div');
+  animTile.className = 'tetris-falling-tile';
+  animTile.textContent = letter;
+  animTile.style.left = `${sourceRect.left + (sourceRect.width / 2)}px`;
+  animTile.style.top = `${sourceRect.top + (sourceRect.height / 2)}px`;
+  animTile.style.setProperty('--drop-x', `${(targetRect.left + (targetRect.width / 2)) - (sourceRect.left + (sourceRect.width / 2))}px`);
+  animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - (sourceRect.top + (sourceRect.height / 2))}px`);
+  animTile.style.animationDuration = `${TETRIS_DROP_MS}ms`;
+  document.body.appendChild(animTile);
+
+  await delay(TETRIS_DROP_MS);
+  animTile.remove();
+}
+
+function paintMatchedPreview(matchedMap) {
+  if (!gridEl) return;
+  const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+  matchedMap.forEach((len, idx) => {
+    const cellEl = cellEls[idx];
+    if (!cellEl) return;
+    cellEl.classList.remove('word-3', 'word-4', 'word-5');
+    cellEl.classList.add(`word-${len}`);
+    cellEl.classList.add('tetris-clear-preview');
+  });
+}
+
+function clearMatchedPreview() {
+  if (!gridEl) return;
+  const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+  cellEls.forEach((cellEl) => {
+    cellEl.classList.remove('tetris-clear-preview');
+  });
+}
+
+async function resolveTetrisClears() {
   if (!isTetrisMode()) return;
 
   let loopGuard = 0;
+  let comboCount = 0;
+
   while (loopGuard < 12) {
-    const toClear = collectMatchedWordIndices();
+    const matchedMap = createMatchedWordMap();
+    const toClear = Array.from(matchedMap.keys());
     if (toClear.length === 0) break;
+
+    comboCount++;
+    paintMatchedPreview(matchedMap);
+    calculateRealTimeScoreLocal();
+    await delay(TETRIS_CLEAR_PREVIEW_MS);
 
     toClear.forEach((idx) => {
       cells[idx] = '';
       wildcardState[idx] = false;
     });
 
+    clearMatchedPreview();
     applyGravity();
+    refreshBoardFromState();
     loopGuard++;
   }
 
@@ -163,6 +240,7 @@ function resolveTetrisClears() {
   refreshBoardFromState();
   syncDropSlots();
   calculateRealTimeScoreLocal();
+  showComboFeedback(comboCount);
 }
 
 function ensureDeckBufferForTetris() {
@@ -174,8 +252,8 @@ function ensureDeckBufferForTetris() {
   }
 }
 
-function handleDropClick(col) {
-  if (!isTetrisMode() || isGameOver) return;
+async function handleDropClick(col) {
+  if (!isTetrisMode() || isGameOver || tetrisBusy) return;
 
   const targetIdx = findDropTargetIndex(col);
   if (targetIdx < 0) {
@@ -201,6 +279,9 @@ function handleDropClick(col) {
     return;
   }
 
+  tetrisBusy = true;
+  syncDropSlots();
+  await animateDropToCell(col, targetIdx, letter);
   placeLetter(targetIdx, letter, cellEl, false);
 }
 
@@ -242,12 +323,34 @@ document.addEventListener('ws:cellClick', (e) => {
   e.preventDefault();
 });
 
-document.addEventListener('ws:tilePlaced', () => {
+document.addEventListener('ws:beforeWildcardPlaced', (e) => {
+  if (!isTetrisMode()) return;
+  if (pendingDropColumn == null) return;
+
+  e.preventDefault();
+
+  const index = e.detail.index;
+  const letter = e.detail.letter;
+  const cellEl = e.detail.cellEl;
+  const dropCol = pendingDropColumn;
+  pendingDropColumn = null;
+
+  tetrisBusy = true;
+  syncDropSlots();
+  (async () => {
+    await animateDropToCell(dropCol, index, letter);
+    placeLetter(index, letter, cellEl, true);
+  })();
+});
+
+document.addEventListener('ws:tilePlaced', async () => {
   if (!isTetrisMode()) return;
 
-  resolveTetrisClears();
+  await resolveTetrisClears();
 
   if (placedCount >= 25) {
+    tetrisBusy = false;
+    syncDropSlots();
     triggerEndGame();
     return;
   }
@@ -255,9 +358,12 @@ document.addEventListener('ws:tilePlaced', () => {
   ensureDeckBufferForTetris();
   currentDeckIndex++;
   setNextLetter();
+  tetrisBusy = false;
+  syncDropSlots();
 });
 
 document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
   pendingDropColumn = null;
+  tetrisBusy = false;
 });

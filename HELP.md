@@ -22,5 +22,6 @@
 - Scrabble: Uses Scrabble-style letter values.
 - Lookahead: Shows additional upcoming queue letters.
 - MFD: Classic gameplay with a restricted My First Dictionary word list.
+- Tetris: Drop queued letters into columns, clear completed words, and let remaining tiles fall under gravity.
 
 For MFD-specific details, see HELP_MFD.md.

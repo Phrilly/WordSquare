@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'bomb') return 'Bomb';
     if (mode === 'scrabble') return 'Scrabble';
     if (mode === 'lookahead') return 'Lookahead';
+    if (mode === 'tetris') return 'Tetris';
     if (mode === 'mfd') return 'My First Dictionary (MFD)';
     return 'Classic';
   };
@@ -32,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (mode === 'lookahead') {
       return 'Lookahead mode is active: you can see additional upcoming queue letters.';
+    }
+    if (mode === 'tetris') {
+      return 'Tetris mode is active: drop each queued letter into a column, form words, and cleared letters fall away under gravity.';
     }
     if (mode === 'mfd') {
       return 'MFD mode is active: gameplay is Classic, but only words flagged in the MFD dictionary are valid.';
@@ -70,6 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>MFD plays the same as Classic mode.</li>
         <li>The only difference is dictionary scope: only MFD-tagged words are accepted.</li>
+      </ul>
+
+      <h3>Tetris Notes</h3>
+      <ul>
+        <li>Click a DROP slot above the grid to let the current letter fall into that column.</li>
+        <li>When a valid word is formed horizontally, vertically, or diagonally, those letters flash, clear, and the column contents fall down.</li>
+        <li>If a column is full, its DROP slot greys out. The game ends when the grid is full.</li>
       </ul>
 
       <p class="help-subtle">Full docs: <a href="HELP.md" target="_blank" rel="noopener noreferrer">HELP.md</a> and <a href="HELP_MFD.md" target="_blank" rel="noopener noreferrer">HELP_MFD.md</a>.</p>
