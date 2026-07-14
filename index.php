@@ -179,6 +179,13 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
 
     </div>
+    <div id="tetris-tools-row" class="tetris-tools-row" aria-label="Tetris tools">
+      <div id="tetris-bomb-indicator" class="tetris-bomb-indicator" aria-label="Bombs remaining">
+        <span class="tetris-bomb-icon" data-bomb-index="0" aria-hidden="true"></span>
+        <span class="tetris-bomb-icon" data-bomb-index="1" aria-hidden="true"></span>
+        <span class="tetris-bomb-icon" data-bomb-index="2" aria-hidden="true"></span>
+      </div>
+    </div>
     <div class="score-stack">
       <div class="score-meta-row">
         <div id="mode-badge" class="mode-badge"><?= htmlspecialchars(strtoupper($modeDisplayName), ENT_QUOTES, 'UTF-8') ?></div>
@@ -194,11 +201,6 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
     <button class="drop-slot" type="button" data-col="2" aria-label="Drop into column 3"></button>
     <button class="drop-slot" type="button" data-col="3" aria-label="Drop into column 4"></button>
     <button class="drop-slot" type="button" data-col="4" aria-label="Drop into column 5"></button>
-  </div>
-
-  <div id="tetris-tools-row" class="tetris-tools-row" aria-label="Tetris tools">
-    <div id="tetris-bomb-indicator" class="tetris-bomb-indicator">BOMBS 3</div>
-    <div class="tetris-tools-hint">Click a filled tile to blast it and drop the letters above.</div>
   </div>
 
   <div class="grid-container" id="grid">

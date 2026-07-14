@@ -13,12 +13,11 @@
 
 .tetris-tools-row {
   display: none;
-  width: 100%;
-  max-width: var(--game-size);
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 10px 0 auto;
+  flex-shrink: 0;
 }
 
 .tetris-tools-row.is-active {
@@ -26,29 +25,36 @@
 }
 
 .tetris-bomb-indicator {
-  flex-shrink: 0;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(248, 113, 113, 0.45);
-  color: #fee2e2;
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.tetris-bomb-indicator.is-empty {
-  background: rgba(120, 132, 150, 0.24);
-  border-color: rgba(140, 150, 165, 0.45);
-  color: rgba(220, 228, 240, 0.75);
+.tetris-bomb-icon {
+  width: 18px;
+  height: 24px;
+  display: inline-block;
+  background:
+    radial-gradient(circle at 35% 35%, #ff8a80 0 18%, #ff3b30 19% 70%, #d81f1f 71% 100%);
+  border-radius: 50% 50% 44% 44%;
+  position: relative;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
 }
 
-.tetris-tools-hint {
-  color: #dbeafe;
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  text-align: right;
+.tetris-bomb-icon::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3b30;
+}
+
+.tetris-bomb-icon.is-spent {
+  opacity: 0.22;
+  filter: grayscale(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .drop-slot {
@@ -388,13 +394,13 @@
   }
 
   .tetris-tools-row {
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 10px;
+    margin: 0 6px 0 auto;
   }
 
-  .tetris-bomb-indicator,
-  .tetris-tools-hint {
-    font-size: 10px;
+  .tetris-bomb-icon {
+    width: 15px;
+    height: 21px;
   }
 
   .drop-slot {

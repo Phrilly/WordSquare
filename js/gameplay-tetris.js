@@ -84,8 +84,12 @@ function syncTetrisBombUI() {
   const bombIndicator = getBombIndicatorEl();
   if (toolsRow) toolsRow.classList.add('is-active');
   if (bombIndicator) {
-    bombIndicator.innerText = `BOMBS ${tetrisBombsRemaining}`;
     bombIndicator.classList.toggle('is-empty', tetrisBombsRemaining <= 0);
+    const bombIcons = bombIndicator.querySelectorAll('.tetris-bomb-icon');
+    bombIcons.forEach((icon, index) => {
+      const spent = index >= tetrisBombsRemaining;
+      icon.classList.toggle('is-spent', spent);
+    });
   }
 }
 
