@@ -7,8 +7,8 @@ let tetrisBusy = false;
 
 const TETRIS_CLEAR_PREVIEW_MS = 380;
 const TETRIS_LOAD_MS = 220;
-const TETRIS_LOADED_HOLD_MS = 420;
-const TETRIS_DROP_MS = 980;
+const TETRIS_LOADED_HOLD_MS = 760;
+const TETRIS_DROP_MS = 1580;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
