@@ -8,7 +8,9 @@ let tetrisBombsRemaining = 3;
 
 const TETRIS_CLEAR_PREVIEW_MS = 380;
 const TETRIS_LOAD_MS = 220;
-const TETRIS_LOADED_HOLD_MS = 980;
+const TETRIS_LOADED_SETTLE_MS = 380;
+const TETRIS_LOADED_COLOR_SHIFT_MS = 320;
+const TETRIS_LOADED_FINAL_HOLD_MS = 360;
 const TETRIS_DROP_MS = 1320;
 
 function isTetrisMode() {
@@ -109,6 +111,7 @@ function clearSlotLoadedLetter(slot) {
   delete slot.dataset.loadedLetter;
   slot.classList.remove('is-loading');
   slot.classList.remove('is-sealed');
+  slot.classList.remove('is-drop-ready');
 }
 
 function triggerColumnImpact(col, targetIdx) {
@@ -357,9 +360,12 @@ async function animateLoadIntoSlot(col, letter) {
   await delay(TETRIS_LOAD_MS);
   animTile.remove();
   setSlotLoadedLetter(slot, letter);
-  await delay(Math.floor(TETRIS_LOADED_HOLD_MS * 0.45));
+  await delay(TETRIS_LOADED_SETTLE_MS);
   sealLoadedSlot(slot);
-  await delay(Math.ceil(TETRIS_LOADED_HOLD_MS * 0.55));
+  await delay(TETRIS_LOADED_COLOR_SHIFT_MS);
+  slot.classList.add('is-drop-ready');
+  await delay(TETRIS_LOADED_FINAL_HOLD_MS);
+  slot.classList.remove('is-drop-ready');
 }
 
 function paintMatchedPreview(matchedMap) {
