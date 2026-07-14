@@ -8,7 +8,7 @@ let tetrisBombsRemaining = 3;
 
 const TETRIS_CLEAR_PREVIEW_MS = 380;
 const TETRIS_LOAD_MS = 220;
-const TETRIS_LOADED_HOLD_MS = 760;
+const TETRIS_LOADED_HOLD_MS = 980;
 const TETRIS_DROP_MS = 1320;
 
 function isTetrisMode() {
@@ -320,6 +320,8 @@ async function animateDropToCell(col, targetIdx, letter) {
   const animTile = document.createElement('div');
   animTile.className = 'tetris-falling-tile';
   animTile.textContent = letter;
+  animTile.style.width = `${sourceRect.width}px`;
+  animTile.style.height = `${sourceRect.height}px`;
   animTile.style.left = `${sourceRect.left + (sourceRect.width / 2)}px`;
   animTile.style.top = `${sourceRect.top + (sourceRect.height / 2)}px`;
   animTile.style.setProperty('--drop-x', `${(targetRect.left + (targetRect.width / 2)) - (sourceRect.left + (sourceRect.width / 2))}px`);
@@ -343,6 +345,8 @@ async function animateLoadIntoSlot(col, letter) {
   const animTile = document.createElement('div');
   animTile.className = 'tetris-falling-tile is-load';
   animTile.textContent = letter;
+  animTile.style.width = `${targetRect.width}px`;
+  animTile.style.height = `${targetRect.height}px`;
   animTile.style.left = `${sourceRect.left + (sourceRect.width / 2)}px`;
   animTile.style.top = `${sourceRect.top + (sourceRect.height / 2)}px`;
   animTile.style.setProperty('--drop-x', `${(targetRect.left + (targetRect.width / 2)) - (sourceRect.left + (sourceRect.width / 2))}px`);
