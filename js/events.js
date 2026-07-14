@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return 'Lookahead mode is active: you can see additional upcoming queue letters.';
     }
     if (mode === 'tetris') {
-      return 'Tetris mode is active: drop each queued letter into a column, form words, and cleared letters fall away under gravity.';
+      return 'Tetris mode is active: drop each queued letter into a column, build 5-letter words to clear them, and use three bombs to blast occupied tiles.';
     }
     if (mode === 'mfd') {
       return 'MFD mode is active: gameplay is Classic, but only words flagged in the MFD dictionary are valid.';
@@ -79,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <h3>Tetris Notes</h3>
       <ul>
         <li>Click a DROP slot above the grid to let the current letter fall into that column.</li>
-        <li>When a valid word is formed horizontally, vertically, or diagonally, those letters flash, clear, and the column contents fall down.</li>
+        <li>Only 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
+        <li>You have 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when the grid is full.</li>
       </ul>
 

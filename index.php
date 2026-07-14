@@ -196,6 +196,11 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
     <button class="drop-slot" type="button" data-col="4" aria-label="Drop into column 5"></button>
   </div>
 
+  <div id="tetris-tools-row" class="tetris-tools-row" aria-label="Tetris tools">
+    <div id="tetris-bomb-indicator" class="tetris-bomb-indicator">BOMBS 3</div>
+    <div class="tetris-tools-hint">Click a filled tile to blast it and drop the letters above.</div>
+  </div>
+
   <div class="grid-container" id="grid">
     <div class="alphabet-modal" id="alphabet-modal"></div>
 

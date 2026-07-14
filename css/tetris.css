@@ -11,6 +11,46 @@
   display: grid;
 }
 
+.tetris-tools-row {
+  display: none;
+  width: 100%;
+  max-width: var(--game-size);
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tetris-tools-row.is-active {
+  display: flex;
+}
+
+.tetris-bomb-indicator {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #fee2e2;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.tetris-bomb-indicator.is-empty {
+  background: rgba(120, 132, 150, 0.24);
+  border-color: rgba(140, 150, 165, 0.45);
+  color: rgba(220, 228, 240, 0.75);
+}
+
+.tetris-tools-hint {
+  color: #dbeafe;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  text-align: right;
+}
+
 .drop-slot {
   position: relative;
   overflow: hidden;
@@ -187,6 +227,10 @@
     0 8px 18px rgba(0, 0, 0, 0.32);
 }
 
+.grid-cell.tetris-bomb-hit {
+  animation: tetrisBombFlash 0.18s ease-out;
+}
+
 .tetris-combo-banner {
   position: absolute;
   top: 14px;
@@ -276,6 +320,23 @@
   100% { transform: translateX(0); }
 }
 
+@keyframes tetrisBombFlash {
+  0% {
+    transform: scale(1);
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 1),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+      0 0 0 rgba(248, 113, 113, 0);
+  }
+  100% {
+    transform: scale(1.05);
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 1),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+      0 0 18px rgba(248, 113, 113, 0.8);
+  }
+}
+
 @keyframes tetrisMatchedPulse {
   from {
     box-shadow:
@@ -324,6 +385,16 @@
 @media (max-width: 700px) {
   .tetris-drop-row {
     margin-bottom: 6px;
+  }
+
+  .tetris-tools-row {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .tetris-bomb-indicator,
+  .tetris-tools-hint {
+    font-size: 10px;
   }
 
   .drop-slot {

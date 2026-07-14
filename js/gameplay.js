@@ -252,6 +252,11 @@ function handleHoverLeave(cellEl) {
 function handleCellClick(index, cellEl) {
   if (isGameOver || placedCount >= 25) return;
   if (cells[index] !== '') {
+    if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {
+      document.dispatchEvent(new CustomEvent('ws:occupiedCellClick', {
+        detail: { index: index, cellEl: cellEl }
+      }));
+    }
     return;
   }
   

@@ -4,6 +4,7 @@
 
 let pendingDropColumn = null;
 let tetrisBusy = false;
+let tetrisBombsRemaining = 3;
 
 const TETRIS_CLEAR_PREVIEW_MS = 380;
 const TETRIS_LOAD_MS = 220;
@@ -25,6 +26,10 @@ function getDropSlots() {
 
 function getDropSlot(col) {
   return getDropSlots()[col] || null;
+}
+
+function getBombIndicatorEl() {
+  return document.getElementById('tetris-bomb-indicator');
 }
 
 function delay(ms) {
@@ -70,6 +75,18 @@ function syncDropSlots() {
     slot.classList.toggle('is-blocked', Boolean(cells[topIdx]));
     slot.disabled = blocked;
   });
+}
+
+function syncTetrisBombUI() {
+  if (!isTetrisMode()) return;
+
+  const toolsRow = document.getElementById('tetris-tools-row');
+  const bombIndicator = getBombIndicatorEl();
+  if (toolsRow) toolsRow.classList.add('is-active');
+  if (bombIndicator) {
+    bombIndicator.innerText = `BOMBS ${tetrisBombsRemaining}`;
+    bombIndicator.classList.toggle('is-empty', tetrisBombsRemaining <= 0);
+  }
 }
 
 function setSlotLoadedLetter(slot, letter) {
@@ -176,12 +193,12 @@ function createMatchedWordResult() {
           word += letter;
           path.push(idx);
 
-          if (word.length >= 3 && gameDictionary.has(word)) {
+          if (word.length === 5 && gameDictionary.has(word)) {
             const reversed = word.split('').reverse().join('');
             canonicalWords.add(word < reversed ? word : reversed);
             path.forEach((pIdx) => {
               const existing = matchedMap.get(pIdx) || 0;
-              matchedMap.set(pIdx, Math.max(existing, word.length));
+              matchedMap.set(pIdx, Math.max(existing, 5));
             });
           }
         }
@@ -221,6 +238,28 @@ function applyGravity() {
         cells[idx] = '';
         wildcardState[idx] = false;
       }
+    }
+  }
+}
+
+function applyGravityToColumn(col) {
+  const stack = [];
+  for (let row = 0; row < gridSize; row++) {
+    const idx = (row * gridSize) + col;
+    if (cells[idx]) {
+      stack.push({ letter: cells[idx], isWildcard: Boolean(wildcardState[idx]) });
+    }
+  }
+
+  for (let row = gridSize - 1; row >= 0; row--) {
+    const idx = (row * gridSize) + col;
+    if (stack.length > 0) {
+      const next = stack.pop();
+      cells[idx] = next.letter;
+      wildcardState[idx] = next.isWildcard;
+    } else {
+      cells[idx] = '';
+      wildcardState[idx] = false;
     }
   }
 }
@@ -437,12 +476,14 @@ document.addEventListener('ws:afterInit', () => {
   if (topBarEl) topBarEl.classList.add('tetris-mode');
   syncTetrisQueueUI();
   syncDropSlots();
+  syncTetrisBombUI();
 });
 
 document.addEventListener('ws:nextLetterUpdated', () => {
   if (!isTetrisMode()) return;
   syncTetrisQueueUI();
   syncDropSlots();
+  syncTetrisBombUI();
 });
 
 document.addEventListener('ws:applyHover', (e) => {
@@ -453,6 +494,43 @@ document.addEventListener('ws:applyHover', (e) => {
 document.addEventListener('ws:cellClick', (e) => {
   if (!isTetrisMode()) return;
   e.preventDefault();
+});
+
+document.addEventListener('ws:occupiedCellClick', async (e) => {
+  if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (tetrisBombsRemaining <= 0) return;
+
+  const index = e.detail.index;
+  const cellEl = e.detail.cellEl;
+  if (!cellEl || !cells[index]) return;
+
+  const col = index % gridSize;
+  tetrisBusy = true;
+  tetrisBombsRemaining--;
+  syncDropSlots();
+  syncTetrisBombUI();
+
+  cellEl.classList.add('tetris-bomb-hit');
+  await delay(180);
+  cellEl.classList.remove('tetris-bomb-hit');
+
+  cells[index] = '';
+  wildcardState[index] = false;
+  applyGravityToColumn(col);
+  refreshBoardFromState();
+  await resolveTetrisClears();
+
+  placedCount = cells.reduce((count, letter) => count + (letter ? 1 : 0), 0);
+  if (placedCount >= 25) {
+    tetrisBusy = false;
+    syncDropSlots();
+    triggerEndGame();
+    return;
+  }
+
+  tetrisBusy = false;
+  syncDropSlots();
+  syncTetrisBombUI();
 });
 
 document.addEventListener('ws:beforeWildcardPlaced', (e) => {
@@ -494,6 +572,7 @@ document.addEventListener('ws:tilePlaced', async () => {
   setNextLetter();
   tetrisBusy = false;
   syncDropSlots();
+  syncTetrisBombUI();
 });
 
 document.addEventListener('ws:calculateScore', (e) => {
@@ -506,6 +585,8 @@ document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
   pendingDropColumn = null;
   tetrisBusy = false;
+  tetrisBombsRemaining = 3;
   currentScore = 0;
   if (scoreEl) scoreEl.innerText = '0';
+  syncTetrisBombUI();
 });
