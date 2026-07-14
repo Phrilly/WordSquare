@@ -85,7 +85,6 @@ function syncTetrisBombUI() {
   const toolsRow = document.getElementById('tetris-tools-row');
   const bombIndicator = getBombIndicatorEl();
   if (toolsRow) toolsRow.classList.add('is-active');
-  slot.classList.remove('is-engaged');
   if (bombIndicator) {
     bombIndicator.classList.toggle('is-empty', tetrisBombsRemaining <= 0);
     const bombIcons = bombIndicator.querySelectorAll('.tetris-bomb-icon');
@@ -104,8 +103,6 @@ function setSlotLoadedLetter(slot, letter) {
 
 function sealLoadedSlot(slot) {
   if (!slot) return;
-  const slot = getDropSlot(col);
-  if (slot) slot.classList.add('is-engaged');
   slot.classList.add('is-sealed');
 }
 
@@ -115,6 +112,7 @@ function clearSlotLoadedLetter(slot) {
   slot.classList.remove('is-loading');
   slot.classList.remove('is-sealed');
   slot.classList.remove('is-drop-ready');
+  slot.classList.remove('is-engaged');
 }
 
 function triggerColumnImpact(col, targetIdx) {
@@ -130,7 +128,6 @@ function triggerColumnImpact(col, targetIdx) {
   const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
   for (let row = 0; row < gridSize; row++) {
     const idx = (row * gridSize) + col;
-  slot.classList.add('is-engaged');
     const cellEl = cellEls[idx];
     if (!cellEl) continue;
     cellEl.classList.remove('tetris-column-impact');
@@ -347,6 +344,8 @@ async function animateLoadIntoSlot(col, letter) {
   const nextLetterEl = document.getElementById('next-letter');
   if (!slot || !nextLetterEl) return;
 
+  slot.classList.add('is-engaged');
+
   const sourceRect = nextLetterEl.getBoundingClientRect();
   const targetRect = slot.getBoundingClientRect();
   const animTile = document.createElement('div');
@@ -465,6 +464,8 @@ async function handleDropClick(col) {
     return;
   }
 
+  const slot = getDropSlot(col);
+  if (slot) slot.classList.add('is-engaged');
   tetrisBusy = true;
   syncDropSlots();
   await animateLoadIntoSlot(col, letter);
