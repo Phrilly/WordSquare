@@ -9,6 +9,10 @@
   transition: opacity 0.2s ease-in-out;
 }
 
+.top-bar.tetris-mode {
+  justify-content: space-between;
+}
+
 #left-header {
   display: flex;
   align-items: center;

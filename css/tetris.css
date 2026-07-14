@@ -1,0 +1,59 @@
+.tetris-drop-row {
+  display: none;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(4px, 1vw, 8px);
+  width: 100%;
+  max-width: var(--game-size);
+  margin-bottom: 8px;
+}
+
+.tetris-drop-row.is-active {
+  display: grid;
+}
+
+.drop-slot {
+  height: clamp(24px, calc(var(--game-size) * 0.075), 40px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(168, 194, 234, 0.15);
+  color: #dbeafe;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: filter 0.15s ease, background-color 0.15s ease;
+}
+
+.drop-slot::before {
+  content: 'DROP';
+}
+
+.drop-slot:hover {
+  filter: brightness(1.08);
+}
+
+.drop-slot:active {
+  filter: brightness(0.95);
+}
+
+.drop-slot.is-blocked {
+  background: rgba(120, 132, 150, 0.38);
+  border-color: rgba(140, 150, 165, 0.6);
+  color: rgba(220, 228, 240, 0.55);
+  cursor: not-allowed;
+}
+
+.drop-slot.is-blocked::before {
+  content: 'FULL';
+}
+
+@media (max-width: 700px) {
+  .tetris-drop-row {
+    margin-bottom: 6px;
+  }
+
+  .drop-slot {
+    font-size: 10px;
+  }
+}

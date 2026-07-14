@@ -23,20 +23,23 @@ $isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);       // D
 $isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 5 === 0); // Day 1
 $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0); // Day 2
 $isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 5 === 0); // Day 3 (MFD)
+$isTetrisDay    = false;
 
 // DEV OVERRIDES: Strict Input Validation
 if (isset($_GET['mode'])) {
     $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
   if ($mode === 'classic') {
-    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false;
+    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
   } elseif ($mode === 'bomb') {
-        $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false;
+      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
     } elseif ($mode === 'lookahead') {
-        $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false;
+      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
     } elseif ($mode === 'scrabble') {
-        $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false;
     } elseif ($mode === 'mfd' || $mode === 'common') {
-        $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false;
+    } elseif ($mode === 'tetris') {
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true;
     }
 }
 
@@ -49,6 +52,8 @@ if ($isBombDay) {
     $modeDisplayName = 'Lookahead';
 } elseif ($isCommonDay) {
     $modeDisplayName = 'My First Dictionary';
+} elseif ($isTetrisDay) {
+  $modeDisplayName = 'Tetris';
 }
 
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH SCORES";
@@ -70,6 +75,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   <link rel="stylesheet" href="<?= autoVer('css/opening.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/tryit.css') ?>">
+  <link rel="stylesheet" href="<?= autoVer('css/tetris.css') ?>">
   
   <?php if ($isBombDay): ?>
   <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
@@ -86,6 +92,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
         isLookaheadDay: <?= json_encode($isLookaheadDay) ?>,
       isScrabbleDay: <?= json_encode($isScrabbleDay) ?>,
       isCommonDay: <?= json_encode($isCommonDay) ?>,
+      isTetrisDay: <?= json_encode($isTetrisDay) ?>,
       modeDisplayName: <?= json_encode($modeDisplayName) ?>
     };
   </script>
@@ -179,6 +186,14 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
       <div id="score">0</div>
     </div>
+  </div>
+
+  <div id="tetris-drop-row" class="tetris-drop-row" aria-label="Drop row">
+    <button class="drop-slot" type="button" data-col="0" aria-label="Drop into column 1"></button>
+    <button class="drop-slot" type="button" data-col="1" aria-label="Drop into column 2"></button>
+    <button class="drop-slot" type="button" data-col="2" aria-label="Drop into column 3"></button>
+    <button class="drop-slot" type="button" data-col="3" aria-label="Drop into column 4"></button>
+    <button class="drop-slot" type="button" data-col="4" aria-label="Drop into column 5"></button>
   </div>
 
   <div class="grid-container" id="grid">
@@ -286,6 +301,10 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
 
   <?php if ($isCommonDay): ?>
   <script src="<?= autoVer('js/gameplay-common.js') ?>" defer></script>
+  <?php endif; ?>
+
+  <?php if ($isTetrisDay): ?>
+  <script src="<?= autoVer('js/gameplay-tetris.js') ?>" defer></script>
   <?php endif; ?>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>

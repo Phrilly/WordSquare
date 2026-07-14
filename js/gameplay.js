@@ -412,13 +412,13 @@ async function logGameToServer() {
 }
 
 document.addEventListener('ws:tilePlaced', () => {
-    if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return;
+  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isTetrisDay)) return;
     currentDeckIndex++;
     setNextLetter();
 });
 
 document.addEventListener('ws:tileUndone', () => {
-    if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return;
+  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isTetrisDay)) return;
     currentDeckIndex--;
     setNextLetter();
 });

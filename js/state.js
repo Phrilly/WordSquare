@@ -25,12 +25,16 @@ function getCurrentGameMode() {
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isBombDay) return 'bomb';
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return 'scrabble';
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay) return 'lookahead';
+	if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) return 'tetris';
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isCommonDay) return 'mfd';
 	return 'classic';
 }
 
 function getLeaderboardTitleText() {
-	return getCurrentGameMode() === 'mfd' ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH SCORES";
+	const mode = getCurrentGameMode();
+	if (mode === 'mfd') return "TODAY'S MFD HIGH SCORES";
+	if (mode === 'tetris') return "TODAY'S TETRIS HIGH SCORES";
+	return "TODAY'S HIGH SCORES";
 }
 
 const gridEl = document.getElementById('grid');

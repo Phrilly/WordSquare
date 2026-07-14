@@ -36,7 +36,7 @@ function normaliseMode(?string $mode): string
     if ($mode === 'common') {
         $mode = 'mfd';
     }
-    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd'];
+    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd', 'tetris'];
     return in_array($mode, $allowedModes, true) ? $mode : 'classic';
 }
 
