@@ -9,7 +9,7 @@ let tetrisBombsRemaining = 3;
 const TETRIS_CLEAR_PREVIEW_MS = 380;
 const TETRIS_LOAD_MS = 220;
 const TETRIS_LOADED_HOLD_MS = 760;
-const TETRIS_DROP_MS = 1580;
+const TETRIS_DROP_MS = 1320;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -170,7 +170,6 @@ function refreshBoardFromState() {
 function getTetrisWordScore(wordLength) {
   if (wordLength === 5) return 20;
   if (wordLength === 4) return 5;
-  if (wordLength === 3) return 1;
   return 0;
 }
 
@@ -197,12 +196,12 @@ function createMatchedWordResult() {
           word += letter;
           path.push(idx);
 
-          if (word.length === 5 && gameDictionary.has(word)) {
+          if (word.length >= 4 && gameDictionary.has(word)) {
             const reversed = word.split('').reverse().join('');
             canonicalWords.add(word < reversed ? word : reversed);
             path.forEach((pIdx) => {
               const existing = matchedMap.get(pIdx) || 0;
-              matchedMap.set(pIdx, Math.max(existing, 5));
+              matchedMap.set(pIdx, Math.max(existing, word.length));
             });
           }
         }
