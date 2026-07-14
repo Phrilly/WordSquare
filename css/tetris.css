@@ -15,208 +15,402 @@
   display: none;
   align-items: center;
   justify-content: center;
-  .tetris-drop-row {
-    display: none;
-    grid-template-columns: repeat(5, 1fr);
-    gap: clamp(4px, 1vw, 8px);
-    width: 100%;
-    max-width: var(--game-size);
-    margin-bottom: 8px;
-  }
+  gap: 12px;
+  margin: 0 10px 0 auto;
+  flex-shrink: 0;
+}
 
-  .tetris-drop-row.is-active {
-    display: grid;
+.tetris-tools-row.is-active {
+  display: flex;
+}
+
+.tetris-bomb-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tetris-bomb-icon {
+  width: 22px;
+  height: 26px;
+  display: inline-block;
+  position: relative;
+  border-radius: 50% 50% 46% 46%;
+  background: radial-gradient(circle at 34% 30%, #595959 0 12%, #1a1a1a 13% 65%, #050505 66% 100%);
+  box-shadow:
+    inset 2px 2px 3px rgba(255,255,255,0.07),
+    0 2px 4px rgba(0,0,0,0.34);
+}
+
+.tetris-bomb-icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid #d6c28d;
+  border-right: 2px solid #d6c28d;
+  border-radius: 0 100% 0 0;
+  transform: translateX(-12%) rotate(-14deg);
+}
+
+.tetris-bomb-icon.is-spent {
+  opacity: 0.22;
+  filter: grayscale(1);
+}
+
+.drop-slot {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background-color: rgba(0, 0, 0, 0.15);
+  box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4);
+  color: #eef6ff;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: filter 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.drop-slot::before {
+  content: 'LOAD';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.drop-slot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.drop-slot:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.drop-slot:active {
+  filter: brightness(0.95);
+  transform: translateY(0);
+}
+
+.drop-slot.is-loading::before {
+  content: attr(data-loaded-letter);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  background-color: #1f3f68;
+  color: #fdf6e3;
+  letter-spacing: 0;
+  box-shadow:
+    inset 2px 2px 4px rgba(255,255,255,0.14),
+    inset -2px -2px 4px rgba(0,0,0,0.26),
+    0 3px 6px rgba(0,0,0,0.22);
+}
+
+.drop-slot.is-loading::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(215, 236, 255, 0.1), rgba(106, 150, 195, 0.04));
+  border: 1px solid rgba(220, 242, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -3px 8px rgba(13, 33, 58, 0.12);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.drop-slot.is-sealed {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.drop-slot.is-sealed::after {
+  opacity: 0.9;
+  background: linear-gradient(180deg, rgba(228, 245, 255, 0.48), rgba(126, 178, 220, 0.22));
+  border-color: rgba(230, 245, 255, 0.34);
+}
+
+.drop-slot.impact-rattle {
+  animation: tetrisSlotRattle 0.36s ease-out;
+}
+
+.drop-slot.is-blocked {
+  background: rgba(120, 132, 150, 0.38);
+  border-color: rgba(140, 150, 165, 0.6);
+  color: rgba(220, 228, 240, 0.55);
+  cursor: not-allowed;
+}
+
+.drop-slot.is-blocked::before {
+  content: 'FULL';
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.drop-slot.is-blocked::after {
+  content: '';
+}
+
+.tetris-falling-tile {
+  position: fixed;
+  z-index: 9999;
+  width: clamp(34px, calc(var(--game-size) * 0.14), 72px);
+  height: clamp(34px, calc(var(--game-size) * 0.14), 72px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+  background-color: #fdf6e3;
+  color: #1a1a1a;
+  border-radius: 8px;
+  box-shadow:
+    inset 3px 3px 5px rgba(255, 255, 255, 1),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.15),
+    2px 3px 5px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation-fill-mode: forwards;
+}
+
+.tetris-falling-tile.is-load {
+  animation-name: tetrisLoadTile;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.tetris-falling-tile.is-drop {
+  animation-name: tetrisDropTile;
+  animation-timing-function: cubic-bezier(0.18, 0.7, 0.22, 1);
+}
+
+.grid-cell.tetris-clear-preview {
+  animation: tetrisMatchedPulse 0.24s ease-in-out infinite alternate;
+}
+
+.grid-cell.tetris-column-impact {
+  animation: tetrisColumnImpact 0.36s ease-out;
+}
+
+.grid-cell.tetris-impact-hit {
+  box-shadow:
+    inset 3px 3px 5px rgba(255, 255, 255, 1),
+    inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+    0 0 18px rgba(168, 194, 234, 0.42),
+    0 8px 18px rgba(0, 0, 0, 0.32);
+}
+
+.grid-cell.tetris-bomb-hit {
+  animation: tetrisBombFlash 0.18s ease-out;
+}
+
+.tetris-combo-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e4a7a;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+  animation: tetrisComboRise 0.9s ease-out forwards;
+}
+
+.tetris-score-banner {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(253, 246, 227, 0.96);
+  color: #1a1a1a;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+  animation: tetrisScoreRise 0.95s ease-out forwards;
+}
+
+@keyframes tetrisLoadTile {
+  0% {
+    transform: translate(-50%, -50%);
+  }
+  70% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y)));
+  }
+  100% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y)));
+  }
+}
+
+@keyframes tetrisSlotRattle {
+  0% { transform: translateY(0); }
+  18% { transform: translateY(1px) translateX(-1px); }
+  36% { transform: translateY(0) translateX(1px); }
+  54% { transform: translateY(1px) translateX(-1px); }
+  72% { transform: translateY(0) translateX(1px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+@keyframes tetrisDropTile {
+  0% {
+    transform: translate(-50%, -50%);
+  }
+  58% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y))) rotate(0deg);
+  }
+  72% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y) - 12px)) rotate(-5deg);
+  }
+  84% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y))) rotate(4deg);
+  }
+  92% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y) - 5px)) rotate(-2deg);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y)));
+  }
+}
+
+@keyframes tetrisColumnImpact {
+  0% { transform: translateX(0); }
+  18% { transform: translateX(-2px); }
+  36% { transform: translateX(2px); }
+  54% { transform: translateX(-1px); }
+  72% { transform: translateX(1px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes tetrisBombFlash {
+  0% {
+    transform: scale(1);
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 1),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+      0 0 0 rgba(248, 113, 113, 0);
+  }
+  100% {
+    transform: scale(1.05);
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 1),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+      0 0 18px rgba(248, 113, 113, 0.8);
+  }
+}
+
+@keyframes tetrisMatchedPulse {
+  from {
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 0.45),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.2),
+      0 0 0 rgba(255, 255, 255, 0);
+  }
+  to {
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 0.65),
+      inset -4px -4px 6px rgba(0, 0, 0, 0.15),
+      0 0 14px rgba(255, 255, 255, 0.45);
+  }
+}
+
+@keyframes tetrisComboRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.92);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(1.02);
+  }
+}
+
+@keyframes tetrisScoreRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(1.04);
+  }
+}
+
+@media (max-width: 700px) {
+  .tetris-drop-row {
+    margin-bottom: 6px;
   }
 
   .tetris-tools-row {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin: 0 10px 0 auto;
-    flex-shrink: 0;
-  }
-
-  .tetris-tools-row.is-active {
-    display: flex;
-  }
-
-  .tetris-bomb-indicator {
-    display: inline-flex;
-    align-items: center;
     gap: 10px;
-  }
-
-  .tetris-bomb-icon {
-    width: 22px;
-    height: 26px;
-    display: inline-block;
-    position: relative;
-    border-radius: 50% 50% 46% 46%;
-    background: radial-gradient(circle at 34% 30%, #595959 0 12%, #1a1a1a 13% 65%, #050505 66% 100%);
-    box-shadow:
-      inset 2px 2px 3px rgba(255,255,255,0.07),
-      0 2px 4px rgba(0,0,0,0.34);
-  }
-
-  .tetris-bomb-icon::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: -6px;
-    width: 9px;
-    height: 9px;
-    border-top: 2px solid #d6c28d;
-    border-right: 2px solid #d6c28d;
-    border-radius: 0 100% 0 0;
-    transform: translateX(-12%) rotate(-14deg);
-  }
-
-  .tetris-bomb-icon.is-spent {
-    opacity: 0.22;
-    filter: grayscale(1);
+    margin: 0 6px 0 auto;
   }
 
   .drop-slot {
-    position: relative;
-    overflow: hidden;
-    aspect-ratio: 1 / 1;
-    height: auto;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
-    background-color: rgba(0, 0, 0, 0.15);
-    box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4);
-    color: #eef6ff;
-    font-family: Arial, sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    transition: filter 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+    font-size: 10px;
   }
 
   .drop-slot::before {
-    content: 'LOAD';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-  }
-
-  .drop-slot::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-  }
-
-  .drop-slot:hover {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
-
-  .drop-slot:active {
-    filter: brightness(0.95);
-    transform: translateY(0);
-  }
-
-  .drop-slot.is-loading::before {
-    content: attr(data-loaded-letter);
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100% - 2px);
-    height: calc(100% - 2px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 8px;
-    background-color: #1f3f68;
-    color: #fdf6e3;
-    letter-spacing: 0;
-    box-shadow:
-      inset 2px 2px 4px rgba(255,255,255,0.14),
-      inset -2px -2px 4px rgba(0,0,0,0.26),
-      0 3px 6px rgba(0,0,0,0.22);
+    font-size: 10px;
   }
 
   .drop-slot.is-loading::after {
-    content: '';
-    position: absolute;
-    inset: 1px;
-    border-radius: 8px;
-    background: linear-gradient(180deg, rgba(215, 236, 255, 0.1), rgba(106, 150, 195, 0.04));
-    border: 1px solid rgba(220, 242, 255, 0.1);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.22),
-      inset 0 -3px 8px rgba(13, 33, 58, 0.12);
-    pointer-events: none;
-    opacity: 0.3;
+    inset: 2px;
   }
 
-  .drop-slot.is-sealed {
-    background-color: rgba(0, 0, 0, 0.15);
+  .tetris-bomb-icon {
+    width: 19px;
+    height: 23px;
   }
 
-  .drop-slot.is-sealed::after {
-    opacity: 0.9;
-    background: linear-gradient(180deg, rgba(228, 245, 255, 0.48), rgba(126, 178, 220, 0.22));
-    border-color: rgba(230, 245, 255, 0.34);
+  .tetris-combo-banner {
+    font-size: 13px;
+    padding: 7px 12px;
   }
 
-  .drop-slot.impact-rattle {
-    animation: tetrisSlotRattle 0.36s ease-out;
+  .tetris-score-banner {
+    top: 42px;
+    font-size: 15px;
+    padding: 5px 10px;
   }
-
-  .drop-slot.is-blocked {
-    background: rgba(120, 132, 150, 0.38);
-    border-color: rgba(140, 150, 165, 0.6);
-    color: rgba(220, 228, 240, 0.55);
-    cursor: not-allowed;
-  }
-
-  .drop-slot.is-blocked::before {
-    content: 'FULL';
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  .drop-slot.is-blocked::after {
-    content: '';
-  }
-
-  .tetris-falling-tile {
-    position: fixed;
-    z-index: 9999;
-    width: clamp(34px, calc(var(--game-size) * 0.14), 72px);
-    height: clamp(34px, calc(var(--game-size) * 0.14), 72px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
-    background-color: #fdf6e3;
-    color: #1a1a1a;
-    border-radius: 8px;
-    box-shadow:
-      inset 3px 3px 5px rgba(255, 255, 255, 1),
-      inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-      2px 3px 5px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    animation-fill-mode: forwards;
-  }
-
-  .tetris-falling-tile.is-load {
-    animation-name: tetrisLoadTile;
-    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
-  }
-
-  .tetris-falling-tile.is-drop {
-    animation-name: tetrisDropTile;
-    animation-timing-function: cubic-bezier(0.18, 0.7, 0.22, 1);
-  }
+}
 
   .grid-cell.tetris-clear-preview {
     animation: tetrisMatchedPulse 0.24s ease-in-out infinite alternate;
