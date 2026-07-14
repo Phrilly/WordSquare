@@ -6,7 +6,8 @@ let pendingDropColumn = null;
 let tetrisBusy = false;
 
 const TETRIS_CLEAR_PREVIEW_MS = 380;
-const TETRIS_DROP_MS = 180;
+const TETRIS_LOAD_MS = 220;
+const TETRIS_DROP_MS = 620;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -19,6 +20,10 @@ function getDropRowEl() {
 function getDropSlots() {
   const row = getDropRowEl();
   return row ? Array.from(row.querySelectorAll('.drop-slot')) : [];
+}
+
+function getDropSlot(col) {
+  return getDropSlots()[col] || null;
 }
 
 function delay(ms) {
@@ -66,6 +71,47 @@ function syncDropSlots() {
   });
 }
 
+function setSlotLoadedLetter(slot, letter) {
+  if (!slot) return;
+  slot.dataset.loadedLetter = letter;
+  slot.classList.add('is-loading');
+}
+
+function clearSlotLoadedLetter(slot) {
+  if (!slot) return;
+  delete slot.dataset.loadedLetter;
+  slot.classList.remove('is-loading');
+}
+
+function triggerColumnImpact(col, targetIdx) {
+  const slot = getDropSlot(col);
+  if (slot) {
+    slot.classList.remove('impact-rattle');
+    void slot.offsetWidth;
+    slot.classList.add('impact-rattle');
+    setTimeout(() => slot.classList.remove('impact-rattle'), 360);
+  }
+
+  if (!gridEl) return;
+  const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+  for (let row = 0; row < gridSize; row++) {
+    const idx = (row * gridSize) + col;
+    const cellEl = cellEls[idx];
+    if (!cellEl) continue;
+    cellEl.classList.remove('tetris-column-impact');
+    void cellEl.offsetWidth;
+    cellEl.classList.add('tetris-column-impact');
+    if (idx === targetIdx) {
+      cellEl.classList.add('tetris-impact-hit');
+    } else {
+      cellEl.classList.remove('tetris-impact-hit');
+    }
+    setTimeout(() => {
+      cellEl.classList.remove('tetris-column-impact', 'tetris-impact-hit');
+    }, 360);
+  }
+}
+
 function refreshBoardFromState() {
   if (!gridEl) return;
 
@@ -93,9 +139,17 @@ function refreshBoardFromState() {
   }
 }
 
-function createMatchedWordMap() {
+function getTetrisWordScore(wordLength) {
+  if (wordLength === 5) return 20;
+  if (wordLength === 4) return 5;
+  if (wordLength === 3) return 1;
+  return 0;
+}
+
+function createMatchedWordResult() {
   const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1]];
   const matchedMap = new Map();
+  const canonicalWords = new Set();
 
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
@@ -116,6 +170,8 @@ function createMatchedWordMap() {
           path.push(idx);
 
           if (word.length >= 3 && gameDictionary.has(word)) {
+            const reversed = word.split('').reverse().join('');
+            canonicalWords.add(word < reversed ? word : reversed);
             path.forEach((pIdx) => {
               const existing = matchedMap.get(pIdx) || 0;
               matchedMap.set(pIdx, Math.max(existing, word.length));
@@ -126,11 +182,16 @@ function createMatchedWordMap() {
     }
   }
 
-  return matchedMap;
+  let scoreGain = 0;
+  canonicalWords.forEach((word) => {
+    scoreGain += getTetrisWordScore(word.length);
+  });
+
+  return { matchedMap, scoreGain };
 }
 
 function collectMatchedWordIndices() {
-  return Array.from(createMatchedWordMap().keys());
+  return Array.from(createMatchedWordResult().matchedMap.keys());
 }
 
 function applyGravity() {
@@ -167,9 +228,41 @@ function showComboFeedback(comboCount) {
   setTimeout(() => label.remove(), 900);
 }
 
+function showScoreGainFeedback(scoreGain, matchedMap) {
+  if (!gridEl || scoreGain <= 0) return;
+
+  const label = document.createElement('div');
+  label.className = 'tetris-score-banner';
+  label.textContent = `+${scoreGain}`;
+
+  if (matchedMap && matchedMap.size > 0) {
+    const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+    let totalX = 0;
+    let totalY = 0;
+    let count = 0;
+
+    matchedMap.forEach((_, idx) => {
+      const cellEl = cellEls[idx];
+      if (!cellEl) return;
+      const cellRect = cellEl.getBoundingClientRect();
+      const gridRect = gridEl.getBoundingClientRect();
+      totalX += (cellRect.left - gridRect.left) + (cellRect.width / 2);
+      totalY += (cellRect.top - gridRect.top) + (cellRect.height / 2);
+      count++;
+    });
+
+    if (count > 0) {
+      label.style.left = `${totalX / count}px`;
+      label.style.top = `${Math.max(18, (totalY / count) - 12)}px`;
+    }
+  }
+
+  gridEl.appendChild(label);
+  setTimeout(() => label.remove(), 950);
+}
+
 async function animateDropToCell(col, targetIdx, letter) {
-  const slots = getDropSlots();
-  const sourceSlot = slots[col];
+  const sourceSlot = getDropSlot(col);
   const targetCell = document.querySelector(`.grid-cell[data-index='${targetIdx}']`);
   if (!sourceSlot || !targetCell) return;
 
@@ -182,11 +275,35 @@ async function animateDropToCell(col, targetIdx, letter) {
   animTile.style.top = `${sourceRect.top + (sourceRect.height / 2)}px`;
   animTile.style.setProperty('--drop-x', `${(targetRect.left + (targetRect.width / 2)) - (sourceRect.left + (sourceRect.width / 2))}px`);
   animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - (sourceRect.top + (sourceRect.height / 2))}px`);
+  animTile.classList.add('is-drop');
   animTile.style.animationDuration = `${TETRIS_DROP_MS}ms`;
   document.body.appendChild(animTile);
 
   await delay(TETRIS_DROP_MS);
   animTile.remove();
+  triggerColumnImpact(col, targetIdx);
+}
+
+async function animateLoadIntoSlot(col, letter) {
+  const slot = getDropSlot(col);
+  const nextLetterEl = document.getElementById('next-letter');
+  if (!slot || !nextLetterEl) return;
+
+  const sourceRect = nextLetterEl.getBoundingClientRect();
+  const targetRect = slot.getBoundingClientRect();
+  const animTile = document.createElement('div');
+  animTile.className = 'tetris-falling-tile is-load';
+  animTile.textContent = letter;
+  animTile.style.left = `${sourceRect.left + (sourceRect.width / 2)}px`;
+  animTile.style.top = `${sourceRect.top + (sourceRect.height / 2)}px`;
+  animTile.style.setProperty('--drop-x', `${(targetRect.left + (targetRect.width / 2)) - (sourceRect.left + (sourceRect.width / 2))}px`);
+  animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - (sourceRect.top + (sourceRect.height / 2))}px`);
+  animTile.style.animationDuration = `${TETRIS_LOAD_MS}ms`;
+  document.body.appendChild(animTile);
+
+  await delay(TETRIS_LOAD_MS);
+  animTile.remove();
+  setSlotLoadedLetter(slot, letter);
 }
 
 function paintMatchedPreview(matchedMap) {
@@ -216,12 +333,15 @@ async function resolveTetrisClears() {
   let comboCount = 0;
 
   while (loopGuard < 12) {
-    const matchedMap = createMatchedWordMap();
-    const toClear = Array.from(matchedMap.keys());
+    const matchedResult = createMatchedWordResult();
+    const toClear = Array.from(matchedResult.matchedMap.keys());
     if (toClear.length === 0) break;
 
     comboCount++;
-    paintMatchedPreview(matchedMap);
+    currentScore += matchedResult.scoreGain;
+    if (scoreEl) scoreEl.innerText = currentScore;
+    showScoreGainFeedback(matchedResult.scoreGain, matchedResult.matchedMap);
+    paintMatchedPreview(matchedResult.matchedMap);
     calculateRealTimeScoreLocal();
     await delay(TETRIS_CLEAR_PREVIEW_MS);
 
@@ -281,7 +401,9 @@ async function handleDropClick(col) {
 
   tetrisBusy = true;
   syncDropSlots();
+  await animateLoadIntoSlot(col, letter);
   await animateDropToCell(col, targetIdx, letter);
+  clearSlotLoadedLetter(getDropSlot(col));
   placeLetter(targetIdx, letter, cellEl, false);
 }
 
@@ -338,7 +460,9 @@ document.addEventListener('ws:beforeWildcardPlaced', (e) => {
   tetrisBusy = true;
   syncDropSlots();
   (async () => {
+    await animateLoadIntoSlot(dropCol, letter);
     await animateDropToCell(dropCol, index, letter);
+    clearSlotLoadedLetter(getDropSlot(dropCol));
     placeLetter(index, letter, cellEl, true);
   })();
 });
@@ -362,8 +486,16 @@ document.addEventListener('ws:tilePlaced', async () => {
   syncDropSlots();
 });
 
+document.addEventListener('ws:calculateScore', (e) => {
+  if (!isTetrisMode()) return;
+  e.preventDefault();
+  if (scoreEl) scoreEl.innerText = currentScore;
+});
+
 document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
   pendingDropColumn = null;
   tetrisBusy = false;
+  currentScore = 0;
+  if (scoreEl) scoreEl.innerText = '0';
 });

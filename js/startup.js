@@ -131,11 +131,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof updateWildcardModal === 'function') updateWildcardModal();
         const alphaModal = document.getElementById('alphabet-modal');
         if (alphaModal) alphaModal.classList.add('active');
-      } else {
-        const forcedLetter = prompt("Developer Cheat Mode: Enter a specific letter (A-Z)");
-        if (forcedLetter && /^[a-zA-Z]$/.test(forcedLetter)) {
-          localNextBtn.textContent = forcedLetter.toUpperCase();
-        }
       }
     });
   }
