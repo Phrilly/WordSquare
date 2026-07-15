@@ -67,9 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function render() {
-    const value = cleanInput(input.value);
-    if (value !== input.value) {
+    const rawValue = input.value;
+    const value = cleanInput(rawValue);
+    if (value !== rawValue) {
       input.value = value;
+    }
+
+    // On some mobile keyboards, programmatic normalization moves the caret to
+    // the start, causing the next keypress to prepend. Keep caret at the end.
+    if (document.activeElement === input && typeof input.setSelectionRange === 'function') {
+      const caretPos = value.length;
+      input.setSelectionRange(caretPos, caretPos);
     }
 
     const reversed = value.split('').reverse().join('');

@@ -284,7 +284,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
 
     <div class="try-it-hint" id="try-it-hint">Type letters on your keyboard. Backspace deletes.</div>
 
-    <input id="try-it-input" class="try-it-input" type="text" inputmode="latin" autocomplete="off" maxlength="5" aria-label="Type up to 5 letters to test dictionary words">
+    <input id="try-it-input" class="try-it-input" type="text" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="5" aria-label="Type up to 5 letters to test dictionary words">
   </div>
 
   <div class="version-tag">Version Dynamic Auto-Versioning</div>
