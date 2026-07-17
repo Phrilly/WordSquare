@@ -25,6 +25,7 @@ let tetrisMoveTimer = null;
 let tetrisClockTimer = null;
 let tetrisClockDeadline = 0;
 let tetrisRoundToken = 0;
+let tetrisActiveLetter = '';
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -116,6 +117,20 @@ function syncTetrisActiveSlot(letter) {
   });
 }
 
+function advanceTetrisPreviewQueue() {
+  if (!isTetrisMode()) return;
+  if (!Array.isArray(gameDeck) || gameDeck.length === 0) return;
+
+  currentDeckIndex++;
+  if (currentDeckIndex >= gameDeck.length) {
+    triggerEndGame();
+    return;
+  }
+
+  renderNextLetterWindow();
+  syncTetrisQueueUI();
+}
+
 function startTetrisRound() {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
 
@@ -123,13 +138,15 @@ function startTetrisRound() {
   const letter = nextLetterEl ? nextLetterEl.innerText : '';
   if (!letter) return;
 
+  tetrisActiveLetter = letter;
+
   clearTetrisRoundTimers();
   tetrisRoundToken++;
   const token = tetrisRoundToken;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
 
-  syncTetrisActiveSlot(letter);
+  syncTetrisActiveSlot(tetrisActiveLetter);
 
   const roundMs = getTetrisRoundClockMs();
   const sweepMs = getTetrisSweepStepMs();
@@ -148,7 +165,7 @@ function startTetrisRound() {
     tetrisSweepColumn += tetrisSweepDirection;
     if (tetrisSweepColumn < 0) tetrisSweepColumn = 0;
     if (tetrisSweepColumn > (gridSize - 1)) tetrisSweepColumn = gridSize - 1;
-    syncTetrisActiveSlot(letter);
+    syncTetrisActiveSlot(tetrisActiveLetter);
   }, sweepMs);
 
   tetrisClockTimer = setInterval(() => {
@@ -203,8 +220,7 @@ function syncDropSlots() {
   if (!isTetrisMode()) return;
 
   const slots = getDropSlots();
-  const nextLetter = document.getElementById('next-letter');
-  const letter = nextLetter ? nextLetter.innerText : '';
+  const letter = tetrisActiveLetter || (document.getElementById('next-letter') ? document.getElementById('next-letter').innerText : '');
   slots.forEach((slot, col) => {
     const topIdx = col;
     const blocked = Boolean(cells[topIdx]) || tetrisBusy;
@@ -506,6 +522,7 @@ async function animateLoadIntoSlot(col, letter) {
   await delay(TETRIS_LOAD_MS);
   animTile.remove();
   setSlotLoadedLetter(slot, letter);
+  advanceTetrisPreviewQueue();
   await delay(TETRIS_LOADED_SETTLE_MS);
   sealLoadedSlot(slot);
   await delay(TETRIS_LOADED_COLOR_SHIFT_MS);
@@ -592,10 +609,8 @@ async function handleDropClick(col) {
 
   ensureDeckBufferForTetris();
 
-  const nextLetterEl = document.getElementById('next-letter');
-  if (!nextLetterEl || !nextLetterEl.innerText) return;
-
-  const letter = nextLetterEl.innerText;
+  const letter = tetrisActiveLetter || (document.getElementById('next-letter') ? document.getElementById('next-letter').innerText : '');
+  if (!letter) return;
   const cellEl = document.querySelector(`.grid-cell[data-index='${targetIdx}']`);
 
   if (letter === '?') {
@@ -733,11 +748,10 @@ document.addEventListener('ws:tilePlaced', async () => {
   }
 
   ensureDeckBufferForTetris();
-  currentDeckIndex++;
   tetrisBusy = false;
-  setNextLetter();
   syncDropSlots();
   syncTetrisBombUI();
+  startTetrisRound();
 });
 
 document.addEventListener('ws:calculateScore', (e) => {
@@ -751,18 +765,15 @@ document.addEventListener('ws:beforeInit', () => {
   pendingDropColumn = null;
   tetrisBusy = false;
   tetrisBombsRemaining = 3;
+  tetrisActiveLetter = '';
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;
   clearTetrisRoundTimers();
-  currentScore = 0;
-  if (scoreEl) scoreEl.innerText = '0';
-  syncTetrisBombUI();
-});
-
-document.addEventListener('ws:beforeInit', () => {
-  if (!isTetrisMode()) return;
   if (typeof generateBagSequence === 'function') {
     gameDeck = generateBagSequence(false);
   }
+  currentScore = 0;
+  if (scoreEl) scoreEl.innerText = '0';
+  syncTetrisBombUI();
 });

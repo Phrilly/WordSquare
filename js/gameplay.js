@@ -185,6 +185,11 @@ function triggerEndGame() {
 }
 
 function setNextLetter() {
+  renderNextLetterWindow();
+  document.dispatchEvent(new CustomEvent('ws:nextLetterUpdated'));
+}
+
+function renderNextLetterWindow() {
   if (currentDeckIndex >= gameDeck.length) {
       triggerEndGame();
       return;
@@ -206,8 +211,6 @@ function setNextLetter() {
   if (q2El) q2El.innerText = gameDeck[currentDeckIndex + 2] || '';
 
   syncDefaultQueueUI();
-
-  document.dispatchEvent(new CustomEvent('ws:nextLetterUpdated'));
 }
 
 function handleHoverEnter(index, cellEl) {
