@@ -28,6 +28,7 @@ let tetrisRoundToken = 0;
 let tetrisActiveLetter = '';
 let tetrisActiveTone = 'green';
 let tetrisSuccessfulPlacements = 0;
+let tetrisTurnIndex = 0;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -63,11 +64,11 @@ function getTetrisClockValueEl() {
 }
 
 function getTetrisRoundClockMs() {
-  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisSuccessfulPlacements * TETRIS_CLOCK_STEP_MS));
+  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
 }
 
 function getTetrisSweepStepMs() {
-  return Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (tetrisSuccessfulPlacements * TETRIS_SWEEP_STEP_MS));
+  return Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (tetrisTurnIndex * TETRIS_SWEEP_STEP_MS));
 }
 
 function formatTetrisClock(ms) {
@@ -82,9 +83,14 @@ function validateTetrisClockState(context) {
     tetrisSuccessfulPlacements = 0;
   }
 
-  if (currentDeckIndex === 0 && tetrisSuccessfulPlacements !== 0) {
+  if (tetrisTurnIndex < 0 || !Number.isInteger(tetrisTurnIndex)) {
+    console.error(`[Tetris clock invariant] invalid turn counter in ${context}`, tetrisTurnIndex);
+    tetrisTurnIndex = 0;
+  }
+
+  if (tetrisTurnIndex === 0 && tetrisSuccessfulPlacements !== 0) {
     console.error(`[Tetris clock invariant] first round should start at 10.0s in ${context}`, {
-      currentDeckIndex,
+      tetrisTurnIndex,
       tetrisSuccessfulPlacements,
     });
     tetrisSuccessfulPlacements = 0;
@@ -148,6 +154,28 @@ function syncTetrisActiveSlot(letter) {
   });
 }
 
+function isAnyTetrisColumnFull() {
+  for (let col = 0; col < gridSize; col++) {
+    if (cells[col]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function endTetrisIfAnyColumnFull(context) {
+  if (!isTetrisMode() || isGameOver) return false;
+
+  if (!isAnyTetrisColumnFull()) return false;
+
+  console.error(`[Tetris stop condition] ending game because a column is full in ${context}`);
+  clearTetrisRoundTimers();
+  tetrisBusy = false;
+  syncDropSlots();
+  triggerEndGame();
+  return true;
+}
+
 function advanceTetrisPreviewQueue() {
   if (!isTetrisMode()) return;
   if (!Array.isArray(gameDeck) || gameDeck.length === 0) return;
@@ -172,6 +200,9 @@ function startTetrisRound() {
   validateTetrisClockState('startTetrisRound');
   tetrisActiveLetter = letter;
 
+  const thisTurnIndex = tetrisTurnIndex;
+  tetrisTurnIndex++;
+
   clearTetrisRoundTimers();
   tetrisRoundToken++;
   const token = tetrisRoundToken;
@@ -180,8 +211,8 @@ function startTetrisRound() {
 
   syncTetrisActiveSlot(tetrisActiveLetter);
 
-  const roundMs = getTetrisRoundClockMs();
-  const sweepMs = getTetrisSweepStepMs();
+  const roundMs = Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (thisTurnIndex * TETRIS_CLOCK_STEP_MS));
+  const sweepMs = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (thisTurnIndex * TETRIS_SWEEP_STEP_MS));
   tetrisClockDeadline = Date.now() + roundMs;
   setTetrisClockDisplay(roundMs, roundMs);
 
@@ -266,6 +297,8 @@ function syncDropSlots() {
       delete slot.dataset.loadedLetter;
     }
   });
+
+  endTetrisIfAnyColumnFull('syncDropSlots');
 }
 
 function syncTetrisBombUI() {
@@ -635,6 +668,7 @@ async function handleDropClick(col) {
 
   const targetIdx = findDropTargetIndex(col);
   if (targetIdx < 0) {
+    endTetrisIfAnyColumnFull('handleDropClick:full-column');
     syncDropSlots();
     return;
   }
@@ -772,6 +806,10 @@ document.addEventListener('ws:tilePlaced', async () => {
 
   await resolveTetrisClears();
 
+  if (endTetrisIfAnyColumnFull('ws:tilePlaced')) {
+    return;
+  }
+
   tetrisSuccessfulPlacements++;
   validateTetrisClockState('ws:tilePlaced');
 
@@ -803,6 +841,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisActiveLetter = '';
   tetrisActiveTone = 'green';
   tetrisSuccessfulPlacements = 0;
+  tetrisTurnIndex = 0;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;

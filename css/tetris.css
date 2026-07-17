@@ -248,6 +248,21 @@
   content: 'FULL';
   left: 50%;
   transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  font-size: clamp(8px, calc(var(--game-size) * 0.028), 14px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: #ffffff;
+  background: transparent;
+  -webkit-mask: none;
+  mask: none;
+  box-shadow: none;
+  opacity: 1;
 }
 
 .drop-slot.is-blocked::after {
