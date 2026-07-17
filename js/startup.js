@@ -309,7 +309,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         setTimeout(() => {
           openingScreen.style.opacity = '0';
-          setTimeout(() => { openingScreen.style.display = 'none'; }, 500);
+          setTimeout(() => {
+            openingScreen.style.display = 'none';
+            document.dispatchEvent(new CustomEvent('ws:openingClosed'));
+          }, 500);
         }, 900);
       });
     }

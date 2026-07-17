@@ -29,6 +29,7 @@ let tetrisActiveLetter = '';
 let tetrisActiveTone = 'green';
 let tetrisSuccessfulPlacements = 0;
 let tetrisTurnIndex = 0;
+let tetrisOpeningClosedSeen = false;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -63,6 +64,13 @@ function getTetrisClockValueEl() {
   return document.getElementById('tetris-clock-value');
 }
 
+function isTetrisRoundBlockedByOpeningScreen() {
+  const openingScreen = document.getElementById('opening-screen');
+  if (!openingScreen) return false;
+  const computed = window.getComputedStyle(openingScreen);
+  return computed.display !== 'none';
+}
+
 function getTetrisRoundClockMs() {
   return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
 }
@@ -73,6 +81,10 @@ function getTetrisSweepStepMs() {
 
 function formatTetrisClock(ms) {
   return `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
+}
+
+function reportTetrisInvariant(code, details) {
+  console.error(`[Tetris invariant:${code}]`, details);
 }
 
 function validateTetrisClockState(context) {
@@ -89,10 +101,21 @@ function validateTetrisClockState(context) {
   }
 
   if (tetrisTurnIndex === 0 && tetrisSuccessfulPlacements !== 0) {
-    console.error(`[Tetris clock invariant] first round should start at 10.0s in ${context}`, {
+    reportTetrisInvariant('clock-first-round-counter', {
+      context,
       tetrisTurnIndex,
       tetrisSuccessfulPlacements,
     });
+    tetrisSuccessfulPlacements = 0;
+  }
+
+  if (!tetrisOpeningClosedSeen && tetrisTurnIndex > 0) {
+    reportTetrisInvariant('clock-started-before-opening-closed', {
+      context,
+      tetrisTurnIndex,
+      openingClosedSeen: tetrisOpeningClosedSeen,
+    });
+    tetrisTurnIndex = 0;
     tetrisSuccessfulPlacements = 0;
   }
 }
@@ -207,6 +230,10 @@ function advanceTetrisPreviewQueue() {
 
 function startTetrisRound() {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (isTetrisRoundBlockedByOpeningScreen()) {
+    clearTetrisRoundTimers();
+    return;
+  }
 
   const nextLetterEl = document.getElementById('next-letter');
   const letter = nextLetterEl ? nextLetterEl.innerText : '';
@@ -228,6 +255,17 @@ function startTetrisRound() {
 
   const roundMs = Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (thisTurnIndex * TETRIS_CLOCK_STEP_MS));
   const sweepMs = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (thisTurnIndex * TETRIS_SWEEP_STEP_MS));
+
+  if (thisTurnIndex === 0 && roundMs !== TETRIS_START_CLOCK_MS) {
+    reportTetrisInvariant('clock-first-round-duration', {
+      thisTurnIndex,
+      roundMs,
+      expected: TETRIS_START_CLOCK_MS,
+      tetrisSuccessfulPlacements,
+      tetrisTurnIndex,
+    });
+  }
+
   tetrisClockDeadline = Date.now() + roundMs;
   setTetrisClockDisplay(roundMs, roundMs);
 
@@ -580,6 +618,8 @@ async function animateLoadIntoSlot(col, letter) {
   const slot = getDropSlot(col);
   if (!slot) return;
 
+  const deckIndexBeforeLoad = currentDeckIndex;
+
   slot.classList.add('is-engaged');
 
   const targetRect = slot.getBoundingClientRect();
@@ -596,10 +636,26 @@ async function animateLoadIntoSlot(col, letter) {
   animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - sourceTop}px`);
   animTile.style.animationDuration = `${TETRIS_LOAD_MS}ms`;
   document.body.appendChild(animTile);
-  advanceTetrisPreviewQueue();
 
   await delay(TETRIS_LOAD_MS);
   animTile.remove();
+  advanceTetrisPreviewQueue();
+
+  if (!isGameOver && currentDeckIndex !== (deckIndexBeforeLoad + 1)) {
+    reportTetrisInvariant('queue-did-not-advance-on-bar-drop', {
+      deckIndexBeforeLoad,
+      deckIndexAfterLoad: currentDeckIndex,
+      expectedDeckIndexAfterLoad: deckIndexBeforeLoad + 1,
+      letter,
+    });
+
+    currentDeckIndex = deckIndexBeforeLoad + 1;
+    if (currentDeckIndex < gameDeck.length) {
+      renderNextLetterWindow();
+      syncTetrisQueueUI();
+    }
+  }
+
   setSlotLoadedLetter(slot, letter);
   await delay(TETRIS_LOADED_SETTLE_MS);
   sealLoadedSlot(slot);
@@ -744,6 +800,22 @@ document.addEventListener('ws:nextLetterUpdated', () => {
   startTetrisRound();
 });
 
+document.addEventListener('ws:openingClosed', () => {
+  if (!isTetrisMode()) return;
+  tetrisOpeningClosedSeen = true;
+
+  if (tetrisTurnIndex !== 0 || tetrisSuccessfulPlacements !== 0) {
+    reportTetrisInvariant('opening-close-reset-needed', {
+      tetrisTurnIndex,
+      tetrisSuccessfulPlacements,
+    });
+    tetrisTurnIndex = 0;
+    tetrisSuccessfulPlacements = 0;
+  }
+
+  startTetrisRound();
+});
+
 document.addEventListener('ws:applyHover', (e) => {
   if (!isTetrisMode()) return;
   e.preventDefault();
@@ -846,6 +918,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisActiveTone = 'green';
   tetrisSuccessfulPlacements = 0;
   tetrisTurnIndex = 0;
+  tetrisOpeningClosedSeen = false;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;
