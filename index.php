@@ -186,6 +186,10 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
         <span class="tetris-bomb-icon" data-bomb-index="2" aria-hidden="true"></span>
       </div>
     </div>
+    <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
+      <span class="tetris-clock-label">CLOCK</span>
+      <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
+    </div>
     <div class="score-stack">
       <div class="score-meta-row">
         <div id="mode-badge" class="mode-badge"><?= htmlspecialchars(strtoupper($modeDisplayName), ENT_QUOTES, 'UTF-8') ?></div>

@@ -14,7 +14,7 @@
 }
 
 .top-bar.tetris-mode #left-header {
-  flex-shrink: 0;
+  display: none;
 }
 
 #left-header {
@@ -147,6 +147,52 @@
   gap: 6px;
 }
 
+.tetris-clock {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: clamp(72px, calc(var(--game-size) * 0.16), 110px);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 244, 216, 0.16), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+  color: #f8fafc;
+  text-align: center;
+  user-select: none;
+}
+
+.top-bar.tetris-mode .tetris-clock {
+  display: flex;
+}
+
+.tetris-clock-label {
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.tetris-clock-value {
+  font-family: Arial, sans-serif;
+  font-size: clamp(18px, calc(var(--game-size) * 0.06), 28px);
+  font-weight: 900;
+  line-height: 1;
+  color: #fff7d6;
+  text-shadow: 0 0 12px rgba(255, 236, 160, 0.18);
+}
+
+.tetris-clock.is-urgent .tetris-clock-value {
+  color: #fecaca;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.22);
+}
+
 .mode-badge {
   font-family: Arial, sans-serif;
   font-size: 10px;
@@ -201,6 +247,15 @@
     width: 20px;
     height: 20px;
     font-size: 12px;
+  }
+
+  .tetris-clock {
+    min-width: 64px;
+    padding: 6px 10px;
+  }
+
+  .tetris-clock-value {
+    font-size: 16px;
   }
 }
 

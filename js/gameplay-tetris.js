@@ -12,6 +12,19 @@ const TETRIS_LOADED_SETTLE_MS = 380;
 const TETRIS_LOADED_COLOR_SHIFT_MS = 320;
 const TETRIS_LOADED_FINAL_HOLD_MS = 360;
 const TETRIS_DROP_MS = 1320;
+const TETRIS_START_CLOCK_MS = 10000;
+const TETRIS_MIN_CLOCK_MS = 2800;
+const TETRIS_CLOCK_STEP_MS = 300;
+const TETRIS_START_SWEEP_MS = 800;
+const TETRIS_MIN_SWEEP_MS = 320;
+const TETRIS_SWEEP_STEP_MS = 20;
+
+let tetrisSweepColumn = 0;
+let tetrisSweepDirection = 1;
+let tetrisMoveTimer = null;
+let tetrisClockTimer = null;
+let tetrisClockDeadline = 0;
+let tetrisRoundToken = 0;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -38,6 +51,133 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getTetrisClockEl() {
+  return document.getElementById('tetris-clock');
+}
+
+function getTetrisClockValueEl() {
+  return document.getElementById('tetris-clock-value');
+}
+
+function getTetrisRoundClockMs() {
+  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (placedCount * TETRIS_CLOCK_STEP_MS));
+}
+
+function getTetrisSweepStepMs() {
+  return Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (placedCount * TETRIS_SWEEP_STEP_MS));
+}
+
+function formatTetrisClock(ms) {
+  return `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
+}
+
+function clearTetrisRoundTimers() {
+  if (tetrisMoveTimer) {
+    clearInterval(tetrisMoveTimer);
+    tetrisMoveTimer = null;
+  }
+  if (tetrisClockTimer) {
+    clearInterval(tetrisClockTimer);
+    tetrisClockTimer = null;
+  }
+}
+
+function setTetrisClockDisplay(remainingMs, roundMs) {
+  const clockEl = getTetrisClockEl();
+  const clockValueEl = getTetrisClockValueEl();
+  if (!clockEl || !clockValueEl) return;
+
+  if (remainingMs <= 3000) {
+    clockEl.classList.add('is-urgent');
+  } else {
+    clockEl.classList.remove('is-urgent');
+  }
+
+  if (roundMs > 0) {
+    clockEl.style.setProperty('--tetris-clock-progress', String(Math.max(0, Math.min(1, remainingMs / roundMs))));
+  }
+
+  clockValueEl.textContent = formatTetrisClock(remainingMs);
+}
+
+function syncTetrisActiveSlot(letter) {
+  if (!isTetrisMode()) return;
+
+  const slots = getDropSlots();
+  slots.forEach((slot, col) => {
+    const active = col === tetrisSweepColumn && !tetrisBusy;
+    slot.classList.toggle('is-sweep-active', active);
+    slot.disabled = !active || tetrisBusy;
+    if (active) {
+      slot.dataset.loadedLetter = letter || '';
+    } else {
+      delete slot.dataset.loadedLetter;
+    }
+  });
+}
+
+function startTetrisRound() {
+  if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+
+  const nextLetterEl = document.getElementById('next-letter');
+  const letter = nextLetterEl ? nextLetterEl.innerText : '';
+  if (!letter) return;
+
+  clearTetrisRoundTimers();
+  tetrisRoundToken++;
+  const token = tetrisRoundToken;
+  tetrisSweepColumn = 0;
+  tetrisSweepDirection = 1;
+
+  syncTetrisActiveSlot(letter);
+
+  if (letter === '?') {
+    const clockValueEl = getTetrisClockValueEl();
+    if (clockValueEl) clockValueEl.textContent = 'PICK';
+    const clockEl = getTetrisClockEl();
+    if (clockEl) clockEl.classList.remove('is-urgent');
+    return;
+  }
+
+  const roundMs = getTetrisRoundClockMs();
+  const sweepMs = getTetrisSweepStepMs();
+  tetrisClockDeadline = Date.now() + roundMs;
+  setTetrisClockDisplay(roundMs, roundMs);
+
+  tetrisMoveTimer = setInterval(() => {
+    if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
+
+    if (tetrisSweepDirection > 0 && tetrisSweepColumn >= (gridSize - 1)) {
+      tetrisSweepDirection = -1;
+    } else if (tetrisSweepDirection < 0 && tetrisSweepColumn <= 0) {
+      tetrisSweepDirection = 1;
+    }
+
+    tetrisSweepColumn += tetrisSweepDirection;
+    if (tetrisSweepColumn < 0) tetrisSweepColumn = 0;
+    if (tetrisSweepColumn > (gridSize - 1)) tetrisSweepColumn = gridSize - 1;
+    syncTetrisActiveSlot(letter);
+  }, sweepMs);
+
+  tetrisClockTimer = setInterval(() => {
+    if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
+
+    const remainingMs = tetrisClockDeadline - Date.now();
+    setTetrisClockDisplay(remainingMs, roundMs);
+    if (remainingMs <= 0) {
+      clearTetrisRoundTimers();
+      autoDropCurrentTetrisTile(token);
+    }
+  }, 80);
+}
+
+async function autoDropCurrentTetrisTile(token) {
+  if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (token !== tetrisRoundToken) return;
+
+  await handleDropClick(tetrisSweepColumn);
+}
+
 function findDropTargetIndex(col) {
   for (let row = gridSize - 1; row >= 0; row--) {
     const idx = (row * gridSize) + col;
@@ -56,8 +196,8 @@ function syncTetrisQueueUI() {
   const q1 = document.getElementById('queue-1');
   const q2 = document.getElementById('queue-2');
 
-  if (nextLetter) nextLetter.style.display = 'inline-flex';
-  if (queueContainer) queueContainer.classList.add('is-active');
+  if (nextLetter) nextLetter.style.display = 'none';
+  if (queueContainer) queueContainer.classList.remove('is-active');
 
   if (q1) {
     q1.classList.toggle('is-active', (q1.innerText || '').trim() !== '');
@@ -71,11 +211,20 @@ function syncDropSlots() {
   if (!isTetrisMode()) return;
 
   const slots = getDropSlots();
+  const nextLetter = document.getElementById('next-letter');
+  const letter = nextLetter ? nextLetter.innerText : '';
   slots.forEach((slot, col) => {
     const topIdx = col;
     const blocked = Boolean(cells[topIdx]) || tetrisBusy;
+    const active = col === tetrisSweepColumn && !tetrisBusy;
     slot.classList.toggle('is-blocked', Boolean(cells[topIdx]));
-    slot.disabled = blocked;
+    slot.classList.toggle('is-sweep-active', active);
+    slot.disabled = blocked || !active;
+    if (active) {
+      slot.dataset.loadedLetter = letter || '';
+    } else {
+      delete slot.dataset.loadedLetter;
+    }
   });
 }
 
@@ -84,7 +233,9 @@ function syncTetrisBombUI() {
 
   const toolsRow = document.getElementById('tetris-tools-row');
   const bombIndicator = getBombIndicatorEl();
+  const clockEl = getTetrisClockEl();
   if (toolsRow) toolsRow.classList.add('is-active');
+  if (clockEl) clockEl.classList.add('is-active');
   if (bombIndicator) {
     bombIndicator.classList.toggle('is-empty', tetrisBombsRemaining <= 0);
     const bombIcons = bombIndicator.querySelectorAll('.tetris-bomb-icon');
@@ -341,22 +492,22 @@ async function animateDropToCell(col, targetIdx, letter) {
 
 async function animateLoadIntoSlot(col, letter) {
   const slot = getDropSlot(col);
-  const nextLetterEl = document.getElementById('next-letter');
-  if (!slot || !nextLetterEl) return;
+  if (!slot) return;
 
   slot.classList.add('is-engaged');
 
-  const sourceRect = nextLetterEl.getBoundingClientRect();
   const targetRect = slot.getBoundingClientRect();
+  const sourceLeft = targetRect.left + (targetRect.width / 2);
+  const sourceTop = targetRect.top - (targetRect.height * 1.25);
   const animTile = document.createElement('div');
   animTile.className = 'tetris-falling-tile is-load';
   animTile.textContent = letter;
   animTile.style.width = `${targetRect.width}px`;
   animTile.style.height = `${targetRect.height}px`;
-  animTile.style.left = `${sourceRect.left + (sourceRect.width / 2)}px`;
-  animTile.style.top = `${sourceRect.top + (sourceRect.height / 2)}px`;
-  animTile.style.setProperty('--drop-x', `${(targetRect.left + (targetRect.width / 2)) - (sourceRect.left + (sourceRect.width / 2))}px`);
-  animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - (sourceRect.top + (sourceRect.height / 2))}px`);
+  animTile.style.left = `${sourceLeft}px`;
+  animTile.style.top = `${sourceTop}px`;
+  animTile.style.setProperty('--drop-x', '0px');
+  animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - sourceTop}px`);
   animTile.style.animationDuration = `${TETRIS_LOAD_MS}ms`;
   document.body.appendChild(animTile);
 
@@ -439,6 +590,7 @@ function ensureDeckBufferForTetris() {
 
 async function handleDropClick(col) {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (col !== tetrisSweepColumn) return;
 
   const targetIdx = findDropTargetIndex(col);
   if (targetIdx < 0) {
@@ -457,6 +609,7 @@ async function handleDropClick(col) {
   if (letter === '?') {
     pendingDropColumn = col;
     pendingCellIndex = targetIdx;
+    clearTetrisRoundTimers();
     if (typeof updateWildcardModal === 'function') updateWildcardModal();
     if (typeof alphabetModal !== 'undefined' && alphabetModal) {
       alphabetModal.classList.add('active');
@@ -467,6 +620,7 @@ async function handleDropClick(col) {
   const slot = getDropSlot(col);
   if (slot) slot.classList.add('is-engaged');
   tetrisBusy = true;
+  clearTetrisRoundTimers();
   syncDropSlots();
   await animateLoadIntoSlot(col, letter);
   await animateDropToCell(col, targetIdx, letter);
@@ -502,6 +656,7 @@ document.addEventListener('ws:nextLetterUpdated', () => {
   syncTetrisQueueUI();
   syncDropSlots();
   syncTetrisBombUI();
+  startTetrisRound();
 });
 
 document.addEventListener('ws:applyHover', (e) => {
@@ -587,8 +742,8 @@ document.addEventListener('ws:tilePlaced', async () => {
 
   ensureDeckBufferForTetris();
   currentDeckIndex++;
-  setNextLetter();
   tetrisBusy = false;
+  setNextLetter();
   syncDropSlots();
   syncTetrisBombUI();
 });
@@ -604,6 +759,10 @@ document.addEventListener('ws:beforeInit', () => {
   pendingDropColumn = null;
   tetrisBusy = false;
   tetrisBombsRemaining = 3;
+  tetrisSweepColumn = 0;
+  tetrisSweepDirection = 1;
+  tetrisRoundToken++;
+  clearTetrisRoundTimers();
   currentScore = 0;
   if (scoreEl) scoreEl.innerText = '0';
   syncTetrisBombUI();
