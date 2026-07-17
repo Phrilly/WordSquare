@@ -176,6 +176,21 @@ function endTetrisIfAnyColumnFull(context) {
   return true;
 }
 
+function finalizeTetrisTurn(context) {
+  if (!isTetrisMode() || isGameOver) return;
+
+  if (endTetrisIfAnyColumnFull(context)) {
+    return;
+  }
+
+  if (placedCount >= 25) {
+    clearTetrisRoundTimers();
+    tetrisBusy = false;
+    syncDropSlots();
+    triggerEndGame();
+  }
+}
+
 function advanceTetrisPreviewQueue() {
   if (!isTetrisMode()) return;
   if (!Array.isArray(gameDeck) || gameDeck.length === 0) return;
@@ -297,8 +312,6 @@ function syncDropSlots() {
       delete slot.dataset.loadedLetter;
     }
   });
-
-  endTetrisIfAnyColumnFull('syncDropSlots');
 }
 
 function syncTetrisBombUI() {
@@ -668,7 +681,6 @@ async function handleDropClick(col) {
 
   const targetIdx = findDropTargetIndex(col);
   if (targetIdx < 0) {
-    endTetrisIfAnyColumnFull('handleDropClick:full-column');
     syncDropSlots();
     return;
   }
@@ -767,12 +779,8 @@ document.addEventListener('ws:occupiedCellClick', async (e) => {
   await resolveTetrisClears();
 
   placedCount = cells.reduce((count, letter) => count + (letter ? 1 : 0), 0);
-  if (placedCount >= 25) {
-    tetrisBusy = false;
-    syncDropSlots();
-    triggerEndGame();
-    return;
-  }
+  finalizeTetrisTurn('ws:occupiedCellClick');
+  if (isGameOver) return;
 
   tetrisBusy = false;
   syncDropSlots();
@@ -813,12 +821,8 @@ document.addEventListener('ws:tilePlaced', async () => {
   tetrisSuccessfulPlacements++;
   validateTetrisClockState('ws:tilePlaced');
 
-  if (placedCount >= 25) {
-    tetrisBusy = false;
-    syncDropSlots();
-    triggerEndGame();
-    return;
-  }
+  finalizeTetrisTurn('ws:tilePlaced');
+  if (isGameOver) return;
 
   ensureDeckBufferForTetris();
   tetrisBusy = false;
