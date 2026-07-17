@@ -95,12 +95,8 @@
     0 0 8px rgba(255, 213, 74, 0.18),
     inset 0 1px 0 rgba(255,255,255,0.38),
     inset 0 -1px 0 rgba(120, 72, 0, 0.24);
-  opacity: 1;
+  opacity: 0;
   transition: opacity 0.06s linear;
-}
-
-.tetris-drop-row.is-active .drop-slot::before {
-  content: none;
 }
 
 .drop-slot.is-sweep-active {
@@ -137,6 +133,7 @@
     inset 2px 2px 4px rgba(255,255,255,0.36),
     inset -2px -2px 4px rgba(0,0,0,0.22),
     0 4px 10px rgba(0,0,0,0.24);
+  opacity: 1;
 }
 
 .drop-slot.is-sweep-active::after {
