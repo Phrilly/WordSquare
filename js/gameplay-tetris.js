@@ -27,6 +27,7 @@ let tetrisClockDeadline = 0;
 let tetrisRoundToken = 0;
 let tetrisActiveLetter = '';
 let tetrisActiveTone = 'green';
+let tetrisSuccessfulPlacements = 0;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -62,15 +63,32 @@ function getTetrisClockValueEl() {
 }
 
 function getTetrisRoundClockMs() {
-  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (placedCount * TETRIS_CLOCK_STEP_MS));
+  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisSuccessfulPlacements * TETRIS_CLOCK_STEP_MS));
 }
 
 function getTetrisSweepStepMs() {
-  return Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (placedCount * TETRIS_SWEEP_STEP_MS));
+  return Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (tetrisSuccessfulPlacements * TETRIS_SWEEP_STEP_MS));
 }
 
 function formatTetrisClock(ms) {
   return `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
+}
+
+function validateTetrisClockState(context) {
+  if (!isTetrisMode()) return;
+
+  if (tetrisSuccessfulPlacements < 0 || !Number.isInteger(tetrisSuccessfulPlacements)) {
+    console.error(`[Tetris clock invariant] invalid placement counter in ${context}`, tetrisSuccessfulPlacements);
+    tetrisSuccessfulPlacements = 0;
+  }
+
+  if (currentDeckIndex === 0 && tetrisSuccessfulPlacements !== 0) {
+    console.error(`[Tetris clock invariant] first round should start at 10.0s in ${context}`, {
+      currentDeckIndex,
+      tetrisSuccessfulPlacements,
+    });
+    tetrisSuccessfulPlacements = 0;
+  }
 }
 
 function clearTetrisRoundTimers() {
@@ -151,6 +169,7 @@ function startTetrisRound() {
   const letter = nextLetterEl ? nextLetterEl.innerText : '';
   if (!letter) return;
 
+  validateTetrisClockState('startTetrisRound');
   tetrisActiveLetter = letter;
 
   clearTetrisRoundTimers();
@@ -753,6 +772,9 @@ document.addEventListener('ws:tilePlaced', async () => {
 
   await resolveTetrisClears();
 
+  tetrisSuccessfulPlacements++;
+  validateTetrisClockState('ws:tilePlaced');
+
   if (placedCount >= 25) {
     tetrisBusy = false;
     syncDropSlots();
@@ -780,6 +802,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisBombsRemaining = 3;
   tetrisActiveLetter = '';
   tetrisActiveTone = 'green';
+  tetrisSuccessfulPlacements = 0;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;
