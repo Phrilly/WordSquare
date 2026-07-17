@@ -123,23 +123,33 @@
   font-weight: bold;
   line-height: 1;
   border-radius: 8px;
-  background: linear-gradient(180deg, #fff0a4 0%, #ffd94f 48%, #f0b51b 100%);
-  color: #1a1a1a;
+  color: #ffffff;
   letter-spacing: 0;
   -webkit-mask: none;
   mask: none;
   opacity: 1;
   box-shadow:
-    inset 2px 2px 4px rgba(255,255,255,0.36),
-    inset -2px -2px 4px rgba(0,0,0,0.22),
+    inset 2px 2px 4px rgba(255,255,255,0.24),
+    inset -2px -2px 4px rgba(0,0,0,0.24),
     0 4px 10px rgba(0,0,0,0.24);
-  opacity: 1;
+}
+
+.drop-slot.is-sweep-active.is-tone-green::before {
+  background: linear-gradient(180deg, #61c36f 0%, #2f9d47 56%, #1f7a35 100%);
+}
+
+.drop-slot.is-sweep-active.is-tone-amber::before {
+  background: linear-gradient(180deg, #ffd56a 0%, #ffb72c 56%, #d98b00 100%);
+}
+
+.drop-slot.is-sweep-active.is-tone-red::before {
+  background: linear-gradient(180deg, #ff7d7d 0%, #f54d4d 56%, #c41f2f 100%);
 }
 
 .drop-slot.is-sweep-active::after {
   opacity: 1;
-  background: linear-gradient(180deg, rgba(255, 248, 220, 0.15), rgba(255, 196, 37, 0.06));
-  border: 1px solid rgba(255, 235, 150, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.26);
 }
 
 .drop-slot.is-engaged::before {

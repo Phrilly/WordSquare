@@ -26,6 +26,7 @@ let tetrisClockTimer = null;
 let tetrisClockDeadline = 0;
 let tetrisRoundToken = 0;
 let tetrisActiveLetter = '';
+let tetrisActiveTone = 'green';
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -95,10 +96,19 @@ function setTetrisClockDisplay(remainingMs, roundMs) {
   }
 
   if (roundMs > 0) {
-    clockEl.style.setProperty('--tetris-clock-progress', String(Math.max(0, Math.min(1, remainingMs / roundMs))));
+    const ratio = Math.max(0, Math.min(1, remainingMs / roundMs));
+    clockEl.style.setProperty('--tetris-clock-progress', String(ratio));
+    if (ratio <= 1 / 3) {
+      tetrisActiveTone = 'red';
+    } else if (ratio <= 2 / 3) {
+      tetrisActiveTone = 'amber';
+    } else {
+      tetrisActiveTone = 'green';
+    }
   }
 
   clockValueEl.textContent = formatTetrisClock(remainingMs);
+  syncTetrisActiveSlot(tetrisActiveLetter);
 }
 
 function syncTetrisActiveSlot(letter) {
@@ -108,6 +118,9 @@ function syncTetrisActiveSlot(letter) {
   slots.forEach((slot, col) => {
     const active = col === tetrisSweepColumn && !tetrisBusy;
     slot.classList.toggle('is-sweep-active', active);
+    slot.classList.toggle('is-tone-green', active && tetrisActiveTone === 'green');
+    slot.classList.toggle('is-tone-amber', active && tetrisActiveTone === 'amber');
+    slot.classList.toggle('is-tone-red', active && tetrisActiveTone === 'red');
     slot.disabled = !active || tetrisBusy;
     if (active) {
       slot.dataset.loadedLetter = letter || '';
@@ -518,11 +531,11 @@ async function animateLoadIntoSlot(col, letter) {
   animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - sourceTop}px`);
   animTile.style.animationDuration = `${TETRIS_LOAD_MS}ms`;
   document.body.appendChild(animTile);
+  advanceTetrisPreviewQueue();
 
   await delay(TETRIS_LOAD_MS);
   animTile.remove();
   setSlotLoadedLetter(slot, letter);
-  advanceTetrisPreviewQueue();
   await delay(TETRIS_LOADED_SETTLE_MS);
   sealLoadedSlot(slot);
   await delay(TETRIS_LOADED_COLOR_SHIFT_MS);
@@ -766,6 +779,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisBusy = false;
   tetrisBombsRemaining = 3;
   tetrisActiveLetter = '';
+  tetrisActiveTone = 'green';
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;
