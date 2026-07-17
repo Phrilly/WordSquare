@@ -84,16 +84,21 @@ function getScrabbleCellAt(int $r, int $c, array $cells, int $gridSize): ?array
     return null;
 }
 
-function fetchValidWords(array $candidateWords, PDO $pdo): array
+function fetchValidWords(array $candidateWords, PDO $pdo, string $mode = 'classic'): array
 {
     if (empty($candidateWords)) {
         return [];
     }
 
     $placeholders = implode(',', array_fill(0, count($candidateWords), '?'));
+    $mode = normaliseMode($mode);
+    $sql = "SELECT word FROM dictionary WHERE word IN ($placeholders)";
+    if ($mode === 'mfd') {
+        $sql .= ' AND is_mfd = 1';
+    }
 
     try {
-        $stmt = $pdo->prepare("SELECT word FROM dictionary WHERE word IN ($placeholders)");
+        $stmt = $pdo->prepare($sql);
         $stmt->execute($candidateWords);
         $validWords = $stmt->fetchAll(PDO::FETCH_COLUMN);
         return array_map('strtoupper', array_filter($validWords, 'is_string'));
@@ -103,7 +108,7 @@ function fetchValidWords(array $candidateWords, PDO $pdo): array
     }
 }
 
-function calculateClassicGridScore(string $gridString, PDO $pdo): int
+function calculateClassicGridScore(string $gridString, PDO $pdo, string $mode = 'classic'): int
 {
     $cells = buildGridCells($gridString);
 
@@ -146,7 +151,7 @@ function calculateClassicGridScore(string $gridString, PDO $pdo): int
         return 0;
     }
 
-    $validWords = fetchValidWords($uniquePotentialWords, $pdo);
+    $validWords = fetchValidWords($uniquePotentialWords, $pdo, $mode);
     if (empty($validWords)) {
         return 0;
     }
@@ -273,11 +278,13 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
 
 function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo): int
 {
+    $mode = normaliseMode($mode);
+
     if ($mode === 'scrabble') {
         return calculateScrabbleGridScore($gridString, $pdo);
     }
 
-    return calculateClassicGridScore($gridString, $pdo);
+    return calculateClassicGridScore($gridString, $pdo, $mode);
 }
 
 function getModeForDate(DateTimeImmutable $date): string
