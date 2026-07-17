@@ -11,12 +11,6 @@
   display: grid;
 }
 
-.top-bar.tetris-mode #queue-container,
-.top-bar.tetris-mode #next-letter,
-.top-bar.tetris-mode .queued-letter {
-  display: none !important;
-}
-
 .tetris-tools-row {
   display: none;
   align-items: center;

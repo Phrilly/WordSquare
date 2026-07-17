@@ -131,14 +131,6 @@ function startTetrisRound() {
 
   syncTetrisActiveSlot(letter);
 
-  if (letter === '?') {
-    const clockValueEl = getTetrisClockValueEl();
-    if (clockValueEl) clockValueEl.textContent = 'PICK';
-    const clockEl = getTetrisClockEl();
-    if (clockEl) clockEl.classList.remove('is-urgent');
-    return;
-  }
-
   const roundMs = getTetrisRoundClockMs();
   const sweepMs = getTetrisSweepStepMs();
   tetrisClockDeadline = Date.now() + roundMs;
@@ -196,8 +188,8 @@ function syncTetrisQueueUI() {
   const q1 = document.getElementById('queue-1');
   const q2 = document.getElementById('queue-2');
 
-  if (nextLetter) nextLetter.style.display = 'none';
-  if (queueContainer) queueContainer.classList.remove('is-active');
+  if (nextLetter) nextLetter.style.display = 'inline-flex';
+  if (queueContainer) queueContainer.classList.add('is-active');
 
   if (q1) {
     q1.classList.toggle('is-active', (q1.innerText || '').trim() !== '');
@@ -584,7 +576,7 @@ function ensureDeckBufferForTetris() {
   if (typeof generateBagSequence !== 'function' || !Array.isArray(gameDeck)) return;
 
   if ((gameDeck.length - currentDeckIndex) < 4) {
-    gameDeck = gameDeck.concat(generateBagSequence());
+    gameDeck = gameDeck.concat(generateBagSequence(false));
   }
 }
 
@@ -766,4 +758,11 @@ document.addEventListener('ws:beforeInit', () => {
   currentScore = 0;
   if (scoreEl) scoreEl.innerText = '0';
   syncTetrisBombUI();
+});
+
+document.addEventListener('ws:beforeInit', () => {
+  if (!isTetrisMode()) return;
+  if (typeof generateBagSequence === 'function') {
+    gameDeck = generateBagSequence(false);
+  }
 });

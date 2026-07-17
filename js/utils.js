@@ -13,7 +13,7 @@ function getSeededRandom() {
   return ((t ^ t >>> 14) >>> 0) / 4294967296;
 }
 
-function generateBagSequence() {
+function generateBagSequence(allowWildcards = true) {
   const rng = isCurrentGameDaily ? getSeededRandom : Math.random;
   const isNewLogicActive = true;
 
@@ -55,49 +55,51 @@ function generateBagSequence() {
     }
   }
 
-  const wcRoll = rng() * 100;
-  let wcCount = 0;
+  if (allowWildcards) {
+    const wcRoll = rng() * 100;
+    let wcCount = 0;
 
-  if (wcRoll < 5) wcCount = 0;
-  else if (wcRoll < 30) wcCount = 1;
-  else if (wcRoll < 70) wcCount = 2;
-  else if (wcRoll < 95) wcCount = 3;
-  else wcCount = 4;
+    if (wcRoll < 5) wcCount = 0;
+    else if (wcRoll < 30) wcCount = 1;
+    else if (wcRoll < 70) wcCount = 2;
+    else if (wcRoll < 95) wcCount = 3;
+    else wcCount = 4;
 
-  let safeIndices = [];
-  for (let i = 0; i < 25; i++) {
-    if (sequence[i] !== 'S' && sequence[i] !== 'Q') {
-      safeIndices.push(i);
-    }
-  }
-
-  const activeRules = {
-    enforceWildcardLimits: Date.now() >= Date.UTC(2026, 4, 22),
-    minVowels: 6
-  };
-
-  for (let i = 0; i < wcCount && safeIndices.length > 0; i++) {
-    const randSafeIdx = Math.floor(rng() * safeIndices.length);
-    const replaceIdx = safeIndices.splice(randSafeIdx, 1)[0];
-    const charToReplace = sequence[replaceIdx];
-
-    if (activeRules.enforceWildcardLimits) {
-      let isEssential = false;
-
-      if (vowels.includes(charToReplace) && vowelCount <= activeRules.minVowels) {
-        isEssential = true;
+    let safeIndices = [];
+    for (let i = 0; i < 25; i++) {
+      if (sequence[i] !== 'S' && sequence[i] !== 'Q') {
+        safeIndices.push(i);
       }
-
-      if (isEssential) {
-        i--;
-        continue;
-      }
-      
-      if (vowels.includes(charToReplace)) vowelCount--;
-      if (charToReplace === 'S') sCount--;
     }
 
-    sequence[replaceIdx] = '?';
+    const activeRules = {
+      enforceWildcardLimits: Date.now() >= Date.UTC(2026, 4, 22),
+      minVowels: 6
+    };
+
+    for (let i = 0; i < wcCount && safeIndices.length > 0; i++) {
+      const randSafeIdx = Math.floor(rng() * safeIndices.length);
+      const replaceIdx = safeIndices.splice(randSafeIdx, 1)[0];
+      const charToReplace = sequence[replaceIdx];
+
+      if (activeRules.enforceWildcardLimits) {
+        let isEssential = false;
+
+        if (vowels.includes(charToReplace) && vowelCount <= activeRules.minVowels) {
+          isEssential = true;
+        }
+
+        if (isEssential) {
+          i--;
+          continue;
+        }
+        
+        if (vowels.includes(charToReplace)) vowelCount--;
+        if (charToReplace === 'S') sCount--;
+      }
+
+      sequence[replaceIdx] = '?';
+    }
   }
 
   return sequence;
