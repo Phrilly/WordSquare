@@ -18,6 +18,9 @@ const TETRIS_CLOCK_STEP_MS = 100;
 const TETRIS_START_SWEEP_MS = 800;
 const TETRIS_MIN_SWEEP_MS = 320;
 const TETRIS_SWEEP_STEP_MS = 0;
+const TETRIS_SPEED_MIN = 1;
+const TETRIS_SPEED_MAX = 2;
+const TETRIS_SPEED_STEP = 0.25;
 
 let tetrisSweepColumn = 0;
 let tetrisSweepDirection = 1;
@@ -30,6 +33,9 @@ let tetrisActiveTone = 'green';
 let tetrisSuccessfulPlacements = 0;
 let tetrisTurnIndex = 0;
 let tetrisGameplayArmed = false;
+let tetrisSpeedMultiplier = TETRIS_SPEED_MIN;
+let tetrisSpeedControlsBound = false;
+let tetrisSessionToken = 0;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -64,12 +70,81 @@ function getTetrisClockValueEl() {
   return document.getElementById('tetris-clock-value');
 }
 
+function getSpeedValueEl() {
+  return document.getElementById('speed-value');
+}
+
+function getSpeedSlowBtn() {
+  return document.getElementById('speed-slow-btn');
+}
+
+function getSpeedFastBtn() {
+  return document.getElementById('speed-fast-btn');
+}
+
+function clampTetrisSpeed(multiplier) {
+  return Math.max(TETRIS_SPEED_MIN, Math.min(TETRIS_SPEED_MAX, multiplier));
+}
+
+function updateTetrisSpeedControlsUI() {
+  const valueEl = getSpeedValueEl();
+  const slowBtn = getSpeedSlowBtn();
+  const fastBtn = getSpeedFastBtn();
+
+  if (valueEl) valueEl.textContent = `${tetrisSpeedMultiplier.toFixed(2)}x`;
+  if (slowBtn) slowBtn.disabled = tetrisSpeedMultiplier <= TETRIS_SPEED_MIN;
+  if (fastBtn) fastBtn.disabled = tetrisSpeedMultiplier >= TETRIS_SPEED_MAX;
+}
+
+function setTetrisSpeedMultiplier(nextSpeed) {
+  const clamped = clampTetrisSpeed(nextSpeed);
+  if (clamped === tetrisSpeedMultiplier) {
+    updateTetrisSpeedControlsUI();
+    return;
+  }
+
+  const previous = tetrisSpeedMultiplier;
+  tetrisSpeedMultiplier = clamped;
+
+  // If a round is active, adjust remaining clock proportionally.
+  if (!isGameOver && !tetrisBusy && tetrisClockDeadline > 0) {
+    const remaining = tetrisClockDeadline - Date.now();
+    if (remaining > 0) {
+      const adjusted = Math.max(120, Math.round(remaining * (previous / tetrisSpeedMultiplier)));
+      tetrisClockDeadline = Date.now() + adjusted;
+    }
+  }
+
+  updateTetrisSpeedControlsUI();
+}
+
+function bindTetrisSpeedControls() {
+  if (tetrisSpeedControlsBound) return;
+
+  const slowBtn = getSpeedSlowBtn();
+  const fastBtn = getSpeedFastBtn();
+  if (!slowBtn || !fastBtn) return;
+
+  slowBtn.addEventListener('click', () => {
+    setTetrisSpeedMultiplier(tetrisSpeedMultiplier - TETRIS_SPEED_STEP);
+  });
+
+  fastBtn.addEventListener('click', () => {
+    setTetrisSpeedMultiplier(tetrisSpeedMultiplier + TETRIS_SPEED_STEP);
+  });
+
+  tetrisSpeedControlsBound = true;
+  updateTetrisSpeedControlsUI();
+}
+
 function getTetrisRoundClockMs() {
-  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
+  const base = Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
+  return Math.max(1, Math.round(base / tetrisSpeedMultiplier));
 }
 
 function getTetrisSweepStepMs() {
-  return Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (tetrisTurnIndex * TETRIS_SWEEP_STEP_MS));
+  const base = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (tetrisTurnIndex * TETRIS_SWEEP_STEP_MS));
+  return Math.max(1, Math.round(base / tetrisSpeedMultiplier));
 }
 
 function formatTetrisClock(ms) {
@@ -741,6 +816,7 @@ function ensureDeckBufferForTetris() {
 async function handleDropClick(col) {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
   if (col !== tetrisSweepColumn) return;
+  const sessionToken = tetrisSessionToken;
 
   const targetIdx = findDropTargetIndex(col);
   if (targetIdx < 0) {
@@ -771,12 +847,21 @@ async function handleDropClick(col) {
   clearTetrisRoundTimers();
   syncDropSlots();
   await animateDropToCell(col, targetIdx, letter);
+  if (sessionToken !== tetrisSessionToken || isGameOver) {
+    if (slot) clearSlotLoadedLetter(slot);
+    tetrisBusy = false;
+    syncDropSlots();
+    return;
+  }
   if (slot) clearSlotLoadedLetter(slot);
   placeLetter(targetIdx, letter, cellEl, false);
 }
 
 document.addEventListener('ws:afterInit', () => {
   if (!isTetrisMode()) return;
+
+  bindTetrisSpeedControls();
+  updateTetrisSpeedControlsUI();
 
   const row = getDropRowEl();
   if (row) {
@@ -793,6 +878,14 @@ document.addEventListener('ws:afterInit', () => {
   }
 
   if (topBarEl) topBarEl.classList.add('tetris-mode');
+  const headerLabel = document.getElementById('header-label');
+  if (headerLabel) {
+    headerLabel.textContent = '';
+    headerLabel.style.display = 'none';
+  }
+  const leftHeader = document.getElementById('left-header');
+  if (leftHeader) leftHeader.title = '';
+
   syncTetrisQueueUI();
   syncDropSlots();
   syncTetrisBombUI();
@@ -803,7 +896,6 @@ document.addEventListener('ws:nextLetterUpdated', () => {
   syncTetrisQueueUI();
   syncDropSlots();
   syncTetrisBombUI();
-  startTetrisRound();
 });
 
 document.addEventListener('ws:roundArmed', () => {
@@ -858,6 +950,7 @@ document.addEventListener('ws:occupiedCellClick', async (e) => {
 document.addEventListener('ws:beforeWildcardPlaced', (e) => {
   if (!isTetrisMode()) return;
   if (pendingDropColumn == null) return;
+  const sessionToken = tetrisSessionToken;
 
   e.preventDefault();
 
@@ -871,7 +964,19 @@ document.addEventListener('ws:beforeWildcardPlaced', (e) => {
   syncDropSlots();
   (async () => {
     await animateLoadIntoSlot(dropCol, letter);
+    if (sessionToken !== tetrisSessionToken || isGameOver) {
+      clearSlotLoadedLetter(getDropSlot(dropCol));
+      tetrisBusy = false;
+      syncDropSlots();
+      return;
+    }
     await animateDropToCell(dropCol, index, letter);
+    if (sessionToken !== tetrisSessionToken || isGameOver) {
+      clearSlotLoadedLetter(getDropSlot(dropCol));
+      tetrisBusy = false;
+      syncDropSlots();
+      return;
+    }
     clearSlotLoadedLetter(getDropSlot(dropCol));
     placeLetter(index, letter, cellEl, true);
   })();
@@ -907,6 +1012,7 @@ document.addEventListener('ws:calculateScore', (e) => {
 
 document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
+  tetrisSessionToken++;
   pendingDropColumn = null;
   tetrisBusy = false;
   tetrisBombsRemaining = 3;
@@ -922,7 +1028,9 @@ document.addEventListener('ws:beforeInit', () => {
   if (typeof generateBagSequence === 'function') {
     gameDeck = generateBagSequence(false);
   }
+  currentDeckIndex = 0;
   currentScore = 0;
   if (scoreEl) scoreEl.innerText = '0';
+  updateTetrisSpeedControlsUI();
   syncTetrisBombUI();
 });

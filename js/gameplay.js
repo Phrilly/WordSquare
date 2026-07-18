@@ -102,14 +102,19 @@ function initGame() {
       dailySeed = getDailySeed();
   }
 
-  if (typeof generateBagSequence === 'function') {
+  gameDeck = [];
+  document.dispatchEvent(new CustomEvent('ws:beforeInit'));
+
+  if ((!Array.isArray(gameDeck) || gameDeck.length === 0) && typeof generateBagSequence === 'function') {
       gameDeck = generateBagSequence();
   }
 
-  document.dispatchEvent(new CustomEvent('ws:beforeInit'));
   if (scoreEl) scoreEl.innerText = '0';
   const headerLabelEl = document.getElementById('header-label');
-  if (headerLabelEl) headerLabelEl.innerText = 'Next:';
+  if (headerLabelEl) {
+    headerLabelEl.innerText = 'Next:';
+    headerLabelEl.style.display = '';
+  }
 
   const nextLetterEl = document.getElementById('next-letter');
   if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
@@ -148,7 +153,6 @@ function initGame() {
   if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
 
   if (topBarEl) topBarEl.classList.remove('scrabble-mode');
-  if (headerLabelEl) headerLabelEl.style.display = '';
   
   document.dispatchEvent(new CustomEvent('ws:afterInit'));
   if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {

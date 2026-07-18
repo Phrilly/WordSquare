@@ -271,6 +271,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
     </div>
   </div>
 
+  <?php if (!$isTetrisDay): ?>
   <div id="try-it-panel" class="try-it-panel" role="group" aria-label="Try words">
     <div class="try-it-top">
       <div class="try-it-header">TRY IT!</div>
@@ -297,6 +298,21 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
 
     <input id="try-it-input" class="try-it-input" type="text" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="5" aria-label="Type up to 5 letters to test dictionary words">
   </div>
+  <?php endif; ?>
+
+  <?php if ($isTetrisDay): ?>
+  <div id="speed-controls" class="speed-controls" role="group" aria-label="Tetris speed controls">
+    <div class="speed-controls-head">
+      <span class="speed-controls-title">SPEED</span>
+      <span id="speed-value" class="speed-value">1.00x</span>
+    </div>
+    <div class="speed-controls-row">
+      <button id="speed-slow-btn" class="speed-btn" type="button" aria-label="Slow down tetris speed">SLOW DOWN</button>
+      <button id="speed-fast-btn" class="speed-btn" type="button" aria-label="Speed up tetris speed">SPEED UP</button>
+    </div>
+    <div id="speed-note" class="speed-note">Tetris mode only. Range: 1.00x to 2.00x.</div>
+  </div>
+  <?php endif; ?>
 
   <div class="version-tag">Version Dynamic Auto-Versioning</div>
 
