@@ -179,6 +179,14 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
 
     </div>
+    <?php if ($isTetrisDay): ?>
+    <div id="speed-controls" class="speed-controls" role="group" aria-label="Tetris speed controls">
+      <div class="speed-controls-row">
+        <button id="speed-left-btn" class="speed-btn speed-left-btn" type="button" aria-label="Accelerate tile moving left">◀</button>
+        <button id="speed-right-btn" class="speed-btn speed-right-btn" type="button" aria-label="Accelerate tile moving right">▶</button>
+      </div>
+    </div>
+    <?php endif; ?>
     <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
       <span class="tetris-clock-label">CLOCK</span>
       <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
@@ -190,15 +198,6 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
       <div id="score">0</div>
     </div>
-
-    <?php if ($isTetrisDay): ?>
-    <div id="speed-controls" class="speed-controls" role="group" aria-label="Tetris speed controls">
-      <div class="speed-controls-row">
-        <button id="speed-left-btn" class="speed-btn speed-left-btn" type="button" aria-label="Accelerate tile moving left">◀</button>
-        <button id="speed-right-btn" class="speed-btn speed-right-btn" type="button" aria-label="Accelerate tile moving right">▶</button>
-      </div>
-    </div>
-    <?php endif; ?>
   </div>
 
   <div id="tetris-drop-row" class="tetris-drop-row" aria-label="Drop row">

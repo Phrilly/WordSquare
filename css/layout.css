@@ -12,6 +12,7 @@
 .top-bar.tetris-mode {
   justify-content: flex-start;
   align-items: flex-end;
+  flex-wrap: nowrap;
   gap: 8px;
 }
 
@@ -22,9 +23,25 @@
 }
 
 .top-bar.tetris-mode #left-header {
+  order: 1;
   align-items: flex-end;
   align-self: flex-end;
   margin-top: 6px;
+}
+
+.top-bar.tetris-mode .speed-controls {
+  order: 2;
+  margin-left: 0;
+}
+
+.top-bar.tetris-mode .tetris-clock {
+  order: 3;
+  margin-left: 0;
+}
+
+.top-bar.tetris-mode .score-stack {
+  order: 4;
+  margin-left: 8px;
 }
 
 #left-header .queue-container {
@@ -249,14 +266,16 @@
   .top-bar.tetris-mode {
     justify-content: flex-start;
     align-items: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
   }
 
   .top-bar.tetris-mode #left-header {
+    order: 1;
     flex: 0 1 auto;
     min-width: 0;
     margin-top: 6px;
+    margin-right: 0;
   }
 
   .top-bar.tetris-mode .queue-container {
@@ -270,12 +289,15 @@
   }
 
   .top-bar.tetris-mode .tetris-clock {
+    order: 3;
     min-width: 56px;
     padding: 5px 8px;
     align-self: center;
+    margin-left: 0;
   }
 
   .top-bar.tetris-mode .score-stack {
+    order: 4;
     margin-left: 0;
     align-items: center;
     gap: 2px;
@@ -283,14 +305,15 @@
   }
 
   .top-bar.tetris-mode .speed-controls {
-    order: 10;
+    order: 2;
     width: auto;
     min-width: clamp(150px, calc(var(--game-size) * 0.3), 210px);
     min-height: clamp(84px, calc(var(--game-size) * 0.2), 98px);
     max-width: none;
-    margin: 0 0 0 auto;
+    margin: 0;
+    margin-left: 0;
     margin-top: 8px;
-    padding: 10px 14px 11px;
+    padding: 6px 10px;
     border-radius: 10px;
     align-self: flex-end;
   }
@@ -310,13 +333,15 @@
 
   .top-bar.tetris-mode .speed-controls-row {
     gap: 8px;
+    align-items: stretch;
+    flex: 1 1 auto;
     height: 100%;
     margin-top: 0;
   }
 
   .top-bar.tetris-mode .speed-btn {
     flex: 1 1 0;
-    min-height: 100%;
+    min-height: 64px;
     padding: 0;
     font-size: 18px;
     border-radius: 8px;
@@ -444,8 +469,8 @@
   min-width: clamp(150px, calc(var(--game-size) * 0.3), 210px);
   min-height: clamp(84px, calc(var(--game-size) * 0.2), 98px);
   max-width: min(300px, 100%);
-  margin-left: auto;
-  padding: 10px 14px 11px;
+  margin-left: 0;
+  padding: 6px 10px;
   border-radius: 12px;
   background: rgba(12, 30, 52, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -481,7 +506,8 @@
 
 .speed-controls-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  flex: 1 1 auto;
   gap: 8px;
   width: 100%;
   height: 100%;
@@ -494,7 +520,7 @@
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
   border-radius: 10px;
-  min-height: 100%;
+  min-height: 64px;
   padding: 0;
   font-family: Arial, sans-serif;
   font-size: 18px;
@@ -526,18 +552,29 @@
 
 @media (min-width: 701px) and (max-width: 1024px) {
   .top-bar.tetris-mode {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 10px;
   }
 
   .top-bar.tetris-mode .score-stack {
-    margin-left: auto;
+    order: 4;
+    margin-left: 8px;
+  }
+
+  .top-bar.tetris-mode .tetris-clock {
+    order: 3;
+    margin-left: 0;
+  }
+
+  .top-bar.tetris-mode #left-header {
+    order: 1;
+    margin-right: 0;
   }
 
   .top-bar.tetris-mode .speed-controls {
-    order: 3;
-    margin-left: auto;
+    order: 2;
+    margin-left: 0;
     padding: 10px 14px 11px;
     max-width: 300px;
     min-width: clamp(150px, calc(var(--game-size) * 0.3), 210px);
