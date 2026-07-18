@@ -193,10 +193,6 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
 
     <?php if ($isTetrisDay): ?>
     <div id="speed-controls" class="speed-controls" role="group" aria-label="Tetris speed controls">
-      <div class="speed-controls-head">
-        <span class="speed-controls-title">SPEED</span>
-        <span id="speed-value" class="speed-value">x1</span>
-      </div>
       <div class="speed-controls-row">
         <button id="speed-left-btn" class="speed-btn speed-left-btn" type="button" aria-label="Accelerate tile moving left">◀</button>
         <button id="speed-right-btn" class="speed-btn speed-right-btn" type="button" aria-label="Accelerate tile moving right">▶</button>

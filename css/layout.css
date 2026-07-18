@@ -310,12 +310,13 @@
 
   .top-bar.tetris-mode .speed-controls-row {
     gap: 8px;
-    margin-top: 8px;
+    height: 100%;
+    margin-top: 0;
   }
 
   .top-bar.tetris-mode .speed-btn {
     flex: 1 1 0;
-    min-height: 42px;
+    min-height: 100%;
     padding: 0;
     font-size: 18px;
     border-radius: 8px;
@@ -437,6 +438,8 @@
 }
 
 .speed-controls {
+  display: flex;
+  align-items: stretch;
   width: auto;
   min-width: clamp(150px, calc(var(--game-size) * 0.3), 210px);
   min-height: clamp(84px, calc(var(--game-size) * 0.2), 98px);
@@ -481,7 +484,8 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  margin-top: 8px;
+  height: 100%;
+  margin-top: 0;
 }
 
 .speed-btn {
@@ -490,7 +494,7 @@
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
   border-radius: 10px;
-  min-height: 42px;
+  min-height: 100%;
   padding: 0;
   font-family: Arial, sans-serif;
   font-size: 18px;
