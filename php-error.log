@@ -50,3 +50,8 @@
 [18-Jul-2026 12:23:41 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
 [18-Jul-2026 12:23:41 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
 [18-Jul-2026 12:23:41 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:25:37 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"log_game","session_id":"7rr9iv22erj290hjc9hflz","game_seed":45817267235,"is_daily":true,"daily_offset":0,"final_score":0,"grid":"---E----E----AT---HK-MMOR"}
+[18-Jul-2026 12:29:15 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_dict","mode":"tetris"}
+[18-Jul-2026 12:29:15 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
+[18-Jul-2026 12:29:15 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:29:15 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
