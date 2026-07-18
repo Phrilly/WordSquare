@@ -33,11 +33,11 @@
 - Scrabble: Uses Scrabble-style letter values.
 - Lookahead: Shows additional upcoming queue letters.
 - MFD: Classic gameplay with a restricted My First Dictionary word list.
-- Tetris: Drop queued letters into columns, clear completed words, and let remaining tiles fall under gravity.
+- Tetris: Drop queued letters into columns, clear 4-letter and 5-letter words, and let remaining tiles fall under gravity.
 
 ## Tetris Quick Controls
 - Click a DROP slot to place the moving letter in that column.
-- Only 5-letter words clear in Tetris mode (rows, columns, diagonals).
+- 4-letter and 5-letter words clear in Tetris mode (rows, columns, diagonals).
 - You have 3 bombs per game to remove occupied cells.
 - A full column disables its DROP slot; game over occurs when no valid drops remain.
 

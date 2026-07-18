@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>Classic/Bomb/Lookahead/MFD score with standard WordSquare word scoring.</li>
         <li>Scrabble mode scores by letter values and board modifiers.</li>
-        <li>Tetris mode uses live gameplay scoring, then saves a verified final score.</li>
+        <li>Tetris mode scores 4-letter and 5-letter clears during live gameplay, then saves a verified final score.</li>
       </ul>
 
       <h3>MFD Notes</h3>

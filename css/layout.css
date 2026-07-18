@@ -442,6 +442,7 @@
   min-height: clamp(84px, calc(var(--game-size) * 0.2), 98px);
   max-width: min(300px, 100%);
   margin-left: auto;
+  margin-top: 2px;
   padding: 10px 14px 11px;
   border-radius: 12px;
   background: rgba(12, 30, 52, 0.35);
@@ -533,6 +534,7 @@
   .top-bar.tetris-mode .speed-controls {
     order: 3;
     margin-left: auto;
+    margin-top: 2px;
     padding: 10px 14px 11px;
     max-width: 300px;
     min-width: clamp(150px, calc(var(--game-size) * 0.3), 210px);
