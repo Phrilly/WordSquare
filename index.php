@@ -15,7 +15,7 @@ function autoVer(string $url): string {
 }
 
 // VARIANT SCHEDULER: 6-Day Cycle Calculation
-$epochTimestamp = strtotime('2026-05-20 00:00:00 UTC'); 
+$epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // Default cycle logic
@@ -208,10 +208,12 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   </div>
 
   <div class="grid-container" id="grid">
+    <?php if ($isTetrisDay): ?>
     <div class="overlay-modal" id="go-gate-modal" role="dialog" aria-modal="true" aria-label="Start round gate">
       <button id="go-start-btn" class="go-octagon-btn" type="button" aria-label="Start game">GO</button>
       <div class="go-gate-hint">Press GO to start this round.</div>
     </div>
+    <?php endif; ?>
 
     <div class="alphabet-modal" id="alphabet-modal"></div>
 

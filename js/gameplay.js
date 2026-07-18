@@ -40,6 +40,11 @@ function armAndStartRound() {
 }
 
 function showGoGate() {
+  if (!(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay)) {
+    armAndStartRound();
+    return;
+  }
+
   const gate = document.getElementById('go-gate-modal');
   const button = document.getElementById('go-start-btn');
 
@@ -146,7 +151,11 @@ function initGame() {
   if (headerLabelEl) headerLabelEl.style.display = '';
   
   document.dispatchEvent(new CustomEvent('ws:afterInit'));
-  showGoGate();
+  if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {
+    showGoGate();
+  } else {
+    armAndStartRound();
+  }
 }
 
 function triggerEndGame() {

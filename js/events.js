@@ -43,11 +43,37 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'Classic mode is active: standard WordSquare rules and scoring.';
   };
 
+  const getScheduleDebugInfo = () => {
+    const epochUtcMs = Date.UTC(2026, 4, 21, 0, 0, 0);
+    const now = new Date();
+    const todayUtcMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0);
+    const daysSinceEpoch = Math.floor((todayUtcMs - epochUtcMs) / 86400000);
+    const cycleDay = ((daysSinceEpoch % 6) + 6) % 6;
+
+    let computedMode = 'classic';
+    if (daysSinceEpoch > 0 && cycleDay === 0) computedMode = 'bomb';
+    else if (daysSinceEpoch > 0 && cycleDay === 1) computedMode = 'scrabble';
+    else if (daysSinceEpoch > 0 && cycleDay === 2) computedMode = 'lookahead';
+    else if (daysSinceEpoch > 0 && cycleDay === 3) computedMode = 'mfd';
+    else if (daysSinceEpoch > 0 && cycleDay === 4) computedMode = 'tetris';
+
+    const utcDate = now.toISOString().slice(0, 10);
+
+    return {
+      utcDate,
+      daysSinceEpoch,
+      cycleDay,
+      computedMode,
+    };
+  };
+
   const renderHelpContent = () => {
     if (!helpContent) return;
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
     const modeLabel = getModeLabel(mode);
+    const scheduleDebug = getScheduleDebugInfo();
+    const computedModeLabel = getModeLabel(scheduleDebug.computedMode);
 
     helpContent.innerHTML = `
       <h3>Current Mode</h3>
@@ -90,6 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Only 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
         <li>You have 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
+      </ul>
+
+      <h3>Scheduler Debug</h3>
+      <ul>
+        <li>UTC Date: ${scheduleDebug.utcDate}</li>
+        <li>Days Since Epoch (2026-05-21): ${scheduleDebug.daysSinceEpoch}</li>
+        <li>Cycle Day: ${scheduleDebug.cycleDay}</li>
+        <li>Computed Mode: ${computedModeLabel}</li>
+        <li>Loaded Mode: ${modeLabel}</li>
       </ul>
 
       <p class="help-subtle">Full docs: <a href="HELP.md" target="_blank" rel="noopener noreferrer">HELP.md</a> and <a href="HELP_MFD.md" target="_blank" rel="noopener noreferrer">HELP_MFD.md</a>.</p>

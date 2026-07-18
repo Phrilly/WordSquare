@@ -289,7 +289,7 @@ function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo): 
 
 function getModeForDate(DateTimeImmutable $date): string
 {
-    $epoch = new DateTimeImmutable('2026-05-20 00:00:00', new DateTimeZone('UTC'));
+    $epoch = new DateTimeImmutable('2026-05-21 00:00:00', new DateTimeZone('UTC'));
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
     $daysSinceEpoch = (int) floor(($target->getTimestamp() - $epoch->getTimestamp()) / 86400);
 
