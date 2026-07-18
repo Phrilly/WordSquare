@@ -117,15 +117,24 @@ function initGame() {
   }
 
   const nextLetterEl = document.getElementById('next-letter');
-  if (nextLetterEl) nextLetterEl.style.display = 'inline-flex';
+  if (nextLetterEl) {
+    nextLetterEl.style.display = 'inline-flex';
+    nextLetterEl.innerText = '';
+  }
 
   const queueContainerEl = document.getElementById('queue-container');
   if (queueContainerEl) queueContainerEl.classList.remove('is-active');
 
   const queue1El = document.getElementById('queue-1');
   const queue2El = document.getElementById('queue-2');
-  if (queue1El) queue1El.classList.remove('is-active');
-  if (queue2El) queue2El.classList.remove('is-active');
+  if (queue1El) {
+    queue1El.classList.remove('is-active');
+    queue1El.innerText = '';
+  }
+  if (queue2El) {
+    queue2El.classList.remove('is-active');
+    queue2El.innerText = '';
+  }
 
   const scrabbleTrayEl = document.getElementById('scrabble-tray');
   if (scrabbleTrayEl) scrabbleTrayEl.style.display = 'none';

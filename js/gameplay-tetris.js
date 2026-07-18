@@ -91,9 +91,44 @@ function updateTetrisSpeedControlsUI() {
   const slowBtn = getSpeedSlowBtn();
   const fastBtn = getSpeedFastBtn();
 
-  if (valueEl) valueEl.textContent = `${tetrisSpeedMultiplier.toFixed(2)}x`;
+  if (valueEl) {
+    const formatted = Number.isInteger(tetrisSpeedMultiplier)
+      ? String(tetrisSpeedMultiplier)
+      : String(tetrisSpeedMultiplier).replace(/\.0+$/, '');
+    valueEl.textContent = `x${formatted}`;
+  }
   if (slowBtn) slowBtn.disabled = tetrisSpeedMultiplier <= TETRIS_SPEED_MIN;
   if (fastBtn) fastBtn.disabled = tetrisSpeedMultiplier >= TETRIS_SPEED_MAX;
+}
+
+function startOrRestartTetrisSweepTimer(token, sweepMs) {
+  if (tetrisMoveTimer) {
+    clearInterval(tetrisMoveTimer);
+    tetrisMoveTimer = null;
+  }
+
+  tetrisMoveTimer = setInterval(() => {
+    if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
+
+    if (tetrisSweepDirection > 0 && tetrisSweepColumn >= (gridSize - 1)) {
+      tetrisSweepDirection = -1;
+    } else if (tetrisSweepDirection < 0 && tetrisSweepColumn <= 0) {
+      tetrisSweepDirection = 1;
+    }
+
+    tetrisSweepColumn += tetrisSweepDirection;
+    if (tetrisSweepColumn < 0) tetrisSweepColumn = 0;
+    if (tetrisSweepColumn > (gridSize - 1)) tetrisSweepColumn = gridSize - 1;
+    syncTetrisActiveSlot(tetrisActiveLetter);
+  }, sweepMs);
+}
+
+function retimeActiveTetrisSweep() {
+  if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (!tetrisGameplayArmed || !tetrisActiveLetter) return;
+
+  const sweepMs = getTetrisSweepStepMs(Math.max(0, tetrisTurnIndex - 1));
+  startOrRestartTetrisSweepTimer(tetrisRoundToken, sweepMs);
 }
 
 function setTetrisSpeedMultiplier(nextSpeed) {
@@ -103,19 +138,10 @@ function setTetrisSpeedMultiplier(nextSpeed) {
     return;
   }
 
-  const previous = tetrisSpeedMultiplier;
   tetrisSpeedMultiplier = clamped;
 
-  // If a round is active, adjust remaining clock proportionally.
-  if (!isGameOver && !tetrisBusy && tetrisClockDeadline > 0) {
-    const remaining = tetrisClockDeadline - Date.now();
-    if (remaining > 0) {
-      const adjusted = Math.max(120, Math.round(remaining * (previous / tetrisSpeedMultiplier)));
-      tetrisClockDeadline = Date.now() + adjusted;
-    }
-  }
-
   updateTetrisSpeedControlsUI();
+  retimeActiveTetrisSweep();
 }
 
 function bindTetrisSpeedControls() {
@@ -138,12 +164,11 @@ function bindTetrisSpeedControls() {
 }
 
 function getTetrisRoundClockMs() {
-  const base = Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
-  return Math.max(1, Math.round(base / tetrisSpeedMultiplier));
+  return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
 }
 
-function getTetrisSweepStepMs() {
-  const base = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (tetrisTurnIndex * TETRIS_SWEEP_STEP_MS));
+function getTetrisSweepStepMs(turnIndex = tetrisTurnIndex) {
+  const base = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (turnIndex * TETRIS_SWEEP_STEP_MS));
   return Math.max(1, Math.round(base / tetrisSpeedMultiplier));
 }
 
@@ -355,7 +380,7 @@ function startTetrisRound() {
   syncTetrisActiveSlot(tetrisActiveLetter);
 
   const roundMs = Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (thisTurnIndex * TETRIS_CLOCK_STEP_MS));
-  const sweepMs = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (thisTurnIndex * TETRIS_SWEEP_STEP_MS));
+  const sweepMs = getTetrisSweepStepMs(thisTurnIndex);
 
   if (thisTurnIndex === 0 && roundMs !== TETRIS_START_CLOCK_MS) {
     reportTetrisInvariant('clock-first-round-duration', {
@@ -370,20 +395,7 @@ function startTetrisRound() {
   tetrisClockDeadline = Date.now() + roundMs;
   setTetrisClockDisplay(roundMs, roundMs);
 
-  tetrisMoveTimer = setInterval(() => {
-    if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
-
-    if (tetrisSweepDirection > 0 && tetrisSweepColumn >= (gridSize - 1)) {
-      tetrisSweepDirection = -1;
-    } else if (tetrisSweepDirection < 0 && tetrisSweepColumn <= 0) {
-      tetrisSweepDirection = 1;
-    }
-
-    tetrisSweepColumn += tetrisSweepDirection;
-    if (tetrisSweepColumn < 0) tetrisSweepColumn = 0;
-    if (tetrisSweepColumn > (gridSize - 1)) tetrisSweepColumn = gridSize - 1;
-    syncTetrisActiveSlot(tetrisActiveLetter);
-  }, sweepMs);
+  startOrRestartTetrisSweepTimer(token, sweepMs);
 
   tetrisClockTimer = setInterval(() => {
     if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
@@ -431,6 +443,24 @@ function syncTetrisQueueUI() {
   if (q2) {
     q2.classList.toggle('is-active', (q2.innerText || '').trim() !== '');
   }
+}
+
+function renderTetrisPreRoundPreview() {
+  if (!isTetrisMode()) return;
+  if (!Array.isArray(gameDeck) || gameDeck.length === 0) return;
+
+  const nextLetter = document.getElementById('next-letter');
+  const q1 = document.getElementById('queue-1');
+  const q2 = document.getElementById('queue-2');
+
+  // Before GO, the first unclaimed letter becomes the active drop tile.
+  // Keep the top preview focused on upcoming letters to avoid a visible jump.
+  const base = currentDeckIndex;
+  if (nextLetter) nextLetter.innerText = gameDeck[base + 1] || '';
+  if (q1) q1.innerText = gameDeck[base + 2] || '';
+  if (q2) q2.innerText = gameDeck[base + 3] || '';
+
+  syncTetrisQueueUI();
 }
 
 function syncDropSlots() {
@@ -860,6 +890,9 @@ async function handleDropClick(col) {
 document.addEventListener('ws:afterInit', () => {
   if (!isTetrisMode()) return;
 
+  // Always rebuild the visible queue preview from cursor 0 on init.
+  renderTetrisPreRoundPreview();
+
   bindTetrisSpeedControls();
   updateTetrisSpeedControlsUI();
 
@@ -1023,6 +1056,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisGameplayArmed = false;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
+  tetrisSpeedMultiplier = TETRIS_SPEED_MIN;
   tetrisRoundToken++;
   clearTetrisRoundTimers();
   if (typeof generateBagSequence === 'function') {
@@ -1031,6 +1065,7 @@ document.addEventListener('ws:beforeInit', () => {
   currentDeckIndex = 0;
   currentScore = 0;
   if (scoreEl) scoreEl.innerText = '0';
+  renderTetrisPreRoundPreview();
   updateTetrisSpeedControlsUI();
   syncTetrisBombUI();
 });

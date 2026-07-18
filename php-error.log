@@ -1,0 +1,12 @@
+[18-Jul-2026 11:10:19 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[18-Jul-2026 11:10:21 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[18-Jul-2026 11:10:23 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[18-Jul-2026 11:10:40 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[18-Jul-2026 12:00:46 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_dict","mode":"tetris"}
+[18-Jul-2026 12:00:46 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
+[18-Jul-2026 12:00:46 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:00:46 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:02:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_dict","mode":"tetris"}
+[18-Jul-2026 12:02:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
+[18-Jul-2026 12:02:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:02:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}

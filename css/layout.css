@@ -259,6 +259,41 @@
     gap: 2px;
   }
 
+  .top-bar.tetris-mode .speed-controls {
+    order: 10;
+    width: auto;
+    max-width: none;
+    margin: 0 0 0 auto;
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+
+  .top-bar.tetris-mode .speed-controls-head {
+    margin-bottom: 4px;
+  }
+
+  .top-bar.tetris-mode .speed-controls-title {
+    font-size: 11px;
+  }
+
+  .top-bar.tetris-mode .speed-value {
+    font-size: 11px;
+  }
+
+  .top-bar.tetris-mode .speed-controls-row {
+    gap: 4px;
+  }
+
+  .top-bar.tetris-mode .speed-btn {
+    padding: 6px 8px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+
+  .top-bar.tetris-mode .speed-note {
+    display: none;
+  }
+
   .top-bar.tetris-mode .score-meta-row {
     display: none;
   }
@@ -370,10 +405,10 @@
 }
 
 .speed-controls {
-  width: 100%;
-  max-width: var(--game-size);
-  margin-top: 14px;
-  padding: 12px;
+  width: auto;
+  max-width: min(220px, 100%);
+  margin-left: auto;
+  padding: 10px 12px;
   border-radius: 12px;
   background: rgba(12, 30, 52, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -394,12 +429,12 @@
   font-family: Arial, sans-serif;
   font-weight: 800;
   letter-spacing: 0.06em;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .speed-value {
   font-family: Arial, sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: #dbeafe;
 }
@@ -415,9 +450,9 @@
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   font-family: Arial, sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -442,4 +477,27 @@
   font-family: Arial, sans-serif;
   font-size: 11px;
   color: #cbd5e1;
+}
+
+@media (min-width: 701px) and (max-width: 1024px) {
+  .top-bar.tetris-mode {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-bar.tetris-mode .score-stack {
+    margin-left: auto;
+  }
+
+  .top-bar.tetris-mode .speed-controls {
+    order: 3;
+    margin-left: auto;
+    padding: 8px 10px;
+    max-width: 210px;
+  }
+
+  .top-bar.tetris-mode .speed-note {
+    display: none;
+  }
 }
