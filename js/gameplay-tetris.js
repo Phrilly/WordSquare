@@ -71,6 +71,23 @@ function isTetrisRoundBlockedByOpeningScreen() {
   return computed.display !== 'none';
 }
 
+function syncTetrisGameplayArmedState(context) {
+  const blocked = isTetrisRoundBlockedByOpeningScreen();
+  const nextArmed = !blocked;
+
+  if (tetrisGameplayArmed !== nextArmed) {
+    tetrisGameplayArmed = nextArmed;
+    if (!nextArmed) {
+      clearTetrisRoundTimers();
+    }
+    reportTetrisInvariant('gameplay-arm-state-changed', {
+      context,
+      tetrisGameplayArmed,
+      openingBlocked: blocked,
+    });
+  }
+}
+
 function getTetrisRoundClockMs() {
   return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
 }
@@ -261,6 +278,7 @@ function advanceTetrisPreviewQueue() {
 
 function startTetrisRound() {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  syncTetrisGameplayArmedState('startTetrisRound');
   if (!tetrisGameplayArmed) {
     clearTetrisRoundTimers();
     return;
@@ -788,6 +806,7 @@ async function handleDropClick(col) {
 
 document.addEventListener('ws:afterInit', () => {
   if (!isTetrisMode()) return;
+  syncTetrisGameplayArmedState('ws:afterInit');
 
   const row = getDropRowEl();
   if (row) {
@@ -811,6 +830,7 @@ document.addEventListener('ws:afterInit', () => {
 
 document.addEventListener('ws:nextLetterUpdated', () => {
   if (!isTetrisMode()) return;
+  syncTetrisGameplayArmedState('ws:nextLetterUpdated');
   syncTetrisQueueUI();
   syncDropSlots();
   syncTetrisBombUI();
@@ -936,6 +956,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisSuccessfulPlacements = 0;
   tetrisTurnIndex = 0;
   tetrisGameplayArmed = false;
+  syncTetrisGameplayArmedState('ws:beforeInit');
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;
