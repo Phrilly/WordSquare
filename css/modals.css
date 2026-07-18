@@ -19,6 +19,49 @@
   display: flex;
 }
 
+#go-gate-modal {
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  z-index: 45;
+}
+
+.go-octagon-btn {
+  width: clamp(120px, calc(var(--game-size) * 0.42), 200px);
+  height: clamp(120px, calc(var(--game-size) * 0.42), 200px);
+  border: none;
+  cursor: pointer;
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background: linear-gradient(180deg, #78dc7f 0%, #2e9d44 58%, #1f7b33 100%);
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: clamp(30px, calc(var(--game-size) * 0.12), 56px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.28),
+    inset 0 -6px 12px rgba(0,0,0,0.24),
+    0 16px 28px rgba(0,0,0,0.35);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.go-octagon-btn:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.go-octagon-btn:active {
+  filter: brightness(0.95);
+  transform: translateY(1px);
+}
+
+.go-gate-hint {
+  color: #dbeafe;
+  font-family: Arial, sans-serif;
+  font-size: clamp(12px, calc(var(--game-size) * 0.04), 18px);
+  letter-spacing: 0.02em;
+}
+
 #highscore-entry-modal {
   justify-content: center;
 }

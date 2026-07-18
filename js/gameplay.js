@@ -19,6 +19,38 @@ let dailySect = null;
 let nonDailySect = null;
 let lastPlacedInfo = null;
 let isGameOver = false;
+let isRoundArmed = false;
+
+function hideGoGate() {
+  const gate = document.getElementById('go-gate-modal');
+  if (gate) gate.classList.remove('active');
+}
+
+function armAndStartRound() {
+  if (isRoundArmed || isGameOver) return;
+  isRoundArmed = true;
+  hideGoGate();
+  setNextLetter();
+  document.dispatchEvent(new CustomEvent('ws:roundArmed'));
+}
+
+function showGoGate() {
+  const gate = document.getElementById('go-gate-modal');
+  const button = document.getElementById('go-start-btn');
+
+  if (!gate || !button) {
+    // Fallback to prevent a hard lock if GO gate markup is unavailable.
+    armAndStartRound();
+    return;
+  }
+
+  if (!button.dataset.boundGoGate) {
+    button.addEventListener('click', armAndStartRound);
+    button.dataset.boundGoGate = '1';
+  }
+
+  gate.classList.add('active');
+}
 
 function syncDefaultQueueUI() {
   if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isLookaheadDay || window.GAME_CONFIG.isBombDay)) {
@@ -53,6 +85,7 @@ function initGame() {
   usedWildcards.clear();
   lastPlacedInfo = null;
   isGameOver = false;
+  isRoundArmed = false;
 
   isCurrentGameDaily = true;
   if (isCurrentGameDaily && typeof getDailySeed === 'function') {
@@ -108,12 +141,14 @@ function initGame() {
   if (headerLabelEl) headerLabelEl.style.display = '';
   
   document.dispatchEvent(new CustomEvent('ws:afterInit'));
-  setNextLetter();
+  showGoGate();
 }
 
 function triggerEndGame() {
     if (isGameOver) return;
     isGameOver = true;
+    isRoundArmed = false;
+    hideGoGate();
     if (lastPlacedInfo) {
         const oldCell = document.querySelector(`.grid-cell[data-index='${lastPlacedInfo.index}']`);
         if (oldCell) oldCell.classList.remove('is-undoable');
@@ -214,6 +249,7 @@ function renderNextLetterWindow() {
 }
 
 function handleHoverEnter(index, cellEl) {
+  if (!isRoundArmed) return;
   if (cells[index] !== '' || placedCount >= 25 || isGameOver) return;
   let letter = '';
   
@@ -253,6 +289,7 @@ function handleHoverLeave(cellEl) {
 }
 
 function handleCellClick(index, cellEl) {
+  if (!isRoundArmed) return;
   if (isGameOver || placedCount >= 25) return;
   if (cells[index] !== '') {
     if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {
@@ -347,6 +384,7 @@ function undoLastMove() {
 }
 
 function selectWildcard(letter) {
+  if (!isRoundArmed) return;
   if (usedWildcards.has(letter) && letter !== 'Cancel') return;
 
   if (alphabetModal) alphabetModal.classList.remove('active');

@@ -208,6 +208,11 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   </div>
 
   <div class="grid-container" id="grid">
+    <div class="overlay-modal" id="go-gate-modal" role="dialog" aria-modal="true" aria-label="Start round gate">
+      <button id="go-start-btn" class="go-octagon-btn" type="button" aria-label="Start game">GO</button>
+      <div class="go-gate-hint">Press GO to start this round.</div>
+    </div>
+
     <div class="alphabet-modal" id="alphabet-modal"></div>
 
     <div class="overlay-modal" id="highscore-entry-modal">
