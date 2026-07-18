@@ -17,7 +17,7 @@ const TETRIS_MIN_CLOCK_MS = 2800;
 const TETRIS_CLOCK_STEP_MS = 100;
 const TETRIS_START_SWEEP_MS = 800;
 const TETRIS_MIN_SWEEP_MS = 320;
-const TETRIS_SWEEP_STEP_MS = 20;
+const TETRIS_SWEEP_STEP_MS = 0;
 
 let tetrisSweepColumn = 0;
 let tetrisSweepDirection = 1;
