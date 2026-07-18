@@ -29,7 +29,7 @@ let tetrisActiveLetter = '';
 let tetrisActiveTone = 'green';
 let tetrisSuccessfulPlacements = 0;
 let tetrisTurnIndex = 0;
-let tetrisOpeningClosedSeen = false;
+let tetrisGameplayArmed = false;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -87,6 +87,37 @@ function reportTetrisInvariant(code, details) {
   console.error(`[Tetris invariant:${code}]`, details);
 }
 
+function claimNextTetrisLetterForBar() {
+  if (!isTetrisMode()) return '';
+
+  ensureDeckBufferForTetris();
+  if (!Array.isArray(gameDeck) || gameDeck.length === 0) {
+    reportTetrisInvariant('queue-empty-before-claim', { currentDeckIndex });
+    return '';
+  }
+
+  if (currentDeckIndex >= gameDeck.length) {
+    triggerEndGame();
+    return '';
+  }
+
+  const deckIndexBefore = currentDeckIndex;
+  const letter = gameDeck[currentDeckIndex] || '';
+  currentDeckIndex++;
+
+  if (currentDeckIndex !== (deckIndexBefore + 1)) {
+    reportTetrisInvariant('queue-claim-index-mismatch', {
+      deckIndexBefore,
+      deckIndexAfter: currentDeckIndex,
+    });
+  }
+
+  renderNextLetterWindow();
+  syncTetrisQueueUI();
+
+  return letter;
+}
+
 function validateTetrisClockState(context) {
   if (!isTetrisMode()) return;
 
@@ -109,11 +140,11 @@ function validateTetrisClockState(context) {
     tetrisSuccessfulPlacements = 0;
   }
 
-  if (!tetrisOpeningClosedSeen && tetrisTurnIndex > 0) {
-    reportTetrisInvariant('clock-started-before-opening-closed', {
+  if (!tetrisGameplayArmed && tetrisTurnIndex > 0) {
+    reportTetrisInvariant('clock-started-before-gameplay-armed', {
       context,
       tetrisTurnIndex,
-      openingClosedSeen: tetrisOpeningClosedSeen,
+      tetrisGameplayArmed,
     });
     tetrisTurnIndex = 0;
     tetrisSuccessfulPlacements = 0;
@@ -230,13 +261,16 @@ function advanceTetrisPreviewQueue() {
 
 function startTetrisRound() {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (!tetrisGameplayArmed) {
+    clearTetrisRoundTimers();
+    return;
+  }
   if (isTetrisRoundBlockedByOpeningScreen()) {
     clearTetrisRoundTimers();
     return;
   }
 
-  const nextLetterEl = document.getElementById('next-letter');
-  const letter = nextLetterEl ? nextLetterEl.innerText : '';
+  const letter = claimNextTetrisLetterForBar();
   if (!letter) return;
 
   validateTetrisClockState('startTetrisRound');
@@ -618,8 +652,6 @@ async function animateLoadIntoSlot(col, letter) {
   const slot = getDropSlot(col);
   if (!slot) return;
 
-  const deckIndexBeforeLoad = currentDeckIndex;
-
   slot.classList.add('is-engaged');
 
   const targetRect = slot.getBoundingClientRect();
@@ -639,23 +671,6 @@ async function animateLoadIntoSlot(col, letter) {
 
   await delay(TETRIS_LOAD_MS);
   animTile.remove();
-  advanceTetrisPreviewQueue();
-
-  if (!isGameOver && currentDeckIndex !== (deckIndexBeforeLoad + 1)) {
-    reportTetrisInvariant('queue-did-not-advance-on-bar-drop', {
-      deckIndexBeforeLoad,
-      deckIndexAfterLoad: currentDeckIndex,
-      expectedDeckIndexAfterLoad: deckIndexBeforeLoad + 1,
-      letter,
-    });
-
-    currentDeckIndex = deckIndexBeforeLoad + 1;
-    if (currentDeckIndex < gameDeck.length) {
-      renderNextLetterWindow();
-      syncTetrisQueueUI();
-    }
-  }
-
   setSlotLoadedLetter(slot, letter);
   await delay(TETRIS_LOADED_SETTLE_MS);
   sealLoadedSlot(slot);
@@ -763,9 +778,7 @@ async function handleDropClick(col) {
   tetrisBusy = true;
   clearTetrisRoundTimers();
   syncDropSlots();
-  await animateLoadIntoSlot(col, letter);
   await animateDropToCell(col, targetIdx, letter);
-  clearSlotLoadedLetter(getDropSlot(col));
   placeLetter(targetIdx, letter, cellEl, false);
 }
 
@@ -802,7 +815,7 @@ document.addEventListener('ws:nextLetterUpdated', () => {
 
 document.addEventListener('ws:openingClosed', () => {
   if (!isTetrisMode()) return;
-  tetrisOpeningClosedSeen = true;
+  tetrisGameplayArmed = true;
 
   if (tetrisTurnIndex !== 0 || tetrisSuccessfulPlacements !== 0) {
     reportTetrisInvariant('opening-close-reset-needed', {
@@ -918,7 +931,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisActiveTone = 'green';
   tetrisSuccessfulPlacements = 0;
   tetrisTurnIndex = 0;
-  tetrisOpeningClosedSeen = false;
+  tetrisGameplayArmed = false;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;
