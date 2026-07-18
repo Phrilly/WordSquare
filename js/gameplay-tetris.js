@@ -279,6 +279,9 @@ function startTetrisRound() {
   const thisTurnIndex = tetrisTurnIndex;
   tetrisTurnIndex++;
 
+  // Reset residual slot state from previous drops before showing the next active tile.
+  getDropSlots().forEach((slot) => clearSlotLoadedLetter(slot));
+
   clearTetrisRoundTimers();
   tetrisRoundToken++;
   const token = tetrisRoundToken;
@@ -779,6 +782,7 @@ async function handleDropClick(col) {
   clearTetrisRoundTimers();
   syncDropSlots();
   await animateDropToCell(col, targetIdx, letter);
+  if (slot) clearSlotLoadedLetter(slot);
   placeLetter(targetIdx, letter, cellEl, false);
 }
 
