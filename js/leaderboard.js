@@ -90,6 +90,7 @@ async function submitHighscore() {
           action: 'save_score', 
           initials: initials, 
           mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic',
+          session_id: typeof sessionId !== 'undefined' ? sessionId : '',
           score: typeof currentScore !== 'undefined' ? currentScore : 0, 
           grid: gridString 
       })

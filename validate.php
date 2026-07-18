@@ -311,7 +311,14 @@ function getModeForDate(DateTimeImmutable $date): string
 
 function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
 {
+    $mode = normaliseMode($mode);
+
     foreach ($rows as &$row) {
+        if ($mode === 'tetris') {
+            $row['score'] = (int)($row['score'] ?? 0);
+            continue;
+        }
+
         $grid = normaliseGridString($row['grid'] ?? '');
         $row['score'] = calculateGridScoreForMode($grid, $mode, $pdo);
     }
@@ -417,6 +424,8 @@ if (isset($input['action'])) {
         $initials = normaliseInitials($input['initials'] ?? null);
         $grid = normaliseGridString($input['grid'] ?? '');
         $mode = normaliseMode($input['mode'] ?? null);
+        $sessionId = trim((string)($input['session_id'] ?? ''));
+        $submittedScore = isset($input['score']) ? (int)$input['score'] : 0;
 
         // DIAGNOSTIC FIX: Explicit length reporting
         if (strlen($grid) !== 25) {
@@ -426,6 +435,38 @@ if (isset($input['action'])) {
         }
 
         $score = calculateGridScoreForMode($grid, $mode, $pdo);
+
+        if ($mode === 'tetris') {
+            if ($sessionId === '') {
+                jsonResponse(['error' => 'Missing session id for tetris score verification.'], 400);
+            }
+
+            try {
+                $stmtVerify = $pdo->prepare("\n                    SELECT final_score, grid\n                    FROM game_log\n                    WHERE session_id = :session_id\n                    ORDER BY created_at DESC, id DESC\n                    LIMIT 1\n                ");
+                $stmtVerify->execute([':session_id' => $sessionId]);
+                $proof = $stmtVerify->fetch();
+
+                if (!$proof) {
+                    jsonResponse(['error' => 'No gameplay proof found for this session.'], 400);
+                }
+
+                $proofGrid = normaliseGridString($proof['grid'] ?? '');
+                $proofScore = (int)($proof['final_score'] ?? -1);
+
+                if ($proofGrid !== $grid) {
+                    jsonResponse(['error' => 'Score verification failed: grid proof mismatch.'], 400);
+                }
+
+                if ($submittedScore !== $proofScore) {
+                    jsonResponse(['error' => 'Score verification failed: score proof mismatch.'], 400);
+                }
+
+                $score = $proofScore;
+            } catch (PDOException $e) {
+                error_log('validate.php tetris score verification failed: ' . $e->getMessage());
+                jsonResponse(['error' => 'Failed to verify tetris score.'], 500);
+            }
+        }
 
         try {
             $stmt = $pdo->prepare("
