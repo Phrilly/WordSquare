@@ -98,7 +98,7 @@ function updateTetrisSpeedControlsUI() {
     valueEl.textContent = `x${formatted}`;
   }
   if (leftBtn) {
-    leftBtn.disabled = tetrisSweepDirection >= 0 || tetrisDirectionalSpeed <= TETRIS_DIRECTIONAL_SPEED_MIN;
+    leftBtn.disabled = tetrisSweepDirection >= 0 || tetrisDirectionalSpeed >= TETRIS_DIRECTIONAL_SPEED_MAX;
   }
   if (rightBtn) {
     rightBtn.disabled = tetrisSweepDirection <= 0 || tetrisDirectionalSpeed >= TETRIS_DIRECTIONAL_SPEED_MAX;
@@ -114,14 +114,24 @@ function startOrRestartTetrisSweepTimer(token, sweepMs) {
   tetrisMoveTimer = setInterval(() => {
     if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
 
+    let hitEdge = false;
+
     if (tetrisSweepDirection > 0 && tetrisSweepColumn >= (gridSize - 1)) {
       tetrisSweepDirection = -1;
-      tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
-      updateTetrisSpeedControlsUI();
+      hitEdge = true;
     } else if (tetrisSweepDirection < 0 && tetrisSweepColumn <= 0) {
       tetrisSweepDirection = 1;
+      hitEdge = true;
+    }
+
+    if (hitEdge) {
       tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
       updateTetrisSpeedControlsUI();
+      // Edge hits must immediately return to base cadence before any further movement.
+      const resetSweepMs = getTetrisSweepStepMs(Math.max(0, tetrisTurnIndex - 1));
+      startOrRestartTetrisSweepTimer(token, resetSweepMs);
+      syncTetrisActiveSlot(tetrisActiveLetter);
+      return;
     }
 
     tetrisSweepColumn += tetrisSweepDirection;
