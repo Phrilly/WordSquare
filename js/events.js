@@ -70,6 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
+    const helpVersion = '1.1.0';
+    const helpChanges = [
+      '1.1.0 adds the Tetris 4-letter clear/scoring note and the danger-row guidance.',
+    ];
+
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
     const modeLabel = getModeLabel(mode);
     const scheduleDebug = getScheduleDebugInfo();
@@ -79,6 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <h3>Current Mode</h3>
       <p><strong>${modeLabel}</strong></p>
       <p>${getModeRules(mode)}</p>
+
+      <h3>Help Version</h3>
+      <ul>
+        <li>Help Version: ${helpVersion}</li>
+        <li>Change Log: ${helpChanges.join(' ')}</li>
+      </ul>
 
       <h3>Core Rules</h3>
       <ul>

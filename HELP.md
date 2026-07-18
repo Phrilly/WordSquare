@@ -1,5 +1,9 @@
 # WordSquare Help
 
+## Help Version
+- Help Version: 1.1.0
+- Change Log: 1.1.0 adds the Tetris 4-letter clear/scoring note and the danger-row guidance.
+
 ## Core Rules
 - Fill the 5x5 board with letters from the active mode queue/tray.
 - Score words found in rows, columns, and diagonals.
