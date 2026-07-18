@@ -64,30 +64,6 @@ function getTetrisClockValueEl() {
   return document.getElementById('tetris-clock-value');
 }
 
-function isTetrisRoundBlockedByOpeningScreen() {
-  const openingScreen = document.getElementById('opening-screen');
-  if (!openingScreen) return false;
-  const computed = window.getComputedStyle(openingScreen);
-  return computed.display !== 'none';
-}
-
-function syncTetrisGameplayArmedState(context) {
-  const blocked = isTetrisRoundBlockedByOpeningScreen();
-  const nextArmed = !blocked;
-
-  if (tetrisGameplayArmed !== nextArmed) {
-    tetrisGameplayArmed = nextArmed;
-    if (!nextArmed) {
-      clearTetrisRoundTimers();
-    }
-    reportTetrisInvariant('gameplay-arm-state-changed', {
-      context,
-      tetrisGameplayArmed,
-      openingBlocked: blocked,
-    });
-  }
-}
-
 function getTetrisRoundClockMs() {
   return Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (tetrisTurnIndex * TETRIS_CLOCK_STEP_MS));
 }
@@ -278,12 +254,7 @@ function advanceTetrisPreviewQueue() {
 
 function startTetrisRound() {
   if (!isTetrisMode() || isGameOver || tetrisBusy) return;
-  syncTetrisGameplayArmedState('startTetrisRound');
   if (!tetrisGameplayArmed) {
-    clearTetrisRoundTimers();
-    return;
-  }
-  if (isTetrisRoundBlockedByOpeningScreen()) {
     clearTetrisRoundTimers();
     return;
   }
@@ -806,7 +777,6 @@ async function handleDropClick(col) {
 
 document.addEventListener('ws:afterInit', () => {
   if (!isTetrisMode()) return;
-  syncTetrisGameplayArmedState('ws:afterInit');
 
   const row = getDropRowEl();
   if (row) {
@@ -830,26 +800,15 @@ document.addEventListener('ws:afterInit', () => {
 
 document.addEventListener('ws:nextLetterUpdated', () => {
   if (!isTetrisMode()) return;
-  syncTetrisGameplayArmedState('ws:nextLetterUpdated');
   syncTetrisQueueUI();
   syncDropSlots();
   syncTetrisBombUI();
   startTetrisRound();
 });
 
-document.addEventListener('ws:openingClosed', () => {
+document.addEventListener('ws:roundArmed', () => {
   if (!isTetrisMode()) return;
   tetrisGameplayArmed = true;
-
-  if (tetrisTurnIndex !== 0 || tetrisSuccessfulPlacements !== 0) {
-    reportTetrisInvariant('opening-close-reset-needed', {
-      tetrisTurnIndex,
-      tetrisSuccessfulPlacements,
-    });
-    tetrisTurnIndex = 0;
-    tetrisSuccessfulPlacements = 0;
-  }
-
   startTetrisRound();
 });
 
@@ -956,7 +915,6 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisSuccessfulPlacements = 0;
   tetrisTurnIndex = 0;
   tetrisGameplayArmed = false;
-  syncTetrisGameplayArmedState('ws:beforeInit');
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisRoundToken++;

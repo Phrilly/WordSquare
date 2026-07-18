@@ -30,8 +30,13 @@ function armAndStartRound() {
   if (isRoundArmed || isGameOver) return;
   isRoundArmed = true;
   hideGoGate();
-  setNextLetter();
   document.dispatchEvent(new CustomEvent('ws:roundArmed'));
+
+  if (typeof getCurrentGameMode === 'function' && getCurrentGameMode() === 'tetris') {
+    return;
+  }
+
+  setNextLetter();
 }
 
 function showGoGate() {
