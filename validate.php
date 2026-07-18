@@ -293,17 +293,20 @@ function getModeForDate(DateTimeImmutable $date): string
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
     $daysSinceEpoch = (int) floor(($target->getTimestamp() - $epoch->getTimestamp()) / 86400);
 
-    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0) {
+    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 6 === 0) {
         return 'bomb';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 5 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 6 === 0) {
         return 'scrabble';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 6 === 0) {
         return 'lookahead';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 5 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 6 === 0) {
         return 'mfd';
+    }
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 6 === 0) {
+        return 'tetris';
     }
 
     return 'classic';

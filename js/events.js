@@ -61,13 +61,21 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Placed tiles are locked: inserted tiles cannot be deleted.</li>
       </ul>
 
-      <h3>Daily Schedule (5-Day)</h3>
+      <h3>Daily Schedule (6-Day)</h3>
       <ul>
         <li>Day 0: Bomb</li>
         <li>Day 1: Scrabble</li>
         <li>Day 2: Lookahead</li>
         <li>Day 3: MFD (My First Dictionary)</li>
-        <li>Day 4: Classic</li>
+        <li>Day 4: Tetris</li>
+        <li>Day 5: Classic</li>
+      </ul>
+
+      <h3>Scoring Notes</h3>
+      <ul>
+        <li>Classic/Bomb/Lookahead/MFD score with standard WordSquare word scoring.</li>
+        <li>Scrabble mode scores by letter values and board modifiers.</li>
+        <li>Tetris mode uses live gameplay scoring, then saves a verified final score.</li>
       </ul>
 
       <h3>MFD Notes</h3>
@@ -81,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Click a DROP slot above the grid to let the current letter fall into that column.</li>
         <li>Only 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
         <li>You have 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
-        <li>If a column is full, its DROP slot greys out. The game ends when the grid is full.</li>
+        <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
 
       <p class="help-subtle">Full docs: <a href="HELP.md" target="_blank" rel="noopener noreferrer">HELP.md</a> and <a href="HELP_MFD.md" target="_blank" rel="noopener noreferrer">HELP_MFD.md</a>.</p>

@@ -14,16 +14,16 @@ function autoVer(string $url): string {
     return $url . '?v=' . time(); // Fallback if file isn't found
 }
 
-// VARIANT SCHEDULER: 5-Day Cycle Calculation
+// VARIANT SCHEDULER: 6-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-20 00:00:00 UTC'); 
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // Default cycle logic
-$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 5 === 0);       // Day 0
-$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 5 === 0); // Day 1
-$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 5 === 0); // Day 2
-$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 5 === 0); // Day 3 (MFD)
-$isTetrisDay    = false;
+$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 6 === 0);       // Day 0
+$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 6 === 0); // Day 1
+$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 6 === 0); // Day 2
+$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 6 === 0); // Day 3 (MFD)
+$isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 6 === 0); // Day 4
 
 // DEV OVERRIDES: Strict Input Validation
 if (isset($_GET['mode'])) {
