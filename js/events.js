@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <h3>Tetris Notes</h3>
       <ul>
         <li>Click a DROP slot above the grid to let the current letter fall into that column.</li>
-        <li>Only 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
+        <li>4-letter and 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
         <li>You have 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
