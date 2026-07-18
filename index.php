@@ -179,13 +179,6 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
 
     </div>
-    <div id="tetris-tools-row" class="tetris-tools-row" aria-label="Tetris tools">
-      <div id="tetris-bomb-indicator" class="tetris-bomb-indicator" aria-label="Bombs remaining">
-        <span class="tetris-bomb-icon" data-bomb-index="0" aria-hidden="true"></span>
-        <span class="tetris-bomb-icon" data-bomb-index="1" aria-hidden="true"></span>
-        <span class="tetris-bomb-icon" data-bomb-index="2" aria-hidden="true"></span>
-      </div>
-    </div>
     <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
       <span class="tetris-clock-label">CLOCK</span>
       <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
@@ -205,8 +198,8 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
         <span id="speed-value" class="speed-value">x1</span>
       </div>
       <div class="speed-controls-row">
-        <button id="speed-slow-btn" class="speed-btn" type="button" aria-label="Slow down tetris speed">SLOW</button>
-        <button id="speed-fast-btn" class="speed-btn" type="button" aria-label="Speed up tetris speed">FAST</button>
+        <button id="speed-slow-btn" class="speed-btn speed-down-btn" type="button" aria-label="Slow down tetris speed">▼</button>
+        <button id="speed-fast-btn" class="speed-btn speed-up-btn" type="button" aria-label="Speed up tetris speed">▲</button>
       </div>
     </div>
     <?php endif; ?>
@@ -283,6 +276,16 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
     </div>
   </div>
+
+  <?php if ($isTetrisDay): ?>
+  <div class="tetris-bomb-strip" aria-label="Bombs remaining">
+    <div id="tetris-bomb-indicator" class="tetris-bomb-indicator" aria-label="Bombs remaining">
+      <span class="tetris-bomb-icon" data-bomb-index="0" aria-hidden="true"></span>
+      <span class="tetris-bomb-icon" data-bomb-index="1" aria-hidden="true"></span>
+      <span class="tetris-bomb-icon" data-bomb-index="2" aria-hidden="true"></span>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <?php if (!$isTetrisDay): ?>
   <div id="try-it-panel" class="try-it-panel" role="group" aria-label="Try words">

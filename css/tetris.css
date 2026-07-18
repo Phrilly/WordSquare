@@ -24,10 +24,34 @@
   display: flex;
 }
 
+.tetris-bomb-strip {
+  width: 100%;
+  max-width: var(--game-size);
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .tetris-bomb-indicator {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+@media (max-width: 1024px) {
+  .tetris-bomb-strip {
+    margin-top: 4px;
+  }
+
+  .tetris-bomb-indicator {
+    gap: 8px;
+  }
+
+  .tetris-bomb-icon {
+    width: 20px;
+    height: 24px;
+  }
 }
 
 .tetris-bomb-icon {
