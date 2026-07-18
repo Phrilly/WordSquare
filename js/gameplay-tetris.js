@@ -18,9 +18,9 @@ const TETRIS_CLOCK_STEP_MS = 100;
 const TETRIS_START_SWEEP_MS = 800;
 const TETRIS_MIN_SWEEP_MS = 320;
 const TETRIS_SWEEP_STEP_MS = 0;
-const TETRIS_SPEED_MIN = 1;
-const TETRIS_SPEED_MAX = 2;
-const TETRIS_SPEED_STEP = 0.25;
+const TETRIS_DIRECTIONAL_SPEED_MIN = 1;
+const TETRIS_DIRECTIONAL_SPEED_MAX = 2;
+const TETRIS_DIRECTIONAL_SPEED_STEP = 0.25;
 
 let tetrisSweepColumn = 0;
 let tetrisSweepDirection = 1;
@@ -33,7 +33,7 @@ let tetrisActiveTone = 'green';
 let tetrisSuccessfulPlacements = 0;
 let tetrisTurnIndex = 0;
 let tetrisGameplayArmed = false;
-let tetrisSpeedMultiplier = TETRIS_SPEED_MIN;
+let tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
 let tetrisSpeedControlsBound = false;
 let tetrisSessionToken = 0;
 
@@ -74,31 +74,35 @@ function getSpeedValueEl() {
   return document.getElementById('speed-value');
 }
 
-function getSpeedSlowBtn() {
-  return document.getElementById('speed-slow-btn');
+function getSpeedLeftBtn() {
+  return document.getElementById('speed-left-btn');
 }
 
-function getSpeedFastBtn() {
-  return document.getElementById('speed-fast-btn');
+function getSpeedRightBtn() {
+  return document.getElementById('speed-right-btn');
 }
 
-function clampTetrisSpeed(multiplier) {
-  return Math.max(TETRIS_SPEED_MIN, Math.min(TETRIS_SPEED_MAX, multiplier));
+function clampTetrisDirectionalSpeed(multiplier) {
+  return Math.max(TETRIS_DIRECTIONAL_SPEED_MIN, Math.min(TETRIS_DIRECTIONAL_SPEED_MAX, multiplier));
 }
 
 function updateTetrisSpeedControlsUI() {
   const valueEl = getSpeedValueEl();
-  const slowBtn = getSpeedSlowBtn();
-  const fastBtn = getSpeedFastBtn();
+  const leftBtn = getSpeedLeftBtn();
+  const rightBtn = getSpeedRightBtn();
 
   if (valueEl) {
-    const formatted = Number.isInteger(tetrisSpeedMultiplier)
-      ? String(tetrisSpeedMultiplier)
-      : String(tetrisSpeedMultiplier).replace(/\.0+$/, '');
+    const formatted = Number.isInteger(tetrisDirectionalSpeed)
+      ? String(tetrisDirectionalSpeed)
+      : String(tetrisDirectionalSpeed).replace(/\.0+$/, '');
     valueEl.textContent = `x${formatted}`;
   }
-  if (slowBtn) slowBtn.disabled = tetrisSpeedMultiplier <= TETRIS_SPEED_MIN;
-  if (fastBtn) fastBtn.disabled = tetrisSpeedMultiplier >= TETRIS_SPEED_MAX;
+  if (leftBtn) {
+    leftBtn.disabled = tetrisSweepDirection >= 0 || tetrisDirectionalSpeed <= TETRIS_DIRECTIONAL_SPEED_MIN;
+  }
+  if (rightBtn) {
+    rightBtn.disabled = tetrisSweepDirection <= 0 || tetrisDirectionalSpeed >= TETRIS_DIRECTIONAL_SPEED_MAX;
+  }
 }
 
 function startOrRestartTetrisSweepTimer(token, sweepMs) {
@@ -112,8 +116,12 @@ function startOrRestartTetrisSweepTimer(token, sweepMs) {
 
     if (tetrisSweepDirection > 0 && tetrisSweepColumn >= (gridSize - 1)) {
       tetrisSweepDirection = -1;
+      tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
+      updateTetrisSpeedControlsUI();
     } else if (tetrisSweepDirection < 0 && tetrisSweepColumn <= 0) {
       tetrisSweepDirection = 1;
+      tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
+      updateTetrisSpeedControlsUI();
     }
 
     tetrisSweepColumn += tetrisSweepDirection;
@@ -131,32 +139,42 @@ function retimeActiveTetrisSweep() {
   startOrRestartTetrisSweepTimer(tetrisRoundToken, sweepMs);
 }
 
-function setTetrisSpeedMultiplier(nextSpeed) {
-  const clamped = clampTetrisSpeed(nextSpeed);
-  if (clamped === tetrisSpeedMultiplier) {
+function setTetrisDirectionalSpeed(nextSpeed) {
+  const clamped = clampTetrisDirectionalSpeed(nextSpeed);
+  if (clamped === tetrisDirectionalSpeed) {
     updateTetrisSpeedControlsUI();
     return;
   }
 
-  tetrisSpeedMultiplier = clamped;
+  tetrisDirectionalSpeed = clamped;
 
   updateTetrisSpeedControlsUI();
   retimeActiveTetrisSweep();
 }
 
+function resetTetrisDirectionalSpeed() {
+  tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
+  updateTetrisSpeedControlsUI();
+}
+
+function nudgeTetrisDirectionalSpeed(direction) {
+  if (tetrisSweepDirection !== direction) return;
+  setTetrisDirectionalSpeed(tetrisDirectionalSpeed + TETRIS_DIRECTIONAL_SPEED_STEP);
+}
+
 function bindTetrisSpeedControls() {
   if (tetrisSpeedControlsBound) return;
 
-  const slowBtn = getSpeedSlowBtn();
-  const fastBtn = getSpeedFastBtn();
-  if (!slowBtn || !fastBtn) return;
+  const leftBtn = getSpeedLeftBtn();
+  const rightBtn = getSpeedRightBtn();
+  if (!leftBtn || !rightBtn) return;
 
-  slowBtn.addEventListener('click', () => {
-    setTetrisSpeedMultiplier(tetrisSpeedMultiplier - TETRIS_SPEED_STEP);
+  leftBtn.addEventListener('click', () => {
+    nudgeTetrisDirectionalSpeed(-1);
   });
 
-  fastBtn.addEventListener('click', () => {
-    setTetrisSpeedMultiplier(tetrisSpeedMultiplier + TETRIS_SPEED_STEP);
+  rightBtn.addEventListener('click', () => {
+    nudgeTetrisDirectionalSpeed(1);
   });
 
   tetrisSpeedControlsBound = true;
@@ -169,7 +187,7 @@ function getTetrisRoundClockMs() {
 
 function getTetrisSweepStepMs(turnIndex = tetrisTurnIndex) {
   const base = Math.max(TETRIS_MIN_SWEEP_MS, TETRIS_START_SWEEP_MS - (turnIndex * TETRIS_SWEEP_STEP_MS));
-  return Math.max(1, Math.round(base / tetrisSpeedMultiplier));
+  return Math.max(1, Math.round(base / tetrisDirectionalSpeed));
 }
 
 function formatTetrisClock(ms) {
@@ -376,6 +394,7 @@ function startTetrisRound() {
   const token = tetrisRoundToken;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
+  resetTetrisDirectionalSpeed();
 
   syncTetrisActiveSlot(tetrisActiveLetter);
 
@@ -1056,7 +1075,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisGameplayArmed = false;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
-  tetrisSpeedMultiplier = TETRIS_SPEED_MIN;
+  tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
   tetrisRoundToken++;
   clearTetrisRoundTimers();
   if (typeof generateBagSequence === 'function') {

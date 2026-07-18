@@ -59,3 +59,13 @@
 [18-Jul-2026 12:36:25 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
 [18-Jul-2026 12:36:25 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
 [18-Jul-2026 12:36:26 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:51:40 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
+[18-Jul-2026 12:51:40 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_dict","mode":"tetris"}
+[18-Jul-2026 12:51:40 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:51:40 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:51:40 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"log_client_error","error_type":"ReferenceError","message":"Uncaught ReferenceError: TETRIS_SPEED_MIN is not defined","filename":"http://127.0.0.1:8080/js/gameplay-tetris.js?v=1784371892","lineno":1078,"stack_trace":"ReferenceError: TETRIS_SPEED_MIN is not defined\n    at HTMLDocument.<anonymous> (http://127.0.0.1:8080/js/gameplay-tetris.js?v=1784371892:1078:3)\n    at initGame (http://127.0.0.1:8080/js/gameplay.js?v=1784368940:106:12)\n    at HTMLDocument.<anonymous> (http://127.0.0.1:8080/js/startup.js?v=1784332575:230:41)","url":"http://127.0.0.1:8080/index.php?mode=tetris"}
+[18-Jul-2026 12:51:40 Europe/Berlin] DIAGNOSTIC 400: Unknown action: log_client_error
+[18-Jul-2026 12:51:55 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_dict","mode":"tetris"}
+[18-Jul-2026 12:51:55 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
+[18-Jul-2026 12:51:55 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[18-Jul-2026 12:51:55 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
