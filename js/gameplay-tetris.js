@@ -2,15 +2,10 @@
 // TETRIS VARIANT (DROP ROW + GRAVITY)
 // ================================
 
-let pendingDropColumn = null;
 let tetrisBusy = false;
 let tetrisBombsRemaining = 3;
 
 const TETRIS_CLEAR_PREVIEW_MS = 380;
-const TETRIS_LOAD_MS = 220;
-const TETRIS_LOADED_SETTLE_MS = 380;
-const TETRIS_LOADED_COLOR_SHIFT_MS = 320;
-const TETRIS_LOADED_FINAL_HOLD_MS = 360;
 const TETRIS_DROP_MS = 1320;
 const TETRIS_START_CLOCK_MS = 10000;
 const TETRIS_MIN_CLOCK_MS = 2800;
@@ -21,11 +16,13 @@ const TETRIS_SWEEP_STEP_MS = 0;
 const TETRIS_DIRECTIONAL_SPEED_MIN = 1;
 const TETRIS_DIRECTIONAL_SPEED_MAX = 2;
 const TETRIS_DIRECTIONAL_SPEED_STEP = 0.25;
+const TETRIS_BALLOON_PULSE_MS = 500;
 
 let tetrisSweepColumn = 0;
 let tetrisSweepDirection = 1;
 let tetrisMoveTimer = null;
 let tetrisClockTimer = null;
+let tetrisBalloonTimer = null;
 let tetrisClockDeadline = 0;
 let tetrisRoundToken = 0;
 let tetrisActiveLetter = '';
@@ -68,6 +65,10 @@ function getTetrisClockEl() {
 
 function getTetrisClockValueEl() {
   return document.getElementById('tetris-clock-value');
+}
+
+function getTetrisActiveTileEl() {
+  return document.getElementById('tetris-active-tile');
 }
 
 function getSpeedValueEl() {
@@ -127,7 +128,6 @@ function startOrRestartTetrisSweepTimer(token, sweepMs) {
     if (hitEdge) {
       tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
       updateTetrisSpeedControlsUI();
-      // Edge hits must immediately return to base cadence before any further movement.
       const resetSweepMs = getTetrisSweepStepMs(Math.max(0, tetrisTurnIndex - 1));
       startOrRestartTetrisSweepTimer(token, resetSweepMs);
       syncTetrisActiveSlot(tetrisActiveLetter);
@@ -206,6 +206,31 @@ function formatTetrisClock(ms) {
 
 function reportTetrisInvariant(code, details) {
   console.error(`[Tetris invariant:${code}]`, details);
+}
+
+// --- Balloon pulse (0.5s inflate cycle on the active tile) ---
+function startTetrisBalloonPulse() {
+  stopTetrisBalloonPulse();
+  const tileEl = getTetrisActiveTileEl();
+  if (!tileEl) return;
+
+  tetrisBalloonTimer = setInterval(() => {
+    tileEl.classList.remove('is-pulsing');
+    void tileEl.offsetWidth;
+    tileEl.classList.add('is-pulsing');
+    tileEl.classList.add('is-inflated');
+  }, TETRIS_BALLOON_PULSE_MS);
+}
+
+function stopTetrisBalloonPulse() {
+  if (tetrisBalloonTimer) {
+    clearInterval(tetrisBalloonTimer);
+    tetrisBalloonTimer = null;
+  }
+  const tileEl = getTetrisActiveTileEl();
+  if (tileEl) {
+    tileEl.classList.remove('is-pulsing', 'is-inflated');
+  }
 }
 
 function claimNextTetrisLetterForBar() {
@@ -307,12 +332,9 @@ function setTetrisClockDisplay(remainingMs, roundMs) {
   }
 
   clockValueEl.textContent = formatTetrisClock(remainingMs);
-  const tileEl = document.getElementById('tetris-active-tile');
+  const tileEl = getTetrisActiveTileEl();
   if (tileEl) {
-    const ratio = roundMs > 0 ? Math.max(0, Math.min(1, remainingMs / roundMs)) : 0;
     tileEl.textContent = tetrisActiveLetter || '';
-    tileEl.classList.toggle('is-quivering', ratio < 1/3 && remainingMs > 0);
-    tileEl.classList.toggle('is-bursting', remainingMs <= 0);
   }
   syncTetrisActiveSlot(tetrisActiveLetter);
 }
@@ -347,6 +369,7 @@ function endTetrisIfAnyColumnFull(context) {
 
   console.error(`[Tetris stop condition] ending game because a column is full in ${context}`);
   clearTetrisRoundTimers();
+  stopTetrisBalloonPulse();
   tetrisBusy = false;
   syncDropSlots();
   triggerEndGame();
@@ -362,6 +385,7 @@ function finalizeTetrisTurn(context) {
 
   if (placedCount >= 25) {
     clearTetrisRoundTimers();
+    stopTetrisBalloonPulse();
     tetrisBusy = false;
     syncDropSlots();
     triggerEndGame();
@@ -398,7 +422,6 @@ function startTetrisRound() {
   const thisTurnIndex = tetrisTurnIndex;
   tetrisTurnIndex++;
 
-  // Reset residual slot state from previous drops before showing the next active tile.
   getDropSlots().forEach((slot) => clearSlotLoadedLetter(slot));
 
   clearTetrisRoundTimers();
@@ -409,6 +432,7 @@ function startTetrisRound() {
   resetTetrisDirectionalSpeed();
 
   syncTetrisActiveSlot(tetrisActiveLetter);
+  startTetrisBalloonPulse();
 
   const roundMs = Math.max(TETRIS_MIN_CLOCK_MS, TETRIS_START_CLOCK_MS - (thisTurnIndex * TETRIS_CLOCK_STEP_MS));
   const sweepMs = getTetrisSweepStepMs(thisTurnIndex);
@@ -484,8 +508,6 @@ function renderTetrisPreRoundPreview() {
   const q1 = document.getElementById('queue-1');
   const q2 = document.getElementById('queue-2');
 
-  // Before GO, the first unclaimed letter becomes the active drop tile.
-  // Keep the top preview focused on upcoming letters to avoid a visible jump.
   const base = currentDeckIndex;
   if (nextLetter) nextLetter.innerText = gameDeck[base + 1] || '';
   if (q1) q1.innerText = gameDeck[base + 2] || '';
@@ -532,23 +554,9 @@ function syncTetrisBombUI() {
   }
 }
 
-function setSlotLoadedLetter(slot, letter) {
-  if (!slot) return;
-  slot.dataset.loadedLetter = letter;
-  slot.classList.add('is-loading');
-}
-
-function sealLoadedSlot(slot) {
-  if (!slot) return;
-  slot.classList.add('is-sealed');
-}
-
 function clearSlotLoadedLetter(slot) {
   if (!slot) return;
   delete slot.dataset.loadedLetter;
-  slot.classList.remove('is-loading');
-  slot.classList.remove('is-sealed');
-  slot.classList.remove('is-drop-ready');
   slot.classList.remove('is-engaged');
 }
 
@@ -776,38 +784,6 @@ async function animateDropToCell(col, targetIdx, letter) {
   triggerColumnImpact(col, targetIdx);
 }
 
-async function animateLoadIntoSlot(col, letter) {
-  const slot = getDropSlot(col);
-  if (!slot) return;
-
-  slot.classList.add('is-engaged');
-
-  const targetRect = slot.getBoundingClientRect();
-  const sourceLeft = targetRect.left + (targetRect.width / 2);
-  const sourceTop = targetRect.top - (targetRect.height * 1.25);
-  const animTile = document.createElement('div');
-  animTile.className = 'tetris-falling-tile is-load';
-  animTile.textContent = letter;
-  animTile.style.width = `${targetRect.width}px`;
-  animTile.style.height = `${targetRect.height}px`;
-  animTile.style.left = `${sourceLeft}px`;
-  animTile.style.top = `${sourceTop}px`;
-  animTile.style.setProperty('--drop-x', '0px');
-  animTile.style.setProperty('--drop-y', `${(targetRect.top + (targetRect.height / 2)) - sourceTop}px`);
-  animTile.style.animationDuration = `${TETRIS_LOAD_MS}ms`;
-  document.body.appendChild(animTile);
-
-  await delay(TETRIS_LOAD_MS);
-  animTile.remove();
-  setSlotLoadedLetter(slot, letter);
-  await delay(TETRIS_LOADED_SETTLE_MS);
-  sealLoadedSlot(slot);
-  await delay(TETRIS_LOADED_COLOR_SHIFT_MS);
-  slot.classList.add('is-drop-ready');
-  await delay(TETRIS_LOADED_FINAL_HOLD_MS);
-  slot.classList.remove('is-drop-ready');
-}
-
 function paintMatchedPreview(matchedMap) {
   if (!gridEl) return;
   const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
@@ -890,21 +866,11 @@ async function handleDropClick(col) {
   if (!letter) return;
   const cellEl = document.querySelector(`.grid-cell[data-index='${targetIdx}']`);
 
-  if (letter === '?') {
-    pendingDropColumn = col;
-    pendingCellIndex = targetIdx;
-    clearTetrisRoundTimers();
-    if (typeof updateWildcardModal === 'function') updateWildcardModal();
-    if (typeof alphabetModal !== 'undefined' && alphabetModal) {
-      alphabetModal.classList.add('active');
-    }
-    return;
-  }
-
   const slot = getDropSlot(col);
   if (slot) slot.classList.add('is-engaged');
   tetrisBusy = true;
   clearTetrisRoundTimers();
+  stopTetrisBalloonPulse();
   syncDropSlots();
   await animateDropToCell(col, targetIdx, letter);
   if (sessionToken !== tetrisSessionToken || isGameOver) {
@@ -920,7 +886,6 @@ async function handleDropClick(col) {
 document.addEventListener('ws:afterInit', () => {
   if (!isTetrisMode()) return;
 
-  // Always rebuild the visible queue preview from cursor 0 on init.
   renderTetrisPreRoundPreview();
 
   bindTetrisSpeedControls();
@@ -1011,41 +976,6 @@ document.addEventListener('ws:occupiedCellClick', async (e) => {
   syncTetrisBombUI();
 });
 
-document.addEventListener('ws:beforeWildcardPlaced', (e) => {
-  if (!isTetrisMode()) return;
-  if (pendingDropColumn == null) return;
-  const sessionToken = tetrisSessionToken;
-
-  e.preventDefault();
-
-  const index = e.detail.index;
-  const letter = e.detail.letter;
-  const cellEl = e.detail.cellEl;
-  const dropCol = pendingDropColumn;
-  pendingDropColumn = null;
-
-  tetrisBusy = true;
-  syncDropSlots();
-  (async () => {
-    await animateLoadIntoSlot(dropCol, letter);
-    if (sessionToken !== tetrisSessionToken || isGameOver) {
-      clearSlotLoadedLetter(getDropSlot(dropCol));
-      tetrisBusy = false;
-      syncDropSlots();
-      return;
-    }
-    await animateDropToCell(dropCol, index, letter);
-    if (sessionToken !== tetrisSessionToken || isGameOver) {
-      clearSlotLoadedLetter(getDropSlot(dropCol));
-      tetrisBusy = false;
-      syncDropSlots();
-      return;
-    }
-    clearSlotLoadedLetter(getDropSlot(dropCol));
-    placeLetter(index, letter, cellEl, true);
-  })();
-});
-
 document.addEventListener('ws:tilePlaced', async () => {
   if (!isTetrisMode()) return;
 
@@ -1077,7 +1007,6 @@ document.addEventListener('ws:calculateScore', (e) => {
 document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
   tetrisSessionToken++;
-  pendingDropColumn = null;
   tetrisBusy = false;
   tetrisBombsRemaining = 3;
   tetrisActiveLetter = '';
@@ -1090,6 +1019,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
   tetrisRoundToken++;
   clearTetrisRoundTimers();
+  stopTetrisBalloonPulse();
   if (typeof generateBagSequence === 'function') {
     gameDeck = generateBagSequence(false);
   }

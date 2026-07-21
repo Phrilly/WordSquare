@@ -161,7 +161,11 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   <div class="top-bar">
     <div id="left-header" title="Click to open wildcard picker">
       <span id="header-label">Next:</span>
-      
+
+      <?php if ($isTetrisDay): ?>
+      <div id="tetris-active-tile" class="tetris-active-tile" aria-live="polite" aria-label="Active tile"></div>
+      <?php endif; ?>
+
       <!-- Classic / Lookahead Queue -->
       <div id="queue-container" class="queue-container">
         <span id="next-letter"></span>
@@ -179,19 +183,16 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
 
     </div>
-    <?php if ($isTetrisDay): ?>
-    <div id="tetris-active-tile" class="tetris-active-tile" aria-live="polite" aria-label="Active tile"></div>
-    <?php endif; ?>
-    <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
-      <span class="tetris-clock-label">CLOCK</span>
-      <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
-    </div>
     <div class="score-stack">
       <div class="score-meta-row">
         <div id="mode-badge" class="mode-badge"><?= htmlspecialchars(strtoupper($modeDisplayName), ENT_QUOTES, 'UTF-8') ?></div>
         <button class="top-help-btn" id="open-help-btn-top" data-help-open="1" type="button" aria-label="Open help">?</button>
       </div>
       <div id="score">0</div>
+    </div>
+    <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
+      <span class="tetris-clock-label">CLOCK</span>
+      <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
     </div>
   </div>
 
