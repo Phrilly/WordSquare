@@ -1,3 +1,10 @@
+Claude’s logic here is structurally excellent. Detaching the queue via absolute positioning solves the centering issue without fighting the flexbox, and tightening the flex order/margins resolves the gap perfectly.
+
+The only minor adjustment I made when integrating this is correcting Claude's class selector (`.next-letter`) to properly target your Tetris-specific ID (`#tetris-active-tile`), ensuring the glowing, scaled-up effect applies exactly to the new element we established for Tetris mode. I also mirrored the `order: 3` and `order: 4` changes down into your existing `@media` queries so the mobile view doesn't break the new clock/score alignment.
+
+Here is your complete, unabridged `layout.css` file with all of Claude's fixes correctly integrated.
+
+```css
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -14,6 +21,7 @@
   align-items: flex-end;
   flex-wrap: nowrap;
   gap: 8px;
+  position: relative; /* Establishes containing block for absolute queue */
 }
 
 #left-header {
@@ -29,15 +37,17 @@
   margin-top: 6px;
 }
 
-.top-bar.tetris-mode .score-stack {
-  order: 2;
-  margin-left: 0;
-  align-items: flex-start;
-}
-
 .top-bar.tetris-mode .tetris-clock {
   order: 3;
   margin-left: auto;
+  margin-right: 0;
+}
+
+.top-bar.tetris-mode .score-stack {
+  order: 4;
+  margin-left: -8px; /* Pulls score tile in tighter against the clock */
+  gap: 2px;
+  align-items: flex-start;
 }
 
 .top-bar.tetris-mode #tetris-active-tile {
@@ -54,12 +64,40 @@
   background-color: #fdf6e3;
   color: #1a1a1a;
   border-radius: 6px;
+  transition: transform 0.2s ease-out;
+  flex-shrink: 0;
+  
+  /* Claude's Active Tile Scaling & Glow */
+  transform: scale(2);
+  transform-origin: center;
+  z-index: 10;
   box-shadow:
     inset 3px 3px 5px rgba(255, 255, 255, 1),
     inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-    2px 3px 5px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s ease-out;
-  flex-shrink: 0;
+    0 0 0 3px var(--highlight),
+    0 0 18px 6px rgba(168, 194, 234, 0.7);
+  animation: activeTileGlow 1s ease-in-out infinite alternate;
+}
+
+.top-bar.tetris-mode #tetris-active-tile:active {
+  transform: scale(1.85);
+}
+
+@keyframes activeTileGlow {
+  0% {
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 1),
+      inset -3px -3px 5px rgba(0, 0, 0, 0.15),
+      0 0 0 3px var(--highlight),
+      0 0 14px 4px rgba(168, 194, 234, 0.55);
+  }
+  100% {
+    box-shadow:
+      inset 3px 3px 5px rgba(255, 255, 255, 1),
+      inset -3px -3px 5px rgba(0, 0, 0, 0.15),
+      0 0 0 5px var(--highlight),
+      0 0 26px 10px rgba(168, 194, 234, 0.9);
+  }
 }
 
 #left-header .queue-container {
@@ -76,11 +114,20 @@
   margin-left: 12px;
 }
 
+.top-bar.tetris-mode .queue-container {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-42%); /* Centered with a slight nudge for optical alignment */
+  margin-left: 0;
+  z-index: 5;
+}
+
 .queue-container.is-active {
   display: flex;
 }
 
-/* The primary active tile */
+/* The primary active tile (Classic mode fallback) */
 #next-letter {
   display: inline-flex;
   justify-content: center;
@@ -300,20 +347,21 @@
     gap: 6px;
   }
 
-  .top-bar.tetris-mode .score-stack {
-    order: 2;
-    margin-left: 0;
-    align-items: center;
-    gap: 2px;
-    align-self: center;
-  }
-
   .top-bar.tetris-mode .tetris-clock {
     order: 3;
     min-width: 56px;
     padding: 5px 8px;
     align-self: center;
     margin-left: auto;
+    margin-right: 0;
+  }
+
+  .top-bar.tetris-mode .score-stack {
+    order: 4;
+    margin-left: -8px;
+    align-items: center;
+    gap: 2px;
+    align-self: center;
   }
 
   .top-bar.tetris-mode .score-meta-row {
@@ -433,14 +481,15 @@
     gap: 10px;
   }
 
-  .top-bar.tetris-mode .score-stack {
-    order: 2;
-    margin-left: 0;
-  }
-
   .top-bar.tetris-mode .tetris-clock {
     order: 3;
     margin-left: auto;
+    margin-right: 0;
+  }
+
+  .top-bar.tetris-mode .score-stack {
+    order: 4;
+    margin-left: -8px;
   }
 
   .top-bar.tetris-mode #left-header {
@@ -448,3 +497,5 @@
     margin-right: 0;
   }
 }
+
+```
