@@ -161,7 +161,13 @@ function initGame() {
   const leftHeaderEl = document.getElementById('left-header');
   if (leftHeaderEl) leftHeaderEl.title = 'Click to open wildcard picker';
 
-  if (topBarEl) topBarEl.classList.remove('scrabble-mode');
+  if (topBarEl) {
+      topBarEl.classList.remove('scrabble-mode', 'tetris-mode');
+  }
+  
+  if (gridEl) {
+      gridEl.classList.remove('tetris-mode');
+  }
   
   document.dispatchEvent(new CustomEvent('ws:afterInit'));
   if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {

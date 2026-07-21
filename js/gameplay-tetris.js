@@ -940,6 +940,7 @@ document.addEventListener('ws:afterInit', () => {
   }
 
   if (topBarEl) topBarEl.classList.add('tetris-mode');
+  if (gridEl) gridEl.classList.add('tetris-mode');
   const headerLabel = document.getElementById('header-label');
   if (headerLabel) {
     headerLabel.textContent = '';
