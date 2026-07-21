@@ -14,13 +14,12 @@
   align-items: flex-end;
   flex-wrap: nowrap;
   gap: 8px;
-  position: relative; /* Establishes containing block for absolute queue */
 }
 
 #left-header {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap; /* Prevents the queue from wrapping to a new line */
+  flex-wrap: nowrap;
 }
 
 .top-bar.tetris-mode #left-header {
@@ -38,42 +37,39 @@
 
 .top-bar.tetris-mode .score-stack {
   order: 4;
-  margin-left: -8px; /* Pulls score tile in tighter against the clock */
+  margin-left: -8px;
   gap: 2px;
   align-items: flex-start;
 }
 
+/* Active tile for tetris mode */
 .top-bar.tetris-mode #tetris-active-tile {
   order: 0;
   margin-right: 8px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
-  height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  width: clamp(36px, calc(var(--game-size) * 0.11), 54px);
+  height: clamp(36px, calc(var(--game-size) * 0.11), 54px);
   font-family: Arial, sans-serif;
   font-weight: bold;
-  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+  font-size: clamp(20px, calc(var(--game-size) * 0.08), 34px);
   background-color: #fdf6e3;
   color: #1a1a1a;
-  border-radius: 6px;
-  transition: transform 0.2s ease-out;
-  flex-shrink: 0;
-  
-  /* Claude's Active Tile Scaling & Glow */
-  transform: scale(2);
-  transform-origin: center;
-  z-index: 10;
+  border-radius: 8px;
   box-shadow:
     inset 3px 3px 5px rgba(255, 255, 255, 1),
     inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-    0 0 0 3px var(--highlight),
-    0 0 18px 6px rgba(168, 194, 234, 0.7);
-  animation: activeTileGlow 1s ease-in-out infinite alternate;
+    0 0 0 2px rgba(168, 194, 234, 0.65),
+    0 0 8px 2px rgba(168, 194, 234, 0.35);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  flex-shrink: 0;
+  align-self: flex-end;
+  animation: activeTileGlow 1.4s ease-in-out infinite alternate;
 }
 
 .top-bar.tetris-mode #tetris-active-tile:active {
-  transform: scale(1.85);
+  transform: scale(0.96);
 }
 
 @keyframes activeTileGlow {
@@ -81,15 +77,15 @@
     box-shadow:
       inset 3px 3px 5px rgba(255, 255, 255, 1),
       inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-      0 0 0 3px var(--highlight),
-      0 0 14px 4px rgba(168, 194, 234, 0.55);
+      0 0 0 2px rgba(168, 194, 234, 0.55),
+      0 0 6px 1px rgba(168, 194, 234, 0.25);
   }
   100% {
     box-shadow:
       inset 3px 3px 5px rgba(255, 255, 255, 1),
       inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-      0 0 0 5px var(--highlight),
-      0 0 26px 10px rgba(168, 194, 234, 0.9);
+      0 0 0 3px rgba(168, 194, 234, 0.75),
+      0 0 12px 3px rgba(168, 194, 234, 0.55);
   }
 }
 
@@ -97,9 +93,8 @@
   align-self: flex-end;
 }
 
-/* The queue container manages the flow of the next letters */
 .queue-container {
-  display: none; 
+  display: none;
   align-items: center;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -108,19 +103,19 @@
 }
 
 .top-bar.tetris-mode .queue-container {
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  transform: translateX(-42%); /* Centered with a slight nudge for optical alignment */
-  margin-left: 0;
-  z-index: 5;
+  order: 2;
+  display: flex;
+  align-self: flex-end;
+  margin-left: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .queue-container.is-active {
   display: flex;
 }
 
-/* The primary active tile (Classic mode fallback) */
+/* Classic mode fallback */
 #next-letter {
   display: inline-flex;
   justify-content: center;
@@ -148,12 +143,10 @@
   transform: scale(0.95);
 }
 
-/* Base class for queued tiles */
 .queued-letter {
-  display: none; 
+  display: none;
   justify-content: center;
   align-items: center;
-  /* Base size matches the main tile to maintain proportions when scaled */
   width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
   height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
   font-family: Arial, sans-serif;
@@ -169,9 +162,8 @@
   display: inline-flex;
 }
 
-/* Emerging into the light: Step 1 (Slightly in the shadows) - faded to show unusable */
 #queue-1 {
-  background-color: #cbd5e1; /* Dimmer silver */
+  background-color: #cbd5e1;
   color: #475569;
   transform: scale(0.9);
   opacity: 0.6;
@@ -180,12 +172,11 @@
     inset -2px -2px 4px rgba(0, 0, 0, 0.15),
     1px 2px 3px rgba(0, 0, 0, 0.3);
   z-index: 2;
-  margin-left: -4px; /* Pulls it slightly behind the active tile for depth */
+  margin-left: -4px;
 }
 
-/* Emerging into the light: Step 2 (Deep in the shadows) - faded to show unusable */
 #queue-2 {
-  background-color: #94a3b8; /* Darker slate */
+  background-color: #94a3b8;
   color: #334155;
   transform: scale(0.82);
   opacity: 0.45;
@@ -194,7 +185,7 @@
     inset -1px -1px 3px rgba(0, 0, 0, 0.2),
     1px 1px 2px rgba(0, 0, 0, 0.2);
   z-index: 1;
-  margin-left: -12px; /* Pulls it deeper behind queue 1 */
+  margin-left: -12px;
 }
 
 #score {
@@ -330,14 +321,16 @@
     margin-right: 0;
   }
 
+  .top-bar.tetris-mode #tetris-active-tile {
+    width: clamp(32px, calc(var(--game-size) * 0.1), 46px);
+    height: clamp(32px, calc(var(--game-size) * 0.1), 46px);
+    font-size: clamp(18px, calc(var(--game-size) * 0.07), 28px);
+    margin-right: 6px;
+  }
+
   .top-bar.tetris-mode .queue-container {
     margin-left: 6px;
     gap: 2px;
-  }
-
-  .top-bar.tetris-mode #tetris-tools-row {
-    margin: 0;
-    gap: 6px;
   }
 
   .top-bar.tetris-mode .tetris-clock {
