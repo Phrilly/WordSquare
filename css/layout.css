@@ -29,9 +29,26 @@
   margin-top: 6px;
 }
 
-.top-bar.tetris-mode .speed-controls {
+.top-bar.tetris-mode #tetris-active-tile {
   order: 2;
   margin-left: 0;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  height: clamp(30px, calc(var(--game-size) * 0.12), 60px);
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
+  background-color: #fdf6e3;
+  color: #1a1a1a;
+  border-radius: 6px;
+  box-shadow:
+    inset 3px 3px 5px rgba(255, 255, 255, 1),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.15),
+    2px 3px 5px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease-out;
+  align-self: flex-end;
 }
 
 .top-bar.tetris-mode .tetris-clock {

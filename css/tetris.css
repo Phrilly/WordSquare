@@ -750,3 +750,15 @@
       padding: 5px 10px;
     }
   }
+#tetris-active-tile.is-quivering {
+  animation: tetrisQuiver 0.09s infinite;
+}
+#tetris-active-tile.is-bursting {
+  transform: scale(0.3);
+  opacity: 0;
+  transition: all 0.15s ease-in;
+}
+@keyframes tetrisQuiver {
+  0%, 100% { transform: scale(1.18) rotate(-1deg); }
+  50% { transform: scale(1.18) rotate(1deg); }
+}
