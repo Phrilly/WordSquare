@@ -114,8 +114,8 @@
   transform: translate(-50%, -50%);
   z-index: 2;
   font-family: Arial, sans-serif;
-  font-size: clamp(20px, calc(var(--game-size) * 0.072), 34px);
-  line-height: 0.72;
+  font-size: clamp(24px, calc(var(--game-size) * 0.09), 42px);
+  line-height: 0.68;
   font-weight: 900;
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
@@ -381,7 +381,7 @@
   }
 
   .drop-slot::before {
-    font-size: clamp(16px, calc(var(--game-size) * 0.065), 28px);
+    font-size: clamp(20px, calc(var(--game-size) * 0.082), 34px);
   }
 
   .tetris-bomb-icon {

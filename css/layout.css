@@ -139,6 +139,10 @@
   min-width: 0;
 }
 
+.top-bar.tetris-mode #next-letter {
+  opacity: 0.86;
+}
+
 .queue-container.is-active {
   display: flex;
 }
