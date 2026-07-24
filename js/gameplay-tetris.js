@@ -335,6 +335,9 @@ function setTetrisClockDisplay(remainingMs, roundMs) {
   const tileEl = getTetrisActiveTileEl();
   if (tileEl) {
     tileEl.textContent = tetrisActiveLetter || '';
+    tileEl.classList.toggle('is-tone-green', tetrisActiveTone === 'green');
+    tileEl.classList.toggle('is-tone-amber', tetrisActiveTone === 'amber');
+    tileEl.classList.toggle('is-tone-red', tetrisActiveTone === 'red');
   }
   syncTetrisActiveSlot(tetrisActiveLetter);
 }
