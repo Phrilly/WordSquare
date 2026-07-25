@@ -37,6 +37,11 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  position: relative;
+}
+
+.tetris-bomb-indicator.is-topup-flash {
+  animation: tetrisBombStripFlash 0.38s ease-out;
 }
 
 @media (max-width: 1024px) {
@@ -84,8 +89,44 @@
   filter: grayscale(1);
 }
 
+.tetris-bomb-icon.is-refill-flash {
+  filter: brightness(1.55) saturate(1.25);
+}
+
 .tetris-bomb-icon.is-refilled {
-  animation: tetrisBombHatch 0.72s ease-out;
+  animation: tetrisBombPop 0.42s cubic-bezier(0.2, 0.85, 0.22, 1.2);
+}
+
+.tetris-bomb-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 214, 102, 0.72);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  pointer-events: none;
+  animation: tetrisBombRingExpand 0.7s ease-out forwards;
+}
+
+.tetris-bomb-topup-text {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  color: #fff3b0;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.35),
+    0 0 8px rgba(255, 209, 102, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: tetrisBombTextRise 0.9s ease-out forwards;
 }
 
 .drop-slot {
@@ -351,22 +392,60 @@
   }
 }
 
-@keyframes tetrisBombHatch {
+@keyframes tetrisBombPop {
   0% {
-    transform: translateY(0) scale(0.9);
-    filter: brightness(1.35) saturate(1.2);
+    transform: translateY(0) scale(1);
+    filter: brightness(1.3) saturate(1.15);
   }
-  35% {
+  45% {
     transform: translateY(-2px) scale(1.18);
-    filter: brightness(1.55) saturate(1.35);
+    filter: brightness(1.5) saturate(1.3);
   }
-  70% {
+  75% {
     transform: translateY(0) scale(0.98);
-    filter: brightness(1.15) saturate(1.05);
+    filter: brightness(1.15) saturate(1.06);
   }
   100% {
     transform: translateY(0) scale(1);
     filter: none;
+  }
+}
+
+@keyframes tetrisBombRingExpand {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.6);
+  }
+}
+
+@keyframes tetrisBombTextRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.92);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -10px) scale(1.02);
+  }
+}
+
+@keyframes tetrisBombStripFlash {
+  0% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.22) saturate(1.15);
+  }
+  100% {
+    filter: brightness(1);
   }
 }
 
@@ -452,5 +531,10 @@
     top: 72px;
     font-size: 12px;
     padding: 5px 9px;
+  }
+
+  .tetris-bomb-topup-text {
+    top: -15px;
+    font-size: 11px;
   }
 }

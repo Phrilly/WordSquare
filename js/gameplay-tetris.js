@@ -213,13 +213,28 @@ function reportTetrisInvariant(code, details) {
 }
 
 function showBombTopUpFeedback(grantedCount) {
-  if (!gridEl || grantedCount <= 0) return;
+  if (grantedCount <= 0) return;
+
+  const bombIndicator = getBombIndicatorEl();
+  if (!bombIndicator) return;
 
   const label = document.createElement('div');
-  label.className = 'tetris-bomb-banner';
-  label.textContent = grantedCount === 1 ? 'BOMB HATCHED +1' : `BOMBS HATCHED +${grantedCount}`;
-  gridEl.appendChild(label);
-  setTimeout(() => label.remove(), 1200);
+  label.className = 'tetris-bomb-topup-text';
+  label.textContent = grantedCount === 1 ? '+1 BOMB' : `+${grantedCount} BOMBS`;
+  bombIndicator.appendChild(label);
+  setTimeout(() => label.remove(), 900);
+}
+
+function triggerBombRefillRings(icon) {
+  if (!icon) return;
+
+  for (let i = 0; i < 2; i++) {
+    const ring = document.createElement('span');
+    ring.className = 'tetris-bomb-ring';
+    ring.style.animationDelay = `${i * 120}ms`;
+    icon.appendChild(ring);
+    setTimeout(() => ring.remove(), 900);
+  }
 }
 
 function animateBombRefillIcon(iconIndex, delayMs = 0) {
@@ -231,12 +246,24 @@ function animateBombRefillIcon(iconIndex, delayMs = 0) {
   if (!icon) return;
 
   setTimeout(() => {
+    bombIndicator.classList.add('is-topup-flash');
+    setTimeout(() => {
+      bombIndicator.classList.remove('is-topup-flash');
+    }, 380);
+
+    icon.classList.add('is-refill-flash');
+    setTimeout(() => {
+      icon.classList.remove('is-refill-flash');
+    }, 180);
+
     icon.classList.remove('is-refilled');
     void icon.offsetWidth;
     icon.classList.add('is-refilled');
+    triggerBombRefillRings(icon);
+
     setTimeout(() => {
       icon.classList.remove('is-refilled');
-    }, 740);
+    }, 480);
   }, delayMs);
 }
 
