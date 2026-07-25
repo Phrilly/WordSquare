@@ -9,7 +9,7 @@ const TETRIS_CLEAR_PREVIEW_MS = 380;
 const TETRIS_DROP_MS = 1320;
 const TETRIS_START_CLOCK_MS = 10000;
 const TETRIS_MIN_CLOCK_MS = 2800;
-const TETRIS_CLOCK_STEP_MS = 100;
+const TETRIS_CLOCK_STEP_MS = 200;
 const TETRIS_START_SWEEP_MS = 800;
 const TETRIS_MIN_SWEEP_MS = 320;
 const TETRIS_SWEEP_STEP_MS = 0;
@@ -17,6 +17,8 @@ const TETRIS_DIRECTIONAL_SPEED_MIN = 1;
 const TETRIS_DIRECTIONAL_SPEED_MAX = 2;
 const TETRIS_DIRECTIONAL_SPEED_STEP = 0.25;
 const TETRIS_BALLOON_PULSE_MS = 500;
+const TETRIS_BOMB_MAX = 3;
+const TETRIS_BOMB_TOP_UP_INTERVAL_MS = 60000;
 
 let tetrisSweepColumn = 0;
 let tetrisSweepDirection = 1;
@@ -33,6 +35,8 @@ let tetrisGameplayArmed = false;
 let tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;
 let tetrisSpeedControlsBound = false;
 let tetrisSessionToken = 0;
+let tetrisSurvivalStartMs = 0;
+let tetrisNextBombTopUpAtMs = 0;
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -206,6 +210,75 @@ function formatTetrisClock(ms) {
 
 function reportTetrisInvariant(code, details) {
   console.error(`[Tetris invariant:${code}]`, details);
+}
+
+function showBombTopUpFeedback(grantedCount) {
+  if (!gridEl || grantedCount <= 0) return;
+
+  const label = document.createElement('div');
+  label.className = 'tetris-bomb-banner';
+  label.textContent = grantedCount === 1 ? 'BOMB HATCHED +1' : `BOMBS HATCHED +${grantedCount}`;
+  gridEl.appendChild(label);
+  setTimeout(() => label.remove(), 1200);
+}
+
+function animateBombRefillIcon(iconIndex, delayMs = 0) {
+  const bombIndicator = getBombIndicatorEl();
+  if (!bombIndicator) return;
+
+  const icons = bombIndicator.querySelectorAll('.tetris-bomb-icon');
+  const icon = icons[iconIndex];
+  if (!icon) return;
+
+  setTimeout(() => {
+    icon.classList.remove('is-refilled');
+    void icon.offsetWidth;
+    icon.classList.add('is-refilled');
+    setTimeout(() => {
+      icon.classList.remove('is-refilled');
+    }, 740);
+  }, delayMs);
+}
+
+function maybeTopUpTetrisBombs(nowMs = Date.now()) {
+  if (!isTetrisMode() || isGameOver || !tetrisGameplayArmed) return;
+
+  if (tetrisSurvivalStartMs <= 0) {
+    tetrisSurvivalStartMs = nowMs;
+    tetrisNextBombTopUpAtMs = nowMs + TETRIS_BOMB_TOP_UP_INTERVAL_MS;
+    return;
+  }
+
+  if (tetrisNextBombTopUpAtMs <= 0) {
+    tetrisNextBombTopUpAtMs = tetrisSurvivalStartMs + TETRIS_BOMB_TOP_UP_INTERVAL_MS;
+  }
+
+  let totalGranted = 0;
+  const restoredIndices = [];
+
+  while (nowMs >= tetrisNextBombTopUpAtMs) {
+    const before = tetrisBombsRemaining;
+    tetrisBombsRemaining = Math.min(TETRIS_BOMB_MAX, tetrisBombsRemaining + 1);
+    const granted = tetrisBombsRemaining - before;
+
+    if (granted > 0) {
+      const firstRestoredIndex = before;
+      for (let i = 0; i < granted; i++) {
+        restoredIndices.push(firstRestoredIndex + i);
+      }
+      totalGranted += granted;
+    }
+
+    tetrisNextBombTopUpAtMs += TETRIS_BOMB_TOP_UP_INTERVAL_MS;
+  }
+
+  if (totalGranted > 0) {
+    syncTetrisBombUI();
+    restoredIndices.forEach((iconIndex, index) => {
+      animateBombRefillIcon(iconIndex, index * 140);
+    });
+    showBombTopUpFeedback(totalGranted);
+  }
 }
 
 // --- Balloon pulse (0.5s inflate cycle on the active tile) ---
@@ -416,6 +489,8 @@ function startTetrisRound() {
     return;
   }
 
+  maybeTopUpTetrisBombs();
+
   const letter = claimNextTetrisLetterForBar();
   if (!letter) return;
 
@@ -458,6 +533,7 @@ function startTetrisRound() {
   tetrisClockTimer = setInterval(() => {
     if (token !== tetrisRoundToken || tetrisBusy || isGameOver) return;
 
+    maybeTopUpTetrisBombs();
     const remainingMs = tetrisClockDeadline - Date.now();
     setTetrisClockDisplay(remainingMs, roundMs);
     if (remainingMs <= 0) {
@@ -933,6 +1009,9 @@ document.addEventListener('ws:nextLetterUpdated', () => {
 document.addEventListener('ws:roundArmed', () => {
   if (!isTetrisMode()) return;
   tetrisGameplayArmed = true;
+  const now = Date.now();
+  tetrisSurvivalStartMs = now;
+  tetrisNextBombTopUpAtMs = now + TETRIS_BOMB_TOP_UP_INTERVAL_MS;
   startTetrisRound();
 });
 
@@ -1011,12 +1090,14 @@ document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
   tetrisSessionToken++;
   tetrisBusy = false;
-  tetrisBombsRemaining = 3;
+  tetrisBombsRemaining = TETRIS_BOMB_MAX;
   tetrisActiveLetter = '';
   tetrisActiveTone = 'green';
   tetrisSuccessfulPlacements = 0;
   tetrisTurnIndex = 0;
   tetrisGameplayArmed = false;
+  tetrisSurvivalStartMs = 0;
+  tetrisNextBombTopUpAtMs = 0;
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;

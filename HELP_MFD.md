@@ -1,5 +1,9 @@
 # MFD Help (My First Dictionary)
 
+## Help Version
+- Help Version: 1.2.0
+- Change Log: 1.2.0 clarifies MFD scoring and dictionary validation details.
+
 ## What MFD Is
 MFD is a daily variant that plays exactly like Classic mode.
 The only gameplay difference is the dictionary: only words marked as MFD are valid.
@@ -13,10 +17,18 @@ The only gameplay difference is the dictionary: only words marked as MFD are val
 - SQL filter: dictionary.is_mfd = 1
 
 ## Scoring and Board Rules
-- Same board, placement, and scoring model as Classic mode.
+- Same board and placement model as Classic mode.
+- Scoring is unchanged from Classic mode:
+- 3-letter word: 1 point
+- 4-letter word: 5 points
+- 5-letter word: 20 points
+- Reverse duplicates count as one canonical word for scoring.
 - Daily high scores are shown under MFD-specific leaderboard labels.
 - MFD leaderboard ranking follows the Classic-style word scoring model.
 
 ## Tile Placement Rule
-- In normal modes, placed tiles cannot be deleted.
-- MFD follows the same no-delete behavior as Classic.
+- MFD follows the same placement behavior as Classic mode.
+
+## Validation Notes
+- A word must be valid and MFD-flagged to score.
+- Non-MFD words are ignored for MFD scoring even if they are valid in other modes.

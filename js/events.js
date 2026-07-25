@@ -26,16 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getModeRules = (mode) => {
     if (mode === 'bomb') {
-      return 'Bomb mode is active: avoid unstable placements and plan around bomb interactions.';
+      return 'Bomb mode is active: hidden bomb cells burn the current queued letter when triggered.';
     }
     if (mode === 'scrabble') {
-      return 'Scrabble mode is active: points come from letter values and special squares.';
+      return 'Scrabble mode is active: only 5-letter words score, using letter values and double-letter squares.';
     }
     if (mode === 'lookahead') {
       return 'Lookahead mode is active: you can see additional upcoming queue letters.';
     }
     if (mode === 'tetris') {
-      return 'Tetris mode is active: drop each queued letter into a column, build 5-letter words to clear them, and use three bombs to blast occupied tiles.';
+      return 'Tetris mode is active: drop letters into columns, clear 4- and 5-letter words, and survive increasing speed.';
     }
     if (mode === 'mfd') {
       return 'MFD mode is active: gameplay is Classic, but only words flagged in the MFD dictionary are valid.';
@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.1.1';
+    const helpVersion = '1.2.0';
     const helpChanges = [
-      '1.1.1 refreshes Tetris UI clarity (larger DROP chevrons, stronger active tile emphasis, and a slightly faded first queue tile).',
+      '1.2.0 adds precise per-mode scoring and rule details, including Scrabble 5-letter-only scoring and Tetris survival bomb top-ups.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>Fill the 5x5 grid using letters from the current queue/tray system.</li>
         <li>Words are scored from valid rows, columns, and diagonals.</li>
-        <li>Placed tiles are locked: inserted tiles cannot be deleted.</li>
+        <li>Letters stay on the board unless removed by a mode mechanic (for example, Tetris clears or bombs).</li>
       </ul>
 
       <h3>Daily Schedule (6-Day)</h3>
@@ -110,9 +110,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3>Scoring Notes</h3>
       <ul>
-        <li>Classic/Bomb/Lookahead/MFD score with standard WordSquare word scoring.</li>
-        <li>Scrabble mode scores by letter values and board modifiers.</li>
-        <li>Tetris mode scores 4-letter and 5-letter clears during live gameplay, then saves a verified final score.</li>
+        <li>Classic/Bomb/Lookahead/MFD: 3-letter = 1, 4-letter = 5, 5-letter = 20.</li>
+        <li>Scrabble: only 5-letter words score; 3-letter and 4-letter words do not score.</li>
+        <li>Scrabble: wildcard tiles score 0; double-letter squares apply on highlighted DL cells.</li>
+        <li>Tetris: 4-letter clears = 5 and 5-letter clears = 20, with gravity after clears.</li>
+      </ul>
+
+      <h3>Bomb Notes</h3>
+      <ul>
+        <li>There are 3 hidden bomb cells on the board.</li>
+        <li>Clicking a bomb burns the current queued letter instead of placing it.</li>
+      </ul>
+
+      <h3>Lookahead Notes</h3>
+      <ul>
+        <li>Lookahead shows additional upcoming queue letters.</li>
+        <li>Scoring is otherwise the same as Classic mode.</li>
+      </ul>
+
+      <h3>Scrabble Notes</h3>
+      <ul>
+        <li>Only 5-letter words are considered for scoring.</li>
+        <li>Word score is based on Scrabble letter values across the word path.</li>
+        <li>If the same canonical word appears in multiple paths, the highest scoring path is used.</li>
       </ul>
 
       <h3>MFD Notes</h3>
@@ -125,7 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>Click a DROP slot above the grid to let the current letter fall into that column.</li>
         <li>4-letter and 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
-        <li>You have 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
+        <li>Turn timer starts at 10.0s and drops by 0.2s per round to a 2.8s minimum.</li>
+        <li>You start with 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
+        <li>Survival reward: +1 bomb every 60 seconds survived, up to a cap of 3 bombs.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
 

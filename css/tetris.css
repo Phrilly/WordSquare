@@ -84,6 +84,10 @@
   filter: grayscale(1);
 }
 
+.tetris-bomb-icon.is-refilled {
+  animation: tetrisBombHatch 0.72s ease-out;
+}
+
 .drop-slot {
   position: relative;
   overflow: hidden;
@@ -284,6 +288,25 @@
   animation: tetrisScoreRise 0.95s ease-out forwards;
 }
 
+.tetris-bomb-banner {
+  position: absolute;
+  top: 82px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 246, 223, 0.96);
+  color: #2b2b2b;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+  animation: tetrisBombBannerRise 1.2s ease-out forwards;
+}
+
 @keyframes tetrisSlotRattle {
   0% { transform: translateY(0); }
   18% { transform: translateY(1px) translateX(-1px); }
@@ -328,6 +351,25 @@
   }
 }
 
+@keyframes tetrisBombHatch {
+  0% {
+    transform: translateY(0) scale(0.9);
+    filter: brightness(1.35) saturate(1.2);
+  }
+  35% {
+    transform: translateY(-2px) scale(1.18);
+    filter: brightness(1.55) saturate(1.35);
+  }
+  70% {
+    transform: translateY(0) scale(0.98);
+    filter: brightness(1.15) saturate(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+}
+
 @keyframes tetrisMatchedPulse {
   from {
     box-shadow:
@@ -353,6 +395,12 @@
   0% { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
   18% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -26px) scale(1.04); }
+}
+
+@keyframes tetrisBombBannerRise {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
+  20% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -18px) scale(1.02); }
 }
 
 @keyframes tetrisBalloonPulse {
@@ -398,5 +446,11 @@
     top: 42px;
     font-size: 15px;
     padding: 5px 10px;
+  }
+
+  .tetris-bomb-banner {
+    top: 72px;
+    font-size: 12px;
+    padding: 5px 9px;
   }
 }
