@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.2.0';
+    const helpVersion = '1.2.1';
     const helpChanges = [
-      '1.2.0 adds precise per-mode scoring and rule details, including Scrabble 5-letter-only scoring and Tetris survival bomb top-ups.',
+      '1.2.1 refresh marker for latest Tetris feedback pass and deployment verification.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';

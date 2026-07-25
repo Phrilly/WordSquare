@@ -1,8 +1,8 @@
 # MFD Help (My First Dictionary)
 
 ## Help Version
-- Help Version: 1.2.0
-- Change Log: 1.2.0 clarifies MFD scoring and dictionary validation details.
+- Help Version: 1.2.1
+- Change Log: 1.2.1 refresh marker for latest Tetris feedback pass and deployment verification.
 
 ## What MFD Is
 MFD is a daily variant that plays exactly like Classic mode.

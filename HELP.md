@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.2.0
-- Change Log: 1.2.0 expands mode-specific rules and scoring details (including Scrabble 5-letter-only scoring and Tetris survival bomb top-ups).
+- Help Version: 1.2.1
+- Change Log: 1.2.1 refresh marker for latest Tetris feedback pass and deployment verification.
 
 ## Core Rules
 - The board is always 5x5.
