@@ -140,7 +140,8 @@
 }
 
 .top-bar.tetris-mode #next-letter {
-  opacity: 0.86;
+  opacity: 0.58 !important;
+  filter: saturate(0.62) brightness(0.9);
 }
 
 .queue-container.is-active {

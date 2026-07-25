@@ -104,24 +104,23 @@
   transition: filter 0.15s ease, background-color 0.15s ease, transform 0.15s ease, border-bottom-color 0.2s ease;
 }
 
-/* Double downward echelon glyph - always visible */
+/* Double downward chevron marker - rendered from SVG for consistent shape */
 .drop-slot::before {
-  content: "\2304\A\2304";
-  white-space: pre;
+  content: '';
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  width: clamp(34px, calc(var(--game-size) * 0.14), 66px);
+  height: clamp(40px, calc(var(--game-size) * 0.165), 78px);
   z-index: 2;
-  font-family: Arial, sans-serif;
-  font-size: clamp(24px, calc(var(--game-size) * 0.09), 42px);
-  line-height: 0.68;
-  font-weight: 900;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.6);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 140'%3E%3Cg fill='none' stroke='%23eef5ff' stroke-width='16' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 22 L60 66 L104 22'/%3E%3Cpath d='M16 74 L60 118 L104 74'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 6px rgba(160, 188, 226, 0.22));
   opacity: 1;
-  transition: color 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease;
 }
 
 /* Sweep highlight: subtle border-bottom color cycle only */
@@ -381,7 +380,8 @@
   }
 
   .drop-slot::before {
-    font-size: clamp(20px, calc(var(--game-size) * 0.082), 34px);
+    width: clamp(30px, calc(var(--game-size) * 0.13), 54px);
+    height: clamp(36px, calc(var(--game-size) * 0.15), 66px);
   }
 
   .tetris-bomb-icon {
