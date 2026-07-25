@@ -220,20 +220,20 @@ function showBombTopUpFeedback(grantedCount) {
 
   const label = document.createElement('div');
   label.className = 'tetris-bomb-topup-text';
-  label.textContent = grantedCount === 1 ? '+1 BOMB' : `+${grantedCount} BOMBS`;
+  label.textContent = grantedCount === 1 ? '+1 BOMB READY' : `+${grantedCount} BOMBS READY`;
   bombIndicator.appendChild(label);
-  setTimeout(() => label.remove(), 900);
+  setTimeout(() => label.remove(), 1400);
 }
 
 function triggerBombRefillRings(icon) {
   if (!icon) return;
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     const ring = document.createElement('span');
     ring.className = 'tetris-bomb-ring';
-    ring.style.animationDelay = `${i * 120}ms`;
+    ring.style.animationDelay = `${i * 140}ms`;
     icon.appendChild(ring);
-    setTimeout(() => ring.remove(), 900);
+    setTimeout(() => ring.remove(), 1300);
   }
 }
 

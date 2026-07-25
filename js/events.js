@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.2.1';
+    const helpVersion = '1.2.2';
     const helpChanges = [
-      '1.2.1 refresh marker for latest Tetris feedback pass and deployment verification.',
+      '1.2.2 refresh marker for latest Tetris bomb-top-up visibility updates.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';

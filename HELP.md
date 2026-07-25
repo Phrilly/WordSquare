@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.2.1
-- Change Log: 1.2.1 refresh marker for latest Tetris feedback pass and deployment verification.
+- Help Version: 1.2.2
+- Change Log: 1.2.2 refresh marker for latest Tetris bomb-top-up visibility updates.
 
 ## Core Rules
 - The board is always 5x5.
