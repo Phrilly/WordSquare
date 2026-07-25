@@ -1,8 +1,8 @@
 # MFD Help (My First Dictionary)
 
 ## Help Version
-- Help Version: 1.2.2
-- Change Log: 1.2.2 refresh marker for latest Tetris bomb-top-up visibility updates.
+- Help Version: 1.2.3
+- Change Log: 1.2.3 adds stronger bomb-refresh blast highlight and updates help notes.
 
 ## What MFD Is
 MFD is a daily variant that plays exactly like Classic mode.

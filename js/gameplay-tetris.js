@@ -59,6 +59,10 @@ function getBombIndicatorEl() {
   return document.getElementById('tetris-bomb-indicator');
 }
 
+function getBombStripEl() {
+  return document.querySelector('.tetris-bomb-strip');
+}
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -239,6 +243,7 @@ function triggerBombRefillRings(icon) {
 
 function animateBombRefillIcon(iconIndex, delayMs = 0) {
   const bombIndicator = getBombIndicatorEl();
+  const bombStrip = getBombStripEl();
   if (!bombIndicator) return;
 
   const icons = bombIndicator.querySelectorAll('.tetris-bomb-icon');
@@ -246,10 +251,17 @@ function animateBombRefillIcon(iconIndex, delayMs = 0) {
   if (!icon) return;
 
   setTimeout(() => {
+    if (bombStrip) {
+      bombStrip.classList.add('is-topup-blast');
+      setTimeout(() => {
+        bombStrip.classList.remove('is-topup-blast');
+      }, 760);
+    }
+
     bombIndicator.classList.add('is-topup-flash');
     setTimeout(() => {
       bombIndicator.classList.remove('is-topup-flash');
-    }, 380);
+    }, 520);
 
     icon.classList.add('is-refill-flash');
     setTimeout(() => {

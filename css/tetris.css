@@ -31,6 +31,24 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  overflow: visible;
+}
+
+.tetris-bomb-strip::before {
+  content: '';
+  position: absolute;
+  left: -26px;
+  right: -26px;
+  top: -12px;
+  bottom: -12px;
+  border-radius: 16px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.tetris-bomb-strip.is-topup-blast::before {
+  animation: tetrisBombStripBlast 0.76s ease-out;
 }
 
 .tetris-bomb-indicator {
@@ -453,6 +471,24 @@
   }
 }
 
+@keyframes tetrisBombStripBlast {
+  0% {
+    opacity: 0;
+    background: radial-gradient(ellipse at center, rgba(255, 209, 102, 0.75) 0%, rgba(255, 209, 102, 0.3) 35%, rgba(255, 209, 102, 0) 72%);
+    transform: scale(0.7);
+  }
+  28% {
+    opacity: 1;
+    background: radial-gradient(ellipse at center, rgba(255, 222, 135, 0.95) 0%, rgba(255, 209, 102, 0.55) 40%, rgba(255, 209, 102, 0) 78%);
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    background: radial-gradient(ellipse at center, rgba(255, 209, 102, 0.35) 0%, rgba(255, 209, 102, 0.18) 42%, rgba(255, 209, 102, 0) 82%);
+    transform: scale(1.06);
+  }
+}
+
 @keyframes tetrisMatchedPulse {
   from {
     box-shadow:
@@ -540,5 +576,12 @@
   .tetris-bomb-topup-text {
     top: -28px;
     font-size: 15px;
+  }
+
+  .tetris-bomb-strip::before {
+    left: -14px;
+    right: -14px;
+    top: -9px;
+    bottom: -9px;
   }
 }

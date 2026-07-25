@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.2.2
-- Change Log: 1.2.2 refresh marker for latest Tetris bomb-top-up visibility updates.
+- Help Version: 1.2.3
+- Change Log: 1.2.3 adds stronger bomb-refresh blast highlight and updates help notes.
 
 ## Core Rules
 - The board is always 5x5.
@@ -62,6 +62,7 @@
 - Turn timer starts at 10.0s and drops by 0.2s per round to a 2.8s minimum.
 - You start with 3 bombs; one bomb removes one occupied tile.
 - Survival top-up: +1 bomb every 60 seconds survived, up to the cap of 3.
+- Bomb top-up cue: a bright strip blast, icon flash/pop, expanding rings, and a +1 BOMB READY label near the bomb bar.
 - If any column reaches the top (no legal drop), the run ends.
 
 ## Validation Notes

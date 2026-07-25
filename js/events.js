@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.2.2';
+    const helpVersion = '1.2.3';
     const helpChanges = [
-      '1.2.2 refresh marker for latest Tetris bomb-top-up visibility updates.',
+      '1.2.3 adds stronger bomb-refresh blast highlight and updates help notes.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Turn timer starts at 10.0s and drops by 0.2s per round to a 2.8s minimum.</li>
         <li>You start with 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
         <li>Survival reward: +1 bomb every 60 seconds survived, up to a cap of 3 bombs.</li>
+        <li>Bomb top-up cue: bright strip blast, icon flash/pop, expanding rings, and +1 BOMB READY text near the bomb bar.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
 
