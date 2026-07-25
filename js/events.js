@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.1.0';
+    const helpVersion = '1.1.1';
     const helpChanges = [
-      '1.1.0 adds the Tetris 4-letter clear/scoring note and the danger-row guidance.',
+      '1.1.1 refreshes Tetris UI clarity (larger DROP chevrons, stronger active tile emphasis, and a slightly faded first queue tile).',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
