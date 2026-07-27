@@ -13,7 +13,10 @@ const SCRABBLE_VALUES = {
     N:1, O:1, P:3, Q:10, R:1, S:1, T:1, U:1, V:4, W:4, X:8, Y:4, Z:10
 };
 
-let DL_INDICES = [5, 9, 15, 19];
+let SPECIAL_SQUARES = {
+    dl: [5, 9, 15, 19],  // Default DL positions
+    dw: []               // No DW by default
+};
 
 function seededHash(str) {
   let h = 1779033703 ^ str.length;
@@ -87,12 +90,11 @@ function buildScrabbleDeck() {
     return sequence;
 }
 
-function generateRandomDLSquares() {
+function generateRandomSpecialSquares() {
     const rnd = makeDailyRandom('scrabble-dl');
     const allIndices = Array.from({length: 25}, (_, i) => i);
-    const dlIndices = [];
     
-    // Helper function to check if a position is valid with existing DL squares
+    // Helper function to check if a position is valid with existing squares
     function isValidPosition(idx, existing) {
         const row = Math.floor(idx / 5);
         const col = idx % 5;
@@ -110,35 +112,91 @@ function generateRandomDLSquares() {
         return true;
     }
     
-    // Try to find 4 valid positions
+    // 50% chance for 4 DL squares, 50% chance for 2 DL + 1 DW squares
+    const useDW = rnd() < 0.5;
+    const targetDLCount = useDW ? 2 : 4;
+    const targetDWCount = useDW ? 1 : 0;
+    
+    const dlIndices = [];
+    const dwIndices = [];
     let attempts = 0;
     const maxAttempts = 1000;
     
-    while (dlIndices.length < 4 && attempts < maxAttempts) {
+    // First, find DL squares
+    while (dlIndices.length < targetDLCount && attempts < maxAttempts) {
         // Shuffle available indices
         const shuffled = [...allIndices].sort(() => rnd() - 0.5);
         
         for (const idx of shuffled) {
             if (isValidPosition(idx, dlIndices)) {
                 dlIndices.push(idx);
-                if (dlIndices.length === 4) break;
+                if (dlIndices.length === targetDLCount) break;
             }
         }
         
-        // If we didn't find 4, reset and try again
-        if (dlIndices.length < 4) {
+        // If we didn't find enough, reset and try again
+        if (dlIndices.length < targetDLCount) {
             dlIndices.length = 0;
             attempts++;
         }
     }
     
-    // Fallback to default positions if we can't find valid ones
-    if (dlIndices.length < 4) {
-        console.warn('Could not find 4 valid DL positions, using defaults');
-        return [5, 9, 15, 19];
+    // If we need a DW square, find one that's valid with existing DL squares
+    if (useDW && dlIndices.length === targetDLCount) {
+        const combinedSquares = [...dlIndices];
+        let dwFound = false;
+        attempts = 0;
+        
+        while (!dwFound && attempts < maxAttempts) {
+            // Shuffle available indices
+            const shuffled = [...allIndices].sort(() => rnd() - 0.5);
+            
+            for (const idx of shuffled) {
+                if (isValidPosition(idx, combinedSquares)) {
+                    dwIndices.push(idx);
+                    dwFound = true;
+                    break;
+                }
+            }
+            
+            if (!dwFound) {
+                attempts++;
+            }
+        }
+        
+        // If we couldn't find a valid DW position, fall back to 4 DL squares
+        if (!dwFound) {
+            console.warn('Could not find valid DW position, using 4 DL squares instead');
+            // Try to find 2 more DL squares
+            const additionalDLNeeded = 2;
+            while (dlIndices.length < 4 && attempts < maxAttempts) {
+                const shuffled = [...allIndices].sort(() => rnd() - 0.5);
+                for (const idx of shuffled) {
+                    if (isValidPosition(idx, dlIndices)) {
+                        dlIndices.push(idx);
+                        if (dlIndices.length === 4) break;
+                    }
+                }
+                if (dlIndices.length < 4) {
+                    attempts++;
+                }
+            }
+        }
     }
     
-    return dlIndices.sort((a, b) => a - b);
+    // Fallback to default positions if we can't find valid ones
+    if (dlIndices.length < targetDLCount || (useDW && dwIndices.length === 0)) {
+        console.warn('Could not find valid special square positions, using defaults');
+        return {
+            dl: [5, 9, 15, 19],
+            dw: []
+        };
+    }
+    
+    return {
+        dl: dlIndices.sort((a, b) => a - b),
+        dw: dwIndices.sort((a, b) => a - b)
+    };
 }
 
 function renderScrabbleTray() {
@@ -183,8 +241,8 @@ document.addEventListener('ws:beforeInit', () => {
     currentPotIndex = 0;
     scrabbleLastMove = null;
     
-    // Generate random DL squares for this game
-    DL_INDICES = generateRandomDLSquares();
+    // Generate random special squares for this game
+    SPECIAL_SQUARES = generateRandomSpecialSquares();
     
     for(let i=0; i<5; i++) {
         scrabbleTray[i] = scrabblePot[currentPotIndex];
@@ -222,8 +280,11 @@ document.addEventListener('ws:afterInit', () => {
 
     if (gridEl) {
         const gridCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
-        DL_INDICES.forEach(i => {
+        SPECIAL_SQUARES.dl.forEach(i => {
             if (gridCells[i]) gridCells[i].classList.add('dl-square');
+        });
+        SPECIAL_SQUARES.dw.forEach(i => {
+            if (gridCells[i]) gridCells[i].classList.add('dw-square');
         });
     }
 
@@ -402,15 +463,27 @@ document.addEventListener('ws:calculateScore', (e) => {
         let key = item.word < rev ? item.word : rev;
         
         let pathScore = 0;
+        let hasDW = false;
+        
         item.path.forEach(idx => {
             let letter = cells[idx].toUpperCase();
             const isWildcardTile = (typeof wildcardState !== 'undefined' && wildcardState[idx]);
             let val = isWildcardTile ? 0 : (SCRABBLE_VALUES[letter] || 0);
-            if (!isWildcardTile && DL_INDICES.includes(idx)) {
+            if (!isWildcardTile && SPECIAL_SQUARES.dl.includes(idx)) {
                 val *= 2; 
             }
             pathScore += val;
+            
+            // Check if this path includes a DW square
+            if (SPECIAL_SQUARES.dw.includes(idx)) {
+                hasDW = true;
+            }
         });
+        
+        // Double the entire word score if it passes through a DW square
+        if (hasDW) {
+            pathScore *= 2;
+        }
         
         if (!bestScoreForWord[key] || pathScore > bestScoreForWord[key]) {
             bestScoreForWord[key] = pathScore;

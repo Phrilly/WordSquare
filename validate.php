@@ -188,7 +188,7 @@ function calculateClassicGridScore(string $gridString, PDO $pdo, string $mode = 
     return $score;
 }
 
-function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
+function calculateScrabbleGridScore(string $gridString, PDO $pdo, array $dlIndices = [], array $dwIndices = []): int
 {
     $cells = buildGridCellsWithWildcardInfo($gridString);
 
@@ -207,7 +207,8 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
         'O' => 1, 'P' => 3, 'Q' => 10, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1,
         'V' => 4, 'W' => 4, 'X' => 8, 'Y' => 4, 'Z' => 10,
     ];
-    $doubleLetterIndices = [5, 9, 15, 19];
+    // Use provided DL indices or default to hardcoded positions for backward compatibility
+    $doubleLetterIndices = !empty($dlIndices) ? $dlIndices : [5, 9, 15, 19];
 
     $foundPaths = [];
     $candidateWords = [];
@@ -256,6 +257,8 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
         $key = strcmp($item['word'], $reversed) < 0 ? $item['word'] : $reversed;
 
         $pathScore = 0;
+        $hasDW = false;
+        
         foreach ($item['path'] as $idx) {
             $cellInfo = $cells[$idx] ?? ['letter' => '', 'is_wildcard' => false];
             $letter = (string)($cellInfo['letter'] ?? '');
@@ -266,6 +269,16 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
                 $value *= 2;
             }
             $pathScore += $value;
+            
+            // Check if this path includes a DW square
+            if (in_array($idx, $dwIndices, true)) {
+                $hasDW = true;
+            }
+        }
+        
+        // Double the entire word score if it passes through a DW square
+        if ($hasDW) {
+            $pathScore *= 2;
         }
 
         if (!isset($bestScoreForWord[$key]) || $pathScore > $bestScoreForWord[$key]) {
@@ -276,12 +289,12 @@ function calculateScrabbleGridScore(string $gridString, PDO $pdo): int
     return array_sum($bestScoreForWord);
 }
 
-function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo): int
+function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo, array $dlIndices = [], array $dwIndices = []): int
 {
     $mode = normaliseMode($mode);
 
     if ($mode === 'scrabble') {
-        return calculateScrabbleGridScore($gridString, $pdo);
+        return calculateScrabbleGridScore($gridString, $pdo, $dlIndices, $dwIndices);
     }
 
     return calculateClassicGridScore($gridString, $pdo, $mode);
@@ -437,7 +450,26 @@ if (isset($input['action'])) {
             jsonResponse(['error' => $errMsg], 400);
         }
 
-        $score = calculateGridScoreForMode($grid, $mode, $pdo);
+        // Get DL and DW indices from frontend if provided
+        $dlIndices = [];
+        if (isset($input['dl_indices']) && is_array($input['dl_indices'])) {
+            $dlIndices = array_map('intval', $input['dl_indices']);
+            $dlIndices = array_filter($dlIndices, function($idx) {
+                return $idx >= 0 && $idx < 25;
+            });
+            $dlIndices = array_values($dlIndices);
+        }
+        
+        $dwIndices = [];
+        if (isset($input['dw_indices']) && is_array($input['dw_indices'])) {
+            $dwIndices = array_map('intval', $input['dw_indices']);
+            $dwIndices = array_filter($dwIndices, function($idx) {
+                return $idx >= 0 && $idx < 25;
+            });
+            $dwIndices = array_values($dwIndices);
+        }
+        
+        $score = calculateGridScoreForMode($grid, $mode, $pdo, $dlIndices, $dwIndices);
 
         if ($mode === 'tetris') {
             if ($sessionId === '') {

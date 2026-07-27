@@ -83,17 +83,25 @@ async function submitHighscore() {
   }
 
   try {
+    const requestBody = { 
+        action: 'save_score', 
+        initials: initials, 
+        mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic',
+        session_id: typeof sessionId !== 'undefined' ? sessionId : '',
+        score: typeof currentScore !== 'undefined' ? currentScore : 0, 
+        grid: gridString 
+    };
+    
+    // Add DL and DW indices for Scrabble mode
+    if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay && typeof SPECIAL_SQUARES !== 'undefined') {
+        requestBody.dl_indices = SPECIAL_SQUARES.dl;
+        requestBody.dw_indices = SPECIAL_SQUARES.dw;
+    }
+    
     const res = await fetch('validate.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-          action: 'save_score', 
-          initials: initials, 
-          mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic',
-          session_id: typeof sessionId !== 'undefined' ? sessionId : '',
-          score: typeof currentScore !== 'undefined' ? currentScore : 0, 
-          grid: gridString 
-      })
+      body: JSON.stringify(requestBody)
     });
     const data = await res.json();
     isNewTopScore = data.is_top_score;

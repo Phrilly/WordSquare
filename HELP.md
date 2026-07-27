@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.2.3
-- Change Log: 1.2.3 adds stronger bomb-refresh blast highlight and updates help notes.
+- Help Version: 1.3.0
+- Change Log: 1.3.0 adds Double Word (DW) squares to Scrabble variant with 50/50 chance of 4 DL squares vs 2 DL + 1 DW squares configuration.
 
 ## Core Rules
 - The board is always 5x5.
@@ -46,7 +46,10 @@
 - 3-letter and 4-letter words do not score in Scrabble mode.
 - Score is the sum of Scrabble letter values along each valid 5-letter word path.
 - Wildcard tiles (?) are worth 0 points.
-- Double-letter squares apply in Scrabble mode on the dedicated highlighted cells.
+- Double-letter (DL) squares double the value of letters placed on them.
+- Double-word (DW) squares double the entire word score when a 5-letter word passes through them.
+- Special square configuration: 50% chance of 4 DL squares, 50% chance of 2 DL + 1 DW squares.
+- All special squares (DL and DW) are separated by at least one square horizontally and vertically.
 - If the same canonical word appears in multiple paths, the best-scoring path is used.
 
 ### MFD (My First Dictionary)

@@ -136,6 +136,32 @@
   opacity: 0.5;
 }
 
+/* Double Word Multiplier Squares */
+.grid-cell.dw-square {
+  background-color: #f8c8dc !important;
+  color: #1a1a1a !important;
+  border: 2px solid #c44569 !important;
+}
+
+.grid-cell.dw-square::before {
+  content: "DW";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: clamp(10px, 1.5vw, 14px);
+  color: #c44569;
+  font-weight: 900;
+  opacity: 0.8;
+}
+
+.grid-cell.dw-square:empty::before {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(16px, 3vw, 24px);
+  opacity: 0.5;
+}
+
 /* Subscript Scrabble Values (Applied to both the tray and the board) */
 .grid-cell[data-letter]::after,
 .tray-cell[data-letter]::after {
