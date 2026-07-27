@@ -13,7 +13,7 @@ const SCRABBLE_VALUES = {
     N:1, O:1, P:3, Q:10, R:1, S:1, T:1, U:1, V:4, W:4, X:8, Y:4, Z:10
 };
 
-const DL_INDICES = [5, 9, 15, 19];
+let DL_INDICES = [5, 9, 15, 19];
 
 function seededHash(str) {
   let h = 1779033703 ^ str.length;
@@ -87,6 +87,60 @@ function buildScrabbleDeck() {
     return sequence;
 }
 
+function generateRandomDLSquares() {
+    const rnd = makeDailyRandom('scrabble-dl');
+    const allIndices = Array.from({length: 25}, (_, i) => i);
+    const dlIndices = [];
+    
+    // Helper function to check if a position is valid with existing DL squares
+    function isValidPosition(idx, existing) {
+        const row = Math.floor(idx / 5);
+        const col = idx % 5;
+        
+        for (const existingIdx of existing) {
+            const existingRow = Math.floor(existingIdx / 5);
+            const existingCol = existingIdx % 5;
+            
+            // Check if squares are too close: both horizontal AND vertical separation < 2
+            // This prevents squares from being adjacent or diagonally adjacent
+            if (Math.abs(col - existingCol) < 2 && Math.abs(row - existingRow) < 2) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Try to find 4 valid positions
+    let attempts = 0;
+    const maxAttempts = 1000;
+    
+    while (dlIndices.length < 4 && attempts < maxAttempts) {
+        // Shuffle available indices
+        const shuffled = [...allIndices].sort(() => rnd() - 0.5);
+        
+        for (const idx of shuffled) {
+            if (isValidPosition(idx, dlIndices)) {
+                dlIndices.push(idx);
+                if (dlIndices.length === 4) break;
+            }
+        }
+        
+        // If we didn't find 4, reset and try again
+        if (dlIndices.length < 4) {
+            dlIndices.length = 0;
+            attempts++;
+        }
+    }
+    
+    // Fallback to default positions if we can't find valid ones
+    if (dlIndices.length < 4) {
+        console.warn('Could not find 4 valid DL positions, using defaults');
+        return [5, 9, 15, 19];
+    }
+    
+    return dlIndices.sort((a, b) => a - b);
+}
+
 function renderScrabbleTray() {
     const scrabbleTrayEl = document.getElementById('scrabble-tray');
     const trayCells = document.querySelectorAll('.scrabble-tray .tray-cell');
@@ -128,6 +182,9 @@ document.addEventListener('ws:beforeInit', () => {
     scrabblePot = buildScrabbleDeck();
     currentPotIndex = 0;
     scrabbleLastMove = null;
+    
+    // Generate random DL squares for this game
+    DL_INDICES = generateRandomDLSquares();
     
     for(let i=0; i<5; i++) {
         scrabbleTray[i] = scrabblePot[currentPotIndex];
