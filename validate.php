@@ -330,7 +330,7 @@ function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
     $mode = normaliseMode($mode);
 
     foreach ($rows as &$row) {
-        if ($mode === 'tetris') {
+        if ($mode === 'tetris' || $mode === 'scrabble') {
             $row['score'] = (int)($row['score'] ?? 0);
             continue;
         }

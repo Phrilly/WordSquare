@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.2.3';
+    const helpVersion = '1.3.1';
     const helpChanges = [
-      '1.2.3 adds stronger bomb-refresh blast highlight and updates help notes.',
+      '1.3.1 fixes Scrabble leaderboard score ranking for random DL/DW boards and updates help notes.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>Classic/Bomb/Lookahead/MFD: 3-letter = 1, 4-letter = 5, 5-letter = 20.</li>
         <li>Scrabble: only 5-letter words score; 3-letter and 4-letter words do not score.</li>
-        <li>Scrabble: wildcard tiles score 0; double-letter squares apply on highlighted DL cells.</li>
+        <li>Scrabble: wildcard tiles score 0; DL squares double letter value and DW squares double whole-word value.</li>
         <li>Tetris: 4-letter clears = 5 and 5-letter clears = 20, with gravity after clears.</li>
       </ul>
 
@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>Only 5-letter words are considered for scoring.</li>
         <li>Word score is based on Scrabble letter values across the word path.</li>
+        <li>Special squares are daily-randomized: 50% chance of 4 DL, or 50% chance of 2 DL + 1 DW.</li>
         <li>If the same canonical word appears in multiple paths, the highest scoring path is used.</li>
       </ul>
 

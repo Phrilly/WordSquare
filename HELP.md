@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.3.0
-- Change Log: 1.3.0 adds Double Word (DW) squares to Scrabble variant with 50/50 chance of 4 DL squares vs 2 DL + 1 DW squares configuration.
+- Help Version: 1.3.1
+- Change Log: 1.3.1 fixes Scrabble leaderboard score ranking for random DL/DW boards and updates help notes.
 
 ## Core Rules
 - The board is always 5x5.
