@@ -26,6 +26,7 @@ function getCurrentGameMode() {
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay) return 'scrabble';
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isLookaheadDay) return 'lookahead';
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) return 'tetris';
+	if (window.GAME_CONFIG && window.GAME_CONFIG.isBoggleDay) return 'boggle';
 	if (window.GAME_CONFIG && window.GAME_CONFIG.isCommonDay) return 'mfd';
 	return 'classic';
 }
@@ -34,6 +35,7 @@ function getLeaderboardTitleText() {
 	const mode = getCurrentGameMode();
 	if (mode === 'mfd') return "TODAY'S MFD HIGH SCORES";
 	if (mode === 'tetris') return "TODAY'S TETRIS HIGH SCORES";
+	if (mode === 'boggle') return "BIG BOGGLE";
 	return "TODAY'S HIGH SCORES";
 }
 

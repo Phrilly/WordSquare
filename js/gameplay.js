@@ -79,6 +79,13 @@ function syncDefaultQueueUI() {
 }
 
 function initGame() {
+  if (window.GAME_CONFIG && window.GAME_CONFIG.isBoggleDay) {
+    if (typeof initBoggleGame === 'function') {
+      initBoggleGame();
+    }
+    return;
+  }
+
   if (gridEl) {
       const existingCells = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
       existingCells.forEach(cell => cell.remove());

@@ -14,32 +14,35 @@ function autoVer(string $url): string {
     return $url . '?v=' . time(); // Fallback if file isn't found
 }
 
-// VARIANT SCHEDULER: 6-Day Cycle Calculation
+// VARIANT SCHEDULER: 7-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // Default cycle logic
-$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 6 === 0);       // Day 0
-$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 6 === 0); // Day 1
-$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 6 === 0); // Day 2
-$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 6 === 0); // Day 3 (MFD)
-$isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 6 === 0); // Day 4
+$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0);       // Day 0
+$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0); // Day 1
+$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // Day 2
+$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0); // Day 3
+$isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
+$isBoggleDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 5) % 7 === 0); // Day 5
 
 // DEV OVERRIDES: Strict Input Validation
 if (isset($_GET['mode'])) {
     $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
   if ($mode === 'classic') {
-    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
+    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
   } elseif ($mode === 'bomb') {
-      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
+      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'lookahead') {
-      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
+      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'scrabble') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'mfd' || $mode === 'common') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'tetris') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true; $isBoggleDay = false;
+    } elseif ($mode === 'boggle') {
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = true;
     }
 }
 
@@ -54,6 +57,8 @@ if ($isBombDay) {
     $modeDisplayName = 'My First Dictionary';
 } elseif ($isTetrisDay) {
   $modeDisplayName = 'Tetris';
+} elseif ($isBoggleDay) {
+  $modeDisplayName = 'Big Boggle';
 }
 
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH SCORES";
@@ -76,6 +81,9 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   <link rel="stylesheet" href="<?= autoVer('css/responsive.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/tryit.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/tetris.css') ?>">
+  <?php if ($isBoggleDay): ?>
+  <link rel="stylesheet" href="<?= autoVer('css/boggle.css') ?>">
+  <?php endif; ?>
   
   <?php if ($isBombDay): ?>
   <link rel="stylesheet" href="<?= autoVer('css/bomb.css') ?>">
@@ -93,6 +101,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       isScrabbleDay: <?= json_encode($isScrabbleDay) ?>,
       isCommonDay: <?= json_encode($isCommonDay) ?>,
       isTetrisDay: <?= json_encode($isTetrisDay) ?>,
+      isBoggleDay: <?= json_encode($isBoggleDay) ?>,
       modeDisplayName: <?= json_encode($modeDisplayName) ?>
     };
   </script>
@@ -190,6 +199,10 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       </div>
       <div id="score">0</div>
     </div>
+    <div id="boggle-status" class="boggle-status" aria-live="polite" aria-atomic="true">
+      <span id="boggle-round-label">ROUND 1 OF 2</span>
+      <strong id="boggle-timer">3:00</strong>
+    </div>
     <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
       <span class="tetris-clock-label">CLOCK</span>
       <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
@@ -213,6 +226,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
     <?php endif; ?>
 
     <div class="alphabet-modal" id="alphabet-modal"></div>
+    <div id="boggle-feedback" class="boggle-feedback" aria-live="polite"></div>
 
     <div class="overlay-modal" id="highscore-entry-modal">
       <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
@@ -278,7 +292,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   </div>
   <?php endif; ?>
 
-  <?php if (!$isTetrisDay): ?>
+  <?php if (!$isTetrisDay && !$isBoggleDay): ?>
   <div id="try-it-panel" class="try-it-panel" role="group" aria-label="Try words">
     <div class="try-it-top">
       <div class="try-it-header">TRY IT!</div>
@@ -307,6 +321,14 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   </div>
   <?php endif; ?>
 
+  <section id="boggle-panel" class="boggle-panel" hidden aria-live="polite">
+    <div id="boggle-current-word" class="boggle-current-word">Select adjacent tiles</div>
+    <div class="boggle-actions">
+      <button id="boggle-clear-btn" class="arcade-btn mini-btn" type="button">CLEAR</button>
+      <button id="boggle-submit-btn" class="arcade-btn mini-btn" type="button">SUBMIT</button>
+    </div>
+  </section>
+
   <div class="version-tag">Version Dynamic Auto-Versioning</div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
@@ -332,6 +354,9 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
 
   <?php if ($isTetrisDay): ?>
   <script src="<?= autoVer('js/gameplay-tetris.js') ?>" defer></script>
+  <?php endif; ?>
+  <?php if ($isBoggleDay): ?>
+  <script src="<?= autoVer('js/gameplay-boggle.js') ?>" defer></script>
   <?php endif; ?>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>
