@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'scrabble') return 'Scrabble';
     if (mode === 'lookahead') return 'Lookahead';
     if (mode === 'tetris') return 'Tetris';
+    if (mode === 'boggle') return 'Big Boggle';
     if (mode === 'mfd') return 'My First Dictionary (MFD)';
     return 'Classic';
   };
@@ -37,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'tetris') {
       return 'Tetris mode is active: drop letters into columns, clear 4- and 5-letter words, and survive increasing speed.';
     }
+    if (mode === 'boggle') {
+      return 'Big Boggle is active: find words by joining adjacent tiles before the timer ends.';
+    }
     if (mode === 'mfd') {
       return 'MFD mode is active: gameplay is Classic, but only words flagged in the MFD dictionary are valid.';
     }
@@ -48,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     const todayUtcMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0);
     const daysSinceEpoch = Math.floor((todayUtcMs - epochUtcMs) / 86400000);
-    const cycleDay = ((daysSinceEpoch % 6) + 6) % 6;
+    const cycleDay = ((daysSinceEpoch % 7) + 7) % 7;
 
     let computedMode = 'classic';
     if (daysSinceEpoch > 0 && cycleDay === 0) computedMode = 'bomb';
@@ -56,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (daysSinceEpoch > 0 && cycleDay === 2) computedMode = 'lookahead';
     else if (daysSinceEpoch > 0 && cycleDay === 3) computedMode = 'mfd';
     else if (daysSinceEpoch > 0 && cycleDay === 4) computedMode = 'tetris';
+    else if (daysSinceEpoch > 0 && cycleDay === 5) computedMode = 'boggle';
 
     const utcDate = now.toISOString().slice(0, 10);
 
@@ -70,9 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.3.1';
+    const helpVersion = '1.4.0';
     const helpChanges = [
-      '1.3.1 fixes Scrabble leaderboard score ranking for random DL/DW boards and updates help notes.',
+      '1.4.0 adds Big Boggle: two timed 5x5 rounds with cumulative scoring.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
@@ -98,14 +103,15 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Letters stay on the board unless removed by a mode mechanic (for example, Tetris clears or bombs).</li>
       </ul>
 
-      <h3>Daily Schedule (6-Day)</h3>
+      <h3>Daily Schedule (7-Day)</h3>
       <ul>
         <li>Day 0: Bomb</li>
         <li>Day 1: Scrabble</li>
         <li>Day 2: Lookahead</li>
         <li>Day 3: MFD (My First Dictionary)</li>
         <li>Day 4: Tetris</li>
-        <li>Day 5: Classic</li>
+        <li>Day 5: Big Boggle</li>
+        <li>Day 6: Classic</li>
       </ul>
 
       <h3>Scoring Notes</h3>
@@ -114,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Scrabble: only 5-letter words score; 3-letter and 4-letter words do not score.</li>
         <li>Scrabble: wildcard tiles score 0; DL squares double letter value and DW squares double whole-word value.</li>
         <li>Tetris: 4-letter clears = 5 and 5-letter clears = 20, with gravity after clears.</li>
+        <li>Big Boggle: 4 letters = 1, 5 = 2, 6 = 3, 7 = 5, and 8+ = 11.</li>
       </ul>
 
       <h3>Bomb Notes</h3>
@@ -152,6 +159,27 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Bomb top-up cue: bright strip blast, icon flash/pop, expanding rings, and +1 BOMB READY text near the bomb bar.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
+
+      <h3>Big Boggle: How It Works</h3>
+      <ul>
+        <li>Each round begins with a new weighted 5x5 board. Common letters and vowels appear more often; a Qu tile counts as QU.</li>
+        <li>Drag across tiles, or click tiles one at a time, to form a word. Each next tile must touch the last one horizontally, vertically, or diagonally.</li>
+        <li>You cannot use the same tile twice in one word. Release the drag or press Submit to check the highlighted path.</li>
+        <li>Words must contain at least 4 letters, must be in the dictionary, and can score only once per round.</li>
+        <li>There are exactly two rounds, each lasting 3 minutes. When the timer reaches 0:00, the board locks immediately.</li>
+        <li>After Round 1, the summary shows its words, its score, and the running cumulative total before Round 2 begins.</li>
+        <li>After Round 2, Match Complete shows Round 1 + Round 2 = your final cumulative score.</li>
+      </ul>
+      <table>
+        <thead><tr><th>Word length</th><th>Points</th></tr></thead>
+        <tbody>
+          <tr><td>4 letters</td><td>1</td></tr>
+          <tr><td>5 letters</td><td>2</td></tr>
+          <tr><td>6 letters</td><td>3</td></tr>
+          <tr><td>7 letters</td><td>5</td></tr>
+          <tr><td>8+ letters</td><td>11</td></tr>
+        </tbody>
+      </table>
 
       <h3>Scheduler Debug</h3>
       <ul>

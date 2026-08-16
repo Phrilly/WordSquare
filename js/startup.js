@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let hsData = { highscores: [] };
 
   try {
+    const isBoggleMode = typeof getCurrentGameMode === 'function' && getCurrentGameMode() === 'boggle';
     const [dictRes, winnerRes, hsRes] = await Promise.all([
       fetch('validate.php', {
         method: 'POST',
@@ -163,8 +164,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic'
         })
       }),
-      fetch('validate.php', fetchOpts('get_yesterdays_winner')),
-      fetch('validate.php', {
+      isBoggleMode ? Promise.resolve(null) : fetch('validate.php', fetchOpts('get_yesterdays_winner')),
+      isBoggleMode ? Promise.resolve(null) : fetch('validate.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,19 +184,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         dictData = await dictRes.json();
     }
 
-    if (!winnerRes.ok) {
+    if (winnerRes && !winnerRes.ok) {
         const txt = await winnerRes.text();
         console.error("DIAGNOSTIC 400 get_yesterdays_winner:", txt);
         alert("API ERROR: get_yesterdays_winner returned " + winnerRes.status + "\n" + txt);
-    } else {
+    } else if (winnerRes) {
         winnerData = await winnerRes.json();
     }
 
-    if (!hsRes.ok) {
+    if (hsRes && !hsRes.ok) {
         const txt = await hsRes.text();
         console.error("DIAGNOSTIC 400 get_highscores:", txt);
         alert("API ERROR: get_highscores returned " + hsRes.status + "\n" + txt);
-    } else {
+    } else if (hsRes) {
         hsData = await hsRes.json();
     }
 
@@ -216,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 5. Pre-fetch and render leaderboard values inside the UI before unveiling screens
-  if (typeof loadLeaderboard === 'function') {
+  if (typeof loadLeaderboard === 'function' && (!window.GAME_CONFIG || !window.GAME_CONFIG.isBoggleDay)) {
       await loadLeaderboard();
   }
 
@@ -247,9 +248,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const openingGrid = document.getElementById('opening-grid');
   if (openingScreen && openingGrid) {
     openingGrid.innerHTML = '';
+    const isBoggleMode = typeof getCurrentGameMode === 'function' && getCurrentGameMode() === 'boggle';
+    openingGrid.classList.toggle('boggle-opening-grid', isBoggleMode);
     let highscores = (hsData && Array.isArray(hsData.highscores)) ? hsData.highscores : [];
     
-    if (highscores.length > 0) {
+    if (isBoggleMode) {
+      openingGrid.innerHTML = `
+        <strong>BIG BOGGLE</strong>
+        <span>Two 3-minute rounds. Build words from touching tiles.</span>
+        <span>Round 1 + Round 2 = your cumulative score.</span>
+      `;
+    } else if (highscores.length > 0) {
       for (let r = 0; r < 8; r++) {
         const scoreData = highscores[r] || null;
         

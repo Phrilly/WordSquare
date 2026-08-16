@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.3.1
-- Change Log: 1.3.1 fixes Scrabble leaderboard score ranking for random DL/DW boards and updates help notes.
+- Help Version: 1.4.0
+- Change Log: 1.4.0 adds Big Boggle, a two-round 5x5 timed mode with cumulative scoring and a British English dictionary.
 
 ## Core Rules
 - The board is always 5x5.
@@ -10,13 +10,14 @@
 - Letters stay on the board after placement unless removed by a mode mechanic (for example, Tetris clears or bombs).
 - Daily games are ranked on mode-specific leaderboards.
 
-## Daily 6-Day Variant Schedule
+## Daily 7-Day Variant Schedule
 - Day 0: Bomb
 - Day 1: Scrabble
 - Day 2: Lookahead
 - Day 3: MFD (My First Dictionary)
 - Day 4: Tetris
-- Day 5: Classic
+- Day 5: Big Boggle
+- Day 6: Classic
 
 ## Classic / Bomb / Lookahead / MFD Scoring
 - 3-letter word: 1 point
@@ -68,9 +69,31 @@
 - Bomb top-up cue: a bright strip blast, icon flash/pop, expanding rings, and a +1 BOMB READY label near the bomb bar.
 - If any column reaches the top (no legal drop), the run ends.
 
+### Big Boggle (5x5 Time Attack)
+- Big Boggle uses a fully populated 5x5 board with a weighted letter distribution. Common vowels and consonants occur more often than rare letters.
+- A `Qu` tile contributes `QU` when used in a word.
+- Form a word by dragging across tiles or clicking tiles one after another, then submit it.
+- Every next tile must touch the preceding tile horizontally, vertically, or diagonally.
+- A tile may not be used more than once in one submitted word.
+- Words must have at least 4 letters, be in the British English dictionary, and may be found only once per round.
+- A match has exactly 2 rounds. Each round lasts 3 minutes, and input locks as soon as its clock reaches 0:00.
+- The Round 1 summary lists all found words, the Round 1 score, and the clearly labelled cumulative score before the player starts Round 2.
+- Match Complete lists both round scores and the final cumulative total.
+
+| Word length | Points |
+| --- | ---: |
+| 4 letters | 1 |
+| 5 letters | 2 |
+| 6 letters | 3 |
+| 7 letters | 5 |
+| 8+ letters | 11 |
+
+Example: a Round 1 score of 18 and a Round 2 score of 24 produces a cumulative score of `18 + 24 = 42`.
+
 ## Validation Notes
 - All words are validated against the server dictionary.
 - Scrabble uses a dedicated 5-letter scoring pass with letter-value math.
 - Tetris stores and ranks by its live gameplay score.
+- Big Boggle uses the SCOWL British English (`B`) spelling profile, including spellings such as `COLOUR`, `ORGANISE`, and `THEATRE`.
 
 For MFD-specific details, see HELP_MFD.md.

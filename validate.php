@@ -36,7 +36,7 @@ function normaliseMode(?string $mode): string
     if ($mode === 'common') {
         $mode = 'mfd';
     }
-    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd', 'tetris'];
+    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd', 'tetris', 'boggle'];
     return in_array($mode, $allowedModes, true) ? $mode : 'classic';
 }
 
@@ -306,20 +306,23 @@ function getModeForDate(DateTimeImmutable $date): string
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
     $daysSinceEpoch = (int) floor(($target->getTimestamp() - $epoch->getTimestamp()) / 86400);
 
-    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 6 === 0) {
+    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0) {
         return 'bomb';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 6 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0) {
         return 'scrabble';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 6 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0) {
         return 'lookahead';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 6 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0) {
         return 'mfd';
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 6 === 0) {
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0) {
         return 'tetris';
+    }
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 5) % 7 === 0) {
+        return 'boggle';
     }
 
     return 'classic';
@@ -330,7 +333,7 @@ function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
     $mode = normaliseMode($mode);
 
     foreach ($rows as &$row) {
-        if ($mode === 'tetris' || $mode === 'scrabble') {
+        if ($mode === 'tetris' || $mode === 'scrabble' || $mode === 'boggle') {
             $row['score'] = (int)($row['score'] ?? 0);
             continue;
         }
@@ -409,13 +412,20 @@ if (isset($input['action'])) {
         try {
             if ($mode === 'mfd') {
                 $stmt = $pdo->query("SELECT word FROM dictionary WHERE is_mfd = 1");
+            } elseif ($mode === 'boggle') {
+                $stmt = $pdo->query("SELECT word FROM dictionary WHERE CHAR_LENGTH(word) BETWEEN 4 AND 25");
             } else {
                 $stmt = $pdo->query("SELECT word FROM dictionary");
             }
             $words = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-            $words = array_values(array_filter($words, function ($word) {
-                return is_string($word) && preg_match('/^[A-Z]{3,5}$/i', $word);
+            $minimumLength = $mode === 'boggle' ? 4 : 3;
+            $maximumLength = $mode === 'boggle' ? 25 : 5;
+            $words = array_values(array_filter($words, function ($word) use ($minimumLength, $maximumLength) {
+                return is_string($word)
+                    && preg_match('/^[A-Z]+$/i', $word)
+                    && strlen($word) >= $minimumLength
+                    && strlen($word) <= $maximumLength;
             }));
 
             $words = array_map('strtoupper', $words);
