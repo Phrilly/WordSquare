@@ -14,6 +14,8 @@
 .boggle-tile.is-selected { background:var(--highlight); outline:3px solid #fff; transform:scale(.94); }
 .boggle-tile.is-first-selected { outline-color:#78dc7f; box-shadow:0 0 0 4px rgba(120,220,127,.75); }
 .boggle-tile.is-last-selected { outline-color:#FFD700; box-shadow:0 0 0 4px rgba(255,215,0,.75); }
+.boggle-tile.is-invalid-selection { outline-color:#ef4444; box-shadow:0 0 0 4px rgba(239,68,68,.8); }
+.boggle-tile.is-duplicate-selection { outline-color:#FFD700; box-shadow:0 0 0 4px rgba(255,215,0,.8); }
 .boggle-tile:focus-visible, .boggle-controls button:focus-visible { outline:3px solid var(--gold-1); outline-offset:2px; }
 .boggle-controls { display:flex; flex:0 0 70px; flex-direction:row; justify-content:flex-end; gap:4px; }
 .boggle-controls button { width:34px; }
