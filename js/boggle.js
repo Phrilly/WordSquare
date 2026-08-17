@@ -71,7 +71,7 @@ function render() {
       select(index);
     });
     button.addEventListener('pointerenter', event => {
-      if (event.pointerType === 'mouse' && state.desktopPathDrawing && event.buttons === 1) select(index);
+      if (event.pointerType === 'mouse' && state.desktopPathDrawing && state.path.at(-1) !== index) select(index);
     });
     button.addEventListener('click', event => {
       if (event.detail !== 0 && state.ignoreNextMouseClick) {
@@ -112,7 +112,7 @@ function select(index) {
   }
 
   state.path.push(index);
-  message('Select more tiles or enter the word.');
+  message(state.desktopPathDrawing ? 'Move across adjacent tiles, or enter the word.' : 'Select more tiles or enter the word.');
   render();
 }
 
@@ -396,18 +396,20 @@ async function loadDictionary() {
 }
 
 el.backspace.addEventListener('click', () => {
+  state.desktopPathDrawing = false;
   state.path.pop();
   message('Last tile removed.');
   render();
 });
 el.clear.addEventListener('click', () => {
+  state.desktopPathDrawing = false;
   state.path = [];
   message('Word cleared.');
   render();
 });
 el.enter.addEventListener('click', submit);
-window.addEventListener('pointerup', () => {
-  state.desktopPathDrawing = false;
+el.grid.addEventListener('pointerleave', event => {
+  if (!el.grid.contains(event.relatedTarget)) state.desktopPathDrawing = false;
 });
 window.addEventListener('blur', () => {
   state.desktopPathDrawing = false;
