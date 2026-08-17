@@ -20,8 +20,10 @@
 .boggle-found h2 { margin:0 0 8px; color:var(--highlight); font-size:18px; }
 #boggle-found-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:6px; margin:0; padding:0; list-style:none; }
 #boggle-found-list li { display:flex; justify-content:space-between; padding:7px; border-radius:5px; background:rgba(255,255,255,.1); font-weight:bold; }
-.boggle-summary { margin-top:18px; padding:18px; border-radius:10px; background:#17365f; text-align:center; }
-.boggle-summary h2 { margin-top:0; color:var(--highlight); }
+.boggle-summary { position:absolute; inset:0; z-index:10; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; border-radius:12px; background-color:rgba(22,47,78,.92); backdrop-filter:blur(6px); color:#fff; font-family:'Courier New',Courier,monospace; text-align:center; overflow-y:auto; }
+.boggle-summary[hidden] { display:none; }
+.boggle-summary h2 { margin:0 0 14px; color:var(--highlight); font-size:clamp(22px,7vw,34px); }
+.boggle-summary p { margin:6px 0; font-weight:bold; }
 .boggle-summary button { margin:12px auto 0; }
 .boggle-leaderboard { margin-top:22px; }
 .boggle-leaderboard h2 { color:var(--highlight); font-size:18px; }
