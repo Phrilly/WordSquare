@@ -63,6 +63,7 @@ function render() {
     button.textContent = letter === 'Q' ? 'Qu' : letter;
     button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
     button.classList.toggle('is-selected', state.path.includes(index));
+    button.classList.toggle('is-first-selected', state.desktopPathDrawing && state.path[0] === index);
     button.classList.toggle('is-last-selected', state.selectionComplete && state.path.at(-1) === index);
     button.disabled = state.locked;
     button.addEventListener('pointerdown', event => {
@@ -81,6 +82,7 @@ function render() {
       state.desktopPathDrawing = true;
       state.selectionComplete = false;
       select(index);
+      message('Path started. Move across adjacent tiles, then click the final tile.');
     });
     button.addEventListener('click', event => {
       if (event.detail !== 0 && state.ignoreNextMouseClick) {
