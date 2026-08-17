@@ -1,121 +1,391 @@
 const BOGGLE_SIZE = 5;
 const BOGGLE_SECONDS = 180;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
-const state = { tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS, dictionary: new Set(), locked: true, timer: null };
-const el = {
-  grid: document.getElementById('boggle-grid'), preview: document.getElementById('boggle-preview-tiles'),
-  status: document.getElementById('boggle-status'), score: document.getElementById('boggle-score'),
-  round: document.getElementById('boggle-round'), timer: document.getElementById('boggle-timer'),
-  backspace: document.getElementById('boggle-backspace'), clear: document.getElementById('boggle-clear'),
-  enter: document.getElementById('boggle-enter'), found: document.getElementById('boggle-found-list'),
-  summary: document.getElementById('boggle-summary'), leaderboard: document.getElementById('boggle-leaderboard-list')
+const state = {
+  tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
+  dictionary: new Set(), locked: true, timer: null
 };
-function tileText(index) { return state.tiles[index] === 'Q' ? 'QU' : state.tiles[index]; }
-function word() { return state.path.map(tileText).join(''); }
-function points(length) { return length === 4 ? 1 : length === 5 ? 2 : length === 6 ? 3 : length === 7 ? 5 : length >= 8 ? 11 : 0; }
-function adjacent(a, b) { const ar = Math.floor(a / 5), ac = a % 5, br = Math.floor(b / 5), bc = b % 5; return Math.abs(ar-br) <= 1 && Math.abs(ac-bc) <= 1 && a !== b; }
-function total() { return state.roundScores.reduce((sum, value) => sum + value, 0) + (state.locked ? 0 : roundScore()); }
-function roundScore() { return [...state.words.values()].reduce((sum, value) => sum + value, 0); }
-function message(text, invalid = false) { el.status.textContent = text; el.status.style.color = invalid ? '#fecaca' : '#ffffff'; }
+const el = {
+  grid: document.getElementById('boggle-grid'),
+  preview: document.getElementById('boggle-preview-tiles'),
+  status: document.getElementById('boggle-status'),
+  score: document.getElementById('boggle-score'),
+  round: document.getElementById('boggle-round'),
+  timer: document.getElementById('boggle-timer'),
+  backspace: document.getElementById('boggle-backspace'),
+  clear: document.getElementById('boggle-clear'),
+  enter: document.getElementById('boggle-enter'),
+  found: document.getElementById('boggle-found-list'),
+  summary: document.getElementById('boggle-summary'),
+  leaderboard: document.getElementById('boggle-leaderboard-list')
+};
+
+function tileText(index) {
+  return state.tiles[index] === 'Q' ? 'QU' : state.tiles[index];
+}
+
+function word() {
+  return state.path.map(tileText).join('');
+}
+
+function points(length) {
+  return length === 4 ? 1 : length === 5 ? 2 : length === 6 ? 3 : length === 7 ? 5 : length >= 8 ? 11 : 0;
+}
+
+function adjacent(a, b) {
+  const ar = Math.floor(a / BOGGLE_SIZE);
+  const ac = a % BOGGLE_SIZE;
+  const br = Math.floor(b / BOGGLE_SIZE);
+  const bc = b % BOGGLE_SIZE;
+  return Math.abs(ar - br) <= 1 && Math.abs(ac - bc) <= 1 && a !== b;
+}
+
+function roundScore() {
+  return [...state.words.values()].reduce((sum, value) => sum + value, 0);
+}
+
+function total() {
+  return state.roundScores.reduce((sum, value) => sum + value, 0) + (state.locked ? 0 : roundScore());
+}
+
+function message(text, invalid = false) {
+  el.status.textContent = text;
+  el.status.style.color = invalid ? '#fecaca' : '#ffffff';
+}
+
 function render() {
   const tileButtons = state.tiles.map((letter, index) => {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'grid-cell boggle-tile';
-    button.textContent = letter === 'Q' ? 'Qu' : letter; button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
-    button.classList.toggle('is-selected', state.path.includes(index)); button.disabled = state.locked;
-    button.addEventListener('click', () => select(index)); return button;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'grid-cell boggle-tile';
+    button.textContent = letter === 'Q' ? 'Qu' : letter;
+    button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
+    button.classList.toggle('is-selected', state.path.includes(index));
+    button.disabled = state.locked;
+    button.addEventListener('click', () => select(index));
+    return button;
   });
+
   el.grid.replaceChildren(...tileButtons, el.summary);
-  el.preview.replaceChildren(...state.path.map(index => { const tile = document.createElement('span'); tile.className = 'boggle-preview-tile'; tile.textContent = tileText(index); return tile; }));
-  el.backspace.disabled = state.locked || state.path.length === 0; el.clear.disabled = state.locked || state.path.length === 0; el.enter.disabled = state.locked || state.path.length === 0;
-  el.score.textContent = String(total()); el.round.textContent = `ROUND ${state.round} OF 2`; el.timer.textContent = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
+  el.preview.replaceChildren(...state.path.map(index => {
+    const tile = document.createElement('span');
+    tile.className = 'boggle-preview-tile';
+    tile.textContent = tileText(index);
+    return tile;
+  }));
+  el.backspace.disabled = state.locked || state.path.length === 0;
+  el.clear.disabled = state.locked || state.path.length === 0;
+  el.enter.disabled = state.locked || state.path.length === 0;
+  el.score.textContent = String(total());
+  el.round.textContent = `ROUND ${state.round} OF 2`;
+  el.timer.textContent = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
 }
+
 function select(index) {
   if (state.locked) return;
+
   const last = state.path.at(-1);
-  if (state.path.includes(index)) return message('A tile can only be used once.', true);
-  if (last !== undefined && !adjacent(last, index)) return message('Next tile must touch the previous tile.', true);
-  state.path.push(index); message('Select more tiles or enter the word.'); render();
+  if (state.path.includes(index)) {
+    message('A tile can only be used once.', true);
+    return;
+  }
+  if (last !== undefined && !adjacent(last, index)) {
+    message('Next tile must touch the previous tile.', true);
+    return;
+  }
+
+  state.path.push(index);
+  message('Select more tiles or enter the word.');
+  render();
 }
+
 function submit() {
   const candidate = word();
-  if (candidate.length < 4) return message('Words need at least 4 letters.', true);
-  if (state.words.has(candidate)) return message('Already found this round.', true);
-  if (!state.dictionary.has(candidate)) return message('Not in the British English dictionary. Use Backspace to correct it.', true);
-  const earned = points(candidate.length); state.words.set(candidate, earned); state.path = [];
-  message(`+${earned} ${earned === 1 ? 'point' : 'points'}: ${candidate}`); renderWords(); render();
+  if (candidate.length < 4) {
+    message('Words need at least 4 letters.', true);
+    return;
+  }
+  if (state.words.has(candidate)) {
+    message('Already found this round.', true);
+    return;
+  }
+  if (!state.dictionary.has(candidate)) {
+    message('Not in the British English dictionary. Use Backspace to correct it.', true);
+    return;
+  }
+
+  const earned = points(candidate.length);
+  state.words.set(candidate, earned);
+  state.path = [];
+  message(`+${earned} ${earned === 1 ? 'point' : 'points'}: ${candidate}`);
+  renderWords();
+  render();
 }
-function renderWords() { el.found.replaceChildren(...[...state.words].sort(([a],[b]) => a.localeCompare(b)).map(([candidate, earned]) => { const item = document.createElement('li'); item.textContent = candidate; const score = document.createElement('strong'); score.textContent = `+${earned}`; item.append(score); return item; })); }
-function renderLeaderboard(scores) {
-  el.leaderboard.replaceChildren(...scores.map((entry, index) => {
+
+function renderWords() {
+  const entries = [...state.words].sort(([a], [b]) => a.localeCompare(b));
+  el.found.replaceChildren(...entries.map(([candidate, earned]) => {
     const item = document.createElement('li');
-    if (index === 0) item.classList.add('is-top-score');
-    const initials = String(entry.initials || '---').padEnd(3, '-').slice(0, 3);
-    item.innerHTML = `<div class="lb-row-container"><div class="lb-rank">${index + 1}.</div><div class="lb-initials-group"><div class="lb-initial-tile">${initials[0]}</div><div class="lb-initial-tile">${initials[1]}</div><div class="lb-initial-tile">${initials[2]}</div></div><div class="lb-score-tile">${entry.score}</div></div>`;
+    item.textContent = candidate;
+    const score = document.createElement('strong');
+    score.textContent = `+${earned}`;
+    item.append(score);
     return item;
   }));
-  if (scores.length === 0) el.leaderboard.innerHTML = '<li>No scores today.</li>';
 }
+
+function createLeaderboardRow(entry, index) {
+  const item = document.createElement('li');
+  if (index === 0) item.classList.add('is-top-score');
+
+  const initials = String(entry.initials || '---').padEnd(3, '-').slice(0, 3);
+  const row = document.createElement('div');
+  row.className = 'lb-row-container';
+
+  const rank = document.createElement('div');
+  rank.className = 'lb-rank';
+  rank.textContent = `${index + 1}.`;
+
+  const initialsGroup = document.createElement('div');
+  initialsGroup.className = 'lb-initials-group';
+  for (const initial of initials) {
+    const tile = document.createElement('div');
+    tile.className = 'lb-initial-tile';
+    tile.textContent = initial;
+    initialsGroup.append(tile);
+  }
+
+  const score = document.createElement('div');
+  score.className = 'lb-score-tile';
+  score.textContent = String(entry.score);
+  row.append(rank, initialsGroup, score);
+  item.append(row);
+  return item;
+}
+
+function renderLeaderboard(scores, target = el.leaderboard) {
+  if (scores.length === 0) {
+    const item = document.createElement('li');
+    item.textContent = 'No scores today.';
+    target.replaceChildren(item);
+    return;
+  }
+  target.replaceChildren(...scores.map(createLeaderboardRow));
+}
+
+async function getLeaderboardScores() {
+  const response = await fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_boggle_highscores' })
+  });
+  if (!response.ok) throw new Error('Unable to load Boggle scores.');
+
+  const data = await response.json();
+  return Array.isArray(data.highscores) ? data.highscores : [];
+}
+
 async function loadLeaderboard() {
   try {
-    const response = await fetch('validate.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get_boggle_highscores' }) });
-    const data = await response.json();
-    renderLeaderboard(Array.isArray(data.highscores) ? data.highscores : []);
-  } catch (error) { el.leaderboard.innerHTML = '<li>Unable to load scores.</li>'; }
+    renderLeaderboard(await getLeaderboardScores());
+  } catch (error) {
+    el.leaderboard.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Unable to load scores.' }));
+  }
 }
+
 async function saveLeaderboardScore(score, initials) {
-  if (!initials) return;
-  try {
-    const response = await fetch('validate.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save_boggle_highscore', initials, score }) });
-    if (!response.ok) throw new Error('Save failed');
-    await loadLeaderboard();
-  } catch (error) { message('Score could not be saved.', true); }
-}
-function openScoreEntry(score) {
-  el.summary.innerHTML = `<h2>ENTER INITIALS</h2><p>Final score: <strong>${score}</strong></p><div class="initials-wrapper"><input id="boggle-initials-input" class="hidden-initials-input" type="text" maxlength="3" autocomplete="off" aria-label="Enter your initials"><div class="initial-tile" id="boggle-initial-1"></div><div class="initial-tile" id="boggle-initial-2"></div><div class="initial-tile" id="boggle-initial-3"></div></div><button id="boggle-save-score" class="arcade-btn" type="button">SAVE SCORE</button><button id="boggle-cancel-score" class="arcade-btn" type="button">CANCEL</button>`;
-  const input = document.getElementById('boggle-initials-input');
-  const updateTiles = () => {
-    const initials = input.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
-    input.value = initials;
-    for (let index = 0; index < 3; index += 1) document.getElementById(`boggle-initial-${index + 1}`).textContent = initials[index] || '';
-  };
-  input.addEventListener('input', updateTiles);
-  document.getElementById('boggle-save-score').addEventListener('click', async () => {
-    const initials = input.value;
-    if (initials.length !== 3) { message('Enter three initials to save your score.', true); input.focus(); return; }
-    await saveLeaderboardScore(score, initials);
-    el.summary.hidden = true;
+  const response = await fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'save_boggle_highscore', initials, score })
   });
-  document.getElementById('boggle-cancel-score').addEventListener('click', () => showSummary(true));
+  if (!response.ok) throw new Error('Unable to save Boggle score.');
+
+  return response.json();
+}
+
+function updateInitialTiles(input) {
+  const initials = input.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  input.value = initials;
+  for (let index = 0; index < 3; index += 1) {
+    const tile = document.getElementById(`boggle-initial-${index + 1}`);
+    if (!tile) continue;
+    tile.textContent = initials[index] || '';
+    tile.classList.toggle('empty', !initials[index]);
+    tile.classList.toggle('active', index === initials.length);
+  }
+}
+
+function triggerHighScoreBurst() {
+  const gridRect = el.grid.getBoundingClientRect();
+  const centerX = gridRect.left + (gridRect.width / 2);
+  const centerY = gridRect.top + (gridRect.height / 2);
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const maxDimension = Math.max(window.innerWidth, window.innerHeight);
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < 150; index += 1) {
+    const particle = document.createElement('div');
+    particle.className = `particle mega-burst${Math.random() > 0.5 ? ' alt' : ''}`;
+    particle.textContent = alphabet[Math.floor(Math.random() * alphabet.length)];
+    particle.style.left = `${centerX}px`;
+    particle.style.top = `${centerY}px`;
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 100 + Math.random() * (maxDimension * 0.6);
+    particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+    particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+    particle.style.setProperty('--rot', `${(Math.random() - 0.5) * 720}deg`);
+    fragment.append(particle);
+    setTimeout(() => particle.remove(), 3000);
+  }
+
+  document.body.append(fragment);
+}
+
+async function showLeaderboard(isTopScore = false) {
+  el.summary.hidden = false;
+  el.summary.classList.toggle('is-celebration', isTopScore);
+  el.summary.replaceChildren();
+
+  const title = document.createElement('h2');
+  title.textContent = isTopScore ? 'NEW DAILY HIGH SCORE!' : 'BIG BOGGLE HIGH SCORES';
+  const scores = document.createElement('ul');
+  scores.className = 'leaderboard-list';
+  scores.textContent = 'Loading...';
+  const playAgain = document.createElement('button');
+  playAgain.className = 'arcade-btn';
+  playAgain.type = 'button';
+  playAgain.textContent = 'PLAY AGAIN';
+  playAgain.addEventListener('click', startMatch);
+  el.summary.append(title, scores, playAgain);
+
+  if (isTopScore) triggerHighScoreBurst();
+
+  try {
+    renderLeaderboard(await getLeaderboardScores(), scores);
+    await loadLeaderboard();
+  } catch (error) {
+    scores.textContent = 'Unable to load scores.';
+  }
+}
+
+function openScoreEntry(score) {
+  el.summary.hidden = false;
+  el.summary.classList.remove('is-celebration');
+  el.summary.innerHTML = `
+    <h2>GAME OVER</h2>
+    <p>Final Score: <strong>${score}</strong></p>
+    <div class="initials-wrapper">
+      <input id="boggle-initials-input" class="hidden-initials-input" type="text" maxlength="3" autocomplete="off" aria-label="Enter your initials">
+      <div class="initial-tile empty active" id="boggle-initial-1"></div>
+      <div class="initial-tile empty" id="boggle-initial-2"></div>
+      <div class="initial-tile empty" id="boggle-initial-3"></div>
+    </div>
+    <button id="boggle-save-score" class="arcade-btn" type="button">SAVE SCORE</button>
+  `;
+
+  const input = document.getElementById('boggle-initials-input');
+  const wrapper = el.summary.querySelector('.initials-wrapper');
+  const saveButton = document.getElementById('boggle-save-score');
+  if (!input || !wrapper || !saveButton) return;
+
+  const focusInput = () => input.focus();
+  input.addEventListener('input', () => updateInitialTiles(input));
+  input.addEventListener('focus', () => wrapper.classList.add('focused'));
+  input.addEventListener('blur', () => wrapper.classList.remove('focused'));
+  wrapper.addEventListener('click', focusInput);
+  wrapper.addEventListener('touchstart', focusInput);
+  saveButton.addEventListener('click', async () => {
+    saveButton.disabled = true;
+    try {
+      const result = await saveLeaderboardScore(score, input.value);
+      await showLeaderboard(result.is_top_score === true);
+    } catch (error) {
+      message('Score could not be saved.', true);
+      saveButton.disabled = false;
+    }
+  });
   input.focus();
 }
+
 function finishRound() {
-  if (state.locked) return; state.locked = true; clearInterval(state.timer); state.path = []; state.roundScores.push(roundScore()); render();
-  if (state.round === 2) return showSummary(true);
-  showSummary(false);
+  if (state.locked) return;
+
+  state.locked = true;
+  clearInterval(state.timer);
+  state.path = [];
+  state.roundScores.push(roundScore());
+  render();
+  showSummary(state.round === 2);
 }
+
 function showSummary(done) {
-  const current = state.roundScores.at(-1); const totalScore = state.roundScores.reduce((sum, value) => sum + value, 0);
-  el.summary.hidden = false; el.summary.innerHTML = done
-    ? `<h2>MATCH COMPLETE</h2><p>Round 1: ${state.roundScores[0]} | Round 2: ${state.roundScores[1]}</p><p><strong>Cumulative total: ${totalScore}</strong></p><button class="arcade-btn" type="button">SAVE SCORE</button><button class="arcade-btn" type="button">PLAY AGAIN</button>`
-    : `<h2>ROUND 1 COMPLETE</h2><p>Round 1 score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND 2</button>`;
-  const buttons = el.summary.querySelectorAll('button');
+  const current = state.roundScores.at(-1);
+  const totalScore = state.roundScores.reduce((sum, value) => sum + value, 0);
   if (done) {
-    buttons[0].addEventListener('click', () => openScoreEntry(totalScore));
-    buttons[1].addEventListener('click', startMatch);
-  } else buttons[0].addEventListener('click', () => startRound(2));
+    openScoreEntry(totalScore);
+    return;
+  }
+
+  el.summary.hidden = false;
+  el.summary.classList.remove('is-celebration');
+  el.summary.innerHTML = `<h2>ROUND 1 COMPLETE</h2><p>Round 1 score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND 2</button>`;
+  el.summary.querySelector('button').addEventListener('click', () => startRound(2));
 }
+
 function startRound(round) {
-  clearInterval(state.timer); state.round = round; state.seconds = BOGGLE_SECONDS; state.tiles = Array.from({length:25}, () => BOGGLE_BAG[Math.floor(Math.random() * BOGGLE_BAG.length)]);
-  state.path = []; state.words = new Map(); state.locked = false; el.summary.hidden = true; el.summary.replaceChildren(); renderWords(); message(`Round ${round} has started.`); render();
-  state.timer = setInterval(() => { if (--state.seconds <= 0) { state.seconds = 0; finishRound(); } else render(); }, 1000);
+  clearInterval(state.timer);
+  state.round = round;
+  state.seconds = BOGGLE_SECONDS;
+  state.tiles = Array.from({ length: BOGGLE_SIZE * BOGGLE_SIZE }, () => BOGGLE_BAG[Math.floor(Math.random() * BOGGLE_BAG.length)]);
+  state.path = [];
+  state.words = new Map();
+  state.locked = false;
+  el.summary.hidden = true;
+  el.summary.classList.remove('is-celebration');
+  el.summary.replaceChildren();
+  renderWords();
+  message(`Round ${round} has started.`);
+  render();
+  state.timer = setInterval(() => {
+    state.seconds -= 1;
+    if (state.seconds <= 0) {
+      state.seconds = 0;
+      finishRound();
+      return;
+    }
+    render();
+  }, 1000);
 }
-function startMatch() { state.roundScores = []; startRound(1); }
+
+function startMatch() {
+  state.roundScores = [];
+  startRound(1);
+}
+
 async function loadDictionary() {
-  try { const response = await fetch('data/boggle-uk-scowl-60.txt', { cache: 'force-cache' }); if (!response.ok) throw new Error('Dictionary unavailable'); const text = await response.text(); text.trim().split(/\r?\n/).forEach(entry => state.dictionary.add(entry)); if (state.dictionary.size === 0) throw new Error('Dictionary empty'); startMatch(); }
-  catch (error) { message('Dictionary failed to load. Refresh or contact the site owner.', true); }
+  try {
+    const response = await fetch('data/boggle-uk-scowl-60.txt', { cache: 'force-cache' });
+    if (!response.ok) throw new Error('Dictionary unavailable');
+    const text = await response.text();
+    text.trim().split(/\r?\n/).forEach(entry => state.dictionary.add(entry));
+    if (state.dictionary.size === 0) throw new Error('Dictionary empty');
+    startMatch();
+  } catch (error) {
+    message('Dictionary failed to load. Refresh or contact the site owner.', true);
+  }
 }
-el.backspace.addEventListener('click', () => { state.path.pop(); message('Last tile removed.'); render(); });
-el.clear.addEventListener('click', () => { state.path = []; message('Word cleared.'); render(); });
+
+el.backspace.addEventListener('click', () => {
+  state.path.pop();
+  message('Last tile removed.');
+  render();
+});
+el.clear.addEventListener('click', () => {
+  state.path = [];
+  message('Word cleared.');
+  render();
+});
 el.enter.addEventListener('click', submit);
 loadLeaderboard();
 loadDictionary();
