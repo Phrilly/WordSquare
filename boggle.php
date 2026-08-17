@@ -12,7 +12,7 @@ function autoVer(string $url): string
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Word Square - Big Boggle Sandbox</title>
+  <title>Word Square - Big Boggle</title>
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/base.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/board.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/leaderboard.css'), ENT_QUOTES, 'UTF-8') ?>">
@@ -23,7 +23,7 @@ function autoVer(string $url): string
 <body class="boggle-page">
   <main class="boggle-app">
     <header class="boggle-header">
-      <div><div class="boggle-label">BIG BOGGLE SANDBOX</div><div id="boggle-round">ROUND 1 OF 3</div></div>
+      <div><div class="boggle-label">BIG BOGGLE</div><div id="boggle-round">ROUND 1 OF 3</div></div>
       <div><div class="boggle-label">CUMULATIVE</div><output id="boggle-score">0</output></div>
       <div><div class="boggle-label">TIME</div><time id="boggle-timer">2:00</time></div>
       <button id="boggle-view-scores" class="arcade-btn mini-btn boggle-scores-button" type="button">HIGH SCORES</button>

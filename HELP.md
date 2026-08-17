@@ -10,13 +10,14 @@
 - Letters stay on the board after placement unless removed by a mode mechanic (for example, Tetris clears or bombs).
 - Daily games are ranked on mode-specific leaderboards.
 
-## Daily 6-Day Variant Schedule
+## Daily 7-Day Variant Schedule
 - Day 0: Bomb
 - Day 1: Scrabble
 - Day 2: Lookahead
 - Day 3: MFD (My First Dictionary)
 - Day 4: Tetris
 - Day 5: Classic
+- Day 6: Big Boggle
 
 ## Classic / Bomb / Lookahead / MFD Scoring
 - 3-letter word: 1 point
@@ -67,6 +68,15 @@
 - Survival top-up: +1 bomb every 60 seconds survived, up to the cap of 3.
 - Bomb top-up cue: a bright strip blast, icon flash/pop, expanding rings, and a +1 BOMB READY label near the bomb bar.
 - If any column reaches the top (no legal drop), the run ends.
+
+### Big Boggle
+- Big Boggle uses a fixed 5x5 weighted-letter board for each of three two-minute rounds.
+- All players receive the same three boards for the UTC day; Play Again repeats them for fair comparison.
+- Form words by joining horizontally, vertically, or diagonally adjacent tiles without reusing a tile.
+- Words must contain at least four letters.
+- 4 letters score 1, 5 score 2, 6 score 3, 7 score 5, and 8 or more score 11.
+- Desktop: click the first tile, glide across adjacent tiles, then click the final tile to submit.
+- Mobile: tap the final selected tile again to submit.
 
 ## Validation Notes
 - All words are validated against the server dictionary.

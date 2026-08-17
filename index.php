@@ -14,33 +14,42 @@ function autoVer(string $url): string {
     return $url . '?v=' . time(); // Fallback if file isn't found
 }
 
-// VARIANT SCHEDULER: 6-Day Cycle Calculation
+// VARIANT SCHEDULER: 7-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // Default cycle logic
-$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 6 === 0);       // Day 0
-$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 6 === 0); // Day 1
-$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 6 === 0); // Day 2
-$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 6 === 0); // Day 3 (MFD)
-$isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 6 === 0); // Day 4
+$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0);       // Day 0
+$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0); // Day 1
+$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // Day 2
+$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0); // Day 3 (MFD)
+$isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
+$isBoggleDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 6) % 7 === 0); // Day 6
 
 // DEV OVERRIDES: Strict Input Validation
-if (isset($_GET['mode'])) {
-    $mode = htmlspecialchars(trim((string)$_GET['mode']), ENT_QUOTES, 'UTF-8');
+$rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
+if (isset($_GET['mode']) || isset($_GET['']) || $rawQuery === '=boggle') {
+    $mode = trim((string)($_GET['mode'] ?? $_GET[''] ?? ($rawQuery === '=boggle' ? 'boggle' : '')));
   if ($mode === 'classic') {
-    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
+    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
   } elseif ($mode === 'bomb') {
-      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
+      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'lookahead') {
-      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false;
+      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'scrabble') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'mfd' || $mode === 'common') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false; $isBoggleDay = false;
     } elseif ($mode === 'tetris') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true; $isBoggleDay = false;
+    } elseif ($mode === 'boggle') {
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = true;
     }
+}
+
+if ($isBoggleDay) {
+    header('Location: boggle.php', true, 302);
+    exit;
 }
 
 $modeDisplayName = 'Classic';
