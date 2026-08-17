@@ -15,7 +15,6 @@ const el = {
   timer: document.getElementById('boggle-timer'),
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
-  enter: document.getElementById('boggle-enter'),
   found: document.getElementById('boggle-found-list'),
   summary: document.getElementById('boggle-summary'),
   leaderboard: document.getElementById('boggle-leaderboard-list')
@@ -72,10 +71,7 @@ function render() {
       state.ignoreNextMouseClick = true;
       if (state.desktopPathDrawing) {
         if (state.path.at(-1) !== index) select(index);
-        state.desktopPathDrawing = false;
-        state.selectionComplete = true;
-        render();
-        message('Word selection complete. Press Enter Word.');
+        completeSelection();
         return;
       }
 
@@ -87,6 +83,10 @@ function render() {
     button.addEventListener('click', event => {
       if (event.detail !== 0 && state.ignoreNextMouseClick) {
         state.ignoreNextMouseClick = false;
+        return;
+      }
+      if (state.path.at(-1) === index && state.path.length > 0) {
+        completeSelection();
         return;
       }
       select(index);
@@ -103,7 +103,6 @@ function render() {
   }));
   el.backspace.disabled = state.locked || state.path.length === 0;
   el.clear.disabled = state.locked || state.path.length === 0;
-  el.enter.disabled = state.locked || state.path.length === 0;
   el.score.textContent = String(total());
   el.round.textContent = `ROUND ${state.round} OF ${BOGGLE_ROUNDS}`;
   el.timer.textContent = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
@@ -124,8 +123,31 @@ function select(index) {
 
   state.path.push(index);
   state.selectionComplete = false;
-  message(state.desktopPathDrawing ? 'Move across adjacent tiles, or enter the word.' : 'Select more tiles or enter the word.');
+  if (state.desktopPathDrawing) {
+    message('Move across adjacent tiles, then click the final tile.');
+  } else if (word().length >= 4) {
+    message('Select more tiles, or tap the final tile again to enter the word.');
+  } else {
+    message('Select more adjacent tiles.');
+  }
   render();
+}
+
+function completeSelection() {
+  state.desktopPathDrawing = false;
+  if (word().length < 4) {
+    state.selectionComplete = false;
+    render();
+    message('Words need at least 4 letters.', true);
+    return;
+  }
+
+  state.selectionComplete = true;
+  render();
+  message('Word selection complete.');
+  window.setTimeout(() => {
+    if (state.selectionComplete) submit();
+  }, 120);
 }
 
 function submit() {
@@ -424,7 +446,6 @@ el.clear.addEventListener('click', () => {
   message('Word cleared.');
   render();
 });
-el.enter.addEventListener('click', submit);
 el.grid.addEventListener('pointermove', event => {
   if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
 
