@@ -1,10 +1,10 @@
 .boggle-page { padding: 16px; }
 .boggle-app { width: min(100%, 540px); }
-.boggle-header { display:flex; justify-content:space-between; gap:12px; align-items:end; margin-bottom:16px; text-align:center; }
-.boggle-label { color:var(--highlight); font:700 10px Arial,sans-serif; letter-spacing:.12em; }
-#boggle-score, #boggle-timer, #boggle-round { display:block; font:700 clamp(18px,6vw,30px) Arial,sans-serif; }
-.boggle-scores-button { align-self:center; white-space:nowrap; }
-.boggle-help-button { align-self:center; }
+.boggle-header { position:relative; display:flex; justify-content:space-between; gap:6px; align-items:end; min-height:42px; margin-bottom:8px; padding-right:104px; text-align:center; }
+.boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; }
+#boggle-score, #boggle-timer, #boggle-round { display:block; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
+.boggle-scores-button { position:absolute; top:0; right:30px; padding:6px 7px; font-size:10px; white-space:nowrap; }
+.boggle-help-button { position:absolute; top:0; right:0; width:26px; height:26px; padding:0; font-size:18px; line-height:1; }
 .boggle-preview { min-height:64px; padding:8px; border:1px solid rgba(255,255,255,.25); border-radius:10px; background:rgba(0,0,0,.14); }
 .boggle-preview-row { display:flex; align-items:center; gap:6px; }
 .boggle-preview-tiles { display:flex; flex:1 1 auto; flex-wrap:nowrap; align-items:center; justify-content:flex-start; min-width:0; min-height:44px; gap:5px; overflow-x:auto; overflow-y:hidden; }
@@ -49,4 +49,4 @@
 .boggle-help-modal ul { max-width:420px; margin:0; padding-left:22px; line-height:1.35; }
 .boggle-help-modal li { margin:7px 0; }
 .boggle-help-modal button { margin:14px auto 0; }
-@media (max-width:500px) { .boggle-header { gap:6px; } .boggle-label { font-size:8px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }
+@media (max-width:500px) { .boggle-header { gap:4px; padding-right:100px; } .boggle-label { font-size:8px; } .boggle-scores-button { right:30px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }
