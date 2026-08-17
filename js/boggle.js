@@ -349,11 +349,12 @@ function triggerHighScoreBurst() {
 
 async function showLeaderboard(isTopScore = false) {
   el.summary.hidden = false;
+  el.summary.classList.add('is-leaderboard');
   el.summary.classList.toggle('is-celebration', isTopScore);
   el.summary.replaceChildren();
 
   const title = document.createElement('h2');
-  title.textContent = isTopScore ? 'NEW DAILY HIGH SCORE!' : 'BIG BOGGLE HIGH SCORES';
+  title.textContent = isTopScore ? 'NEW DAILY HIGH SCORE!' : 'HIGH SCORES';
   const scores = document.createElement('ul');
   scores.className = 'leaderboard-list';
   scores.textContent = 'Loading...';
@@ -375,6 +376,7 @@ async function showLeaderboard(isTopScore = false) {
 
 function openScoreEntry(score) {
   el.summary.hidden = false;
+  el.summary.classList.remove('is-leaderboard');
   el.summary.classList.remove('is-celebration');
   el.summary.innerHTML = `
     <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
@@ -467,6 +469,7 @@ function showSummary(done) {
   }
 
   el.summary.hidden = false;
+  el.summary.classList.remove('is-leaderboard');
   el.summary.classList.remove('is-celebration');
   const nextRound = state.round + 1;
   el.summary.innerHTML = `<h2>ROUND ${state.round} COMPLETE</h2><p>Round ${state.round} score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND ${nextRound}</button>`;
@@ -484,6 +487,7 @@ function startRound(round) {
   state.selectionComplete = false;
   state.selectionFeedback = null;
   el.summary.hidden = true;
+  el.summary.classList.remove('is-leaderboard');
   el.summary.classList.remove('is-celebration');
   el.summary.replaceChildren();
   renderWords();
