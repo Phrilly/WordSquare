@@ -23,9 +23,9 @@ function autoVer(string $url): string
 <body class="boggle-page">
   <main class="boggle-app">
     <header class="boggle-header">
-      <div><div class="boggle-label">BIG BOGGLE SANDBOX</div><div id="boggle-round">ROUND 1 OF 2</div></div>
+      <div><div class="boggle-label">BIG BOGGLE SANDBOX</div><div id="boggle-round">ROUND 1 OF 3</div></div>
       <div><div class="boggle-label">CUMULATIVE</div><output id="boggle-score">0</output></div>
-      <div><div class="boggle-label">TIME</div><time id="boggle-timer">3:00</time></div>
+      <div><div class="boggle-label">TIME</div><time id="boggle-timer">2:00</time></div>
     </header>
     <section class="boggle-preview" aria-label="Current word">
       <div class="boggle-preview-row">
