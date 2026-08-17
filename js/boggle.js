@@ -17,7 +17,9 @@ const el = {
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
   found: document.getElementById('boggle-found-list'),
-  summary: document.getElementById('boggle-summary')
+  summary: document.getElementById('boggle-summary'),
+  previewPanel: document.querySelector('.boggle-preview'),
+  foundPanel: document.querySelector('.boggle-found')
 };
 
 function tileText(index) {
@@ -348,6 +350,8 @@ function triggerHighScoreBurst() {
 }
 
 async function showLeaderboard(isTopScore = false) {
+  el.previewPanel.hidden = true;
+  el.foundPanel.hidden = true;
   el.summary.hidden = false;
   el.summary.classList.add('is-leaderboard');
   el.summary.classList.toggle('is-celebration', isTopScore);
@@ -486,6 +490,8 @@ function startRound(round) {
   state.locked = false;
   state.selectionComplete = false;
   state.selectionFeedback = null;
+  el.previewPanel.hidden = false;
+  el.foundPanel.hidden = false;
   el.summary.hidden = true;
   el.summary.classList.remove('is-leaderboard');
   el.summary.classList.remove('is-celebration');
