@@ -27,6 +27,7 @@ function autoVer(string $url): string
       <div><div class="boggle-label">CUMULATIVE</div><output id="boggle-score">0</output></div>
       <div><div class="boggle-label">TIME</div><time id="boggle-timer">2:00</time></div>
       <button id="boggle-view-scores" class="arcade-btn mini-btn boggle-scores-button" type="button">HIGH SCORES</button>
+      <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button">HELP</button>
     </header>
     <section class="boggle-preview" aria-label="Current word">
       <div class="boggle-preview-row">
@@ -40,6 +41,18 @@ function autoVer(string $url): string
     </section>
     <section id="boggle-grid" class="grid-container boggle-grid" aria-label="Boggle letter board">
       <section id="boggle-summary" class="boggle-summary" hidden aria-live="polite"></section>
+      <section id="boggle-help-modal" class="boggle-help-modal" hidden aria-modal="true" aria-label="Big Boggle rules">
+        <h2>HOW TO PLAY</h2>
+        <ul>
+          <li>Play three two-minute rounds on 5x5 boards.</li>
+          <li>Join touching tiles horizontally, vertically, or diagonally. Do not reuse a tile.</li>
+          <li>Words need at least four letters: 4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11 points.</li>
+          <li>Desktop: click the first tile, glide through the path, then click the final tile.</li>
+          <li>Mobile: tap the final selected tile again to submit.</li>
+          <li>Every player receives the same three daily boards.</li>
+        </ul>
+        <button id="boggle-close-help" class="arcade-btn" type="button">CLOSE</button>
+      </section>
     </section>
     <section class="boggle-found" aria-labelledby="boggle-found-title">
       <h2 id="boggle-found-title">WORDS FOUND</h2>
