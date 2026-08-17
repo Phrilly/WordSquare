@@ -49,7 +49,11 @@ function autoVer(string $url): string
           <li>Words need at least four letters: 4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11 points.</li>
           <li>Desktop: click the first tile, glide through the path, then click the final tile.</li>
           <li>Mobile: tap the final selected tile again to submit.</li>
+          <li>The first tile is green while a desktop path is active; the final clicked tile is gold.</li>
+          <li>Double-click any board tile to clear the full current selection. Backspace removes one tile and X clears the path.</li>
+          <li>Invalid words show red outlines. Already-found words show yellow outlines. Click any tile to clear either rejected path.</li>
           <li>Every player receives the same three daily boards.</li>
+          <li>SCORES ends an unsaved match and opens the daily leaderboard.</li>
         </ul>
         <button id="boggle-close-help" class="arcade-btn" type="button">CLOSE</button>
       </section>
