@@ -10,7 +10,7 @@
 .boggle-preview-tile { width:44px; height:44px; border-radius:6px; background:#fdf6e3; color:#1a1a1a; }
 #boggle-status { min-height:20px; margin:8px 0 0; text-align:center; font:700 13px Arial,sans-serif; }
 .boggle-grid { margin:16px 0; }
-.boggle-tile { border:0; width:100%; border-radius:8px; background:#fdf6e3; color:#1a1a1a; box-shadow:inset 2px 2px 4px #fff,2px 3px 5px rgba(0,0,0,.4); cursor:pointer; touch-action:manipulation; }
+.boggle-tile { width:100%; border:0; cursor:pointer; touch-action:manipulation; }
 .boggle-tile.is-selected { background:var(--highlight); outline:3px solid #fff; transform:scale(.94); }
 .boggle-tile:focus-visible, .boggle-controls button:focus-visible { outline:3px solid var(--gold-1); outline-offset:2px; }
 .boggle-controls { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }

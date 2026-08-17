@@ -19,7 +19,7 @@ function roundScore() { return [...state.words.values()].reduce((sum, value) => 
 function message(text, invalid = false) { el.status.textContent = text; el.status.style.color = invalid ? '#fecaca' : '#ffffff'; }
 function render() {
   el.grid.replaceChildren(...state.tiles.map((letter, index) => {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'boggle-tile';
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'grid-cell boggle-tile';
     button.textContent = letter === 'Q' ? 'Qu' : letter; button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
     button.classList.toggle('is-selected', state.path.includes(index)); button.disabled = state.locked;
     button.addEventListener('click', () => select(index)); return button;
