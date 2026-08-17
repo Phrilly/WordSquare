@@ -315,11 +315,9 @@ function updateInitialTiles(input) {
   const initials = input.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
   input.value = initials;
   for (let index = 0; index < 3; index += 1) {
-    const tile = document.getElementById(`boggle-initial-${index + 1}`);
+    const tile = document.getElementById(`init-tile-${index + 1}`);
     if (!tile) continue;
     tile.textContent = initials[index] || '';
-    tile.classList.toggle('empty', !initials[index]);
-    tile.classList.toggle('active', index === initials.length);
   }
 }
 
@@ -379,29 +377,63 @@ function openScoreEntry(score) {
   el.summary.hidden = false;
   el.summary.classList.remove('is-celebration');
   el.summary.innerHTML = `
-    <h2>GAME OVER</h2>
+    <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
     <p>${state.roundScores.map((roundScore, index) => `Round ${index + 1}: ${roundScore}`).join(' | ')}</p>
-    <p>Final Score: <strong>${score}</strong></p>
-    <div class="initials-wrapper">
-      <input id="boggle-initials-input" class="hidden-initials-input" type="text" maxlength="3" autocomplete="off" aria-label="Enter your initials">
-      <div class="initial-tile empty active" id="boggle-initial-1"></div>
-      <div class="initial-tile empty" id="boggle-initial-2"></div>
-      <div class="initial-tile empty" id="boggle-initial-3"></div>
+    <div style="font-size:20px; margin-bottom:25px;">
+      Final Score: <strong id="final-score-display" style="color:var(--highlight)">${score}</strong>
     </div>
-    <button id="boggle-save-score" class="arcade-btn" type="button">SAVE SCORE</button>
+    <div id="daily-save-section">
+      <div class="initials-wrapper">
+        <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
+        <div class="initial-tile" id="init-tile-1"></div>
+        <div class="initial-tile" id="init-tile-2"></div>
+        <div class="initial-tile" id="init-tile-3"></div>
+      </div>
+      <button class="arcade-btn" id="submit-score-btn" type="button">SAVE SCORE</button>
+    </div>
   `;
 
-  const input = document.getElementById('boggle-initials-input');
+  const input = document.getElementById('hidden-initials');
   const wrapper = el.summary.querySelector('.initials-wrapper');
-  const saveButton = document.getElementById('boggle-save-score');
+  const saveButton = document.getElementById('submit-score-btn');
   if (!input || !wrapper || !saveButton) return;
 
-  const focusInput = () => input.focus();
+  const focusInput = () => {
+    input.focus();
+    window.setTimeout(() => input.focus(), 50);
+  };
   input.addEventListener('input', () => updateInitialTiles(input));
   input.addEventListener('focus', () => wrapper.classList.add('focused'));
   input.addEventListener('blur', () => wrapper.classList.remove('focused'));
+  input.addEventListener('paste', event => {
+    event.preventDefault();
+    input.value = (event.clipboardData || window.clipboardData).getData('text').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  input.addEventListener('keydown', event => {
+    if (/^[a-zA-Z]$/.test(event.key)) {
+      event.preventDefault();
+      input.value = (input.value + event.key.toUpperCase()).slice(0, 3);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      focusInput();
+    } else if (event.key === 'Backspace') {
+      event.preventDefault();
+      input.value = input.value.slice(0, -1);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      focusInput();
+    }
+  });
+  wrapper.setAttribute('tabindex', '0');
+  wrapper.setAttribute('role', 'textbox');
+  wrapper.setAttribute('aria-label', 'Enter your initials');
   wrapper.addEventListener('click', focusInput);
   wrapper.addEventListener('touchstart', focusInput);
+  wrapper.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      focusInput();
+    }
+  });
   saveButton.addEventListener('click', async () => {
     saveButton.disabled = true;
     try {
@@ -412,7 +444,7 @@ function openScoreEntry(score) {
       saveButton.disabled = false;
     }
   });
-  input.focus();
+  focusInput();
 }
 
 function finishRound() {
