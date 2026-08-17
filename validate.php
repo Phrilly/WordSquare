@@ -436,6 +436,42 @@ if (isset($input['action'])) {
         }
     }
 
+    if ($action === 'get_boggle_highscores') {
+        try {
+            $stmt = $pdo->query("
+                SELECT initials, score
+                FROM boggle_highscores
+                WHERE DATE(created_at) = CURDATE()
+                ORDER BY score DESC, created_at ASC, id ASC
+                LIMIT 8
+            ");
+            jsonResponse(['highscores' => $stmt->fetchAll()]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_boggle_highscores failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to load Boggle high scores.'], 500);
+        }
+    }
+
+    if ($action === 'save_boggle_highscore') {
+        $initials = normaliseInitials($input['initials'] ?? null);
+        $score = isset($input['score']) ? (int)$input['score'] : -1;
+        if ($score < 0 || $score > 100000) {
+            jsonResponse(['error' => 'Invalid Boggle score.'], 400);
+        }
+
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO boggle_highscores (initials, score)
+                VALUES (:initials, :score)
+            ");
+            $stmt->execute([':initials' => $initials, ':score' => $score]);
+            jsonResponse(['success' => true]);
+        } catch (PDOException $e) {
+            error_log('validate.php save_boggle_highscore failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to save Boggle high score.'], 500);
+        }
+    }
+
     if ($action === 'save_score') {
         $initials = normaliseInitials($input['initials'] ?? null);
         $grid = normaliseGridString($input['grid'] ?? '');

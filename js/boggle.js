@@ -8,7 +8,7 @@ const el = {
   round: document.getElementById('boggle-round'), timer: document.getElementById('boggle-timer'),
   backspace: document.getElementById('boggle-backspace'), clear: document.getElementById('boggle-clear'),
   enter: document.getElementById('boggle-enter'), found: document.getElementById('boggle-found-list'),
-  summary: document.getElementById('boggle-summary')
+  summary: document.getElementById('boggle-summary'), leaderboard: document.getElementById('boggle-leaderboard-list')
 };
 function tileText(index) { return state.tiles[index] === 'Q' ? 'QU' : state.tiles[index]; }
 function word() { return state.path.map(tileText).join(''); }
@@ -44,6 +44,32 @@ function submit() {
   message(`+${earned} ${earned === 1 ? 'point' : 'points'}: ${candidate}`); renderWords(); render();
 }
 function renderWords() { el.found.replaceChildren(...[...state.words].sort(([a],[b]) => a.localeCompare(b)).map(([candidate, earned]) => { const item = document.createElement('li'); item.textContent = candidate; const score = document.createElement('strong'); score.textContent = `+${earned}`; item.append(score); return item; })); }
+function renderLeaderboard(scores) {
+  el.leaderboard.replaceChildren(...scores.map((entry, index) => {
+    const item = document.createElement('li');
+    if (index === 0) item.classList.add('is-top-score');
+    const initials = String(entry.initials || '---').padEnd(3, '-').slice(0, 3);
+    item.innerHTML = `<div class="lb-row-container"><div class="lb-rank">${index + 1}.</div><div class="lb-initials-group"><div class="lb-initial-tile">${initials[0]}</div><div class="lb-initial-tile">${initials[1]}</div><div class="lb-initial-tile">${initials[2]}</div></div><div class="lb-score-tile">${entry.score}</div></div>`;
+    return item;
+  }));
+  if (scores.length === 0) el.leaderboard.innerHTML = '<li>No scores today.</li>';
+}
+async function loadLeaderboard() {
+  try {
+    const response = await fetch('validate.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get_boggle_highscores' }) });
+    const data = await response.json();
+    renderLeaderboard(Array.isArray(data.highscores) ? data.highscores : []);
+  } catch (error) { el.leaderboard.innerHTML = '<li>Unable to load scores.</li>'; }
+}
+async function saveLeaderboardScore(score) {
+  const initials = (window.prompt('Enter three initials for the Big Boggle leaderboard:', '') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  if (!initials) return loadLeaderboard();
+  try {
+    const response = await fetch('validate.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save_boggle_highscore', initials, score }) });
+    if (!response.ok) throw new Error('Save failed');
+    await loadLeaderboard();
+  } catch (error) { message('Score could not be saved.', true); }
+}
 function finishRound() {
   if (state.locked) return; state.locked = true; clearInterval(state.timer); state.path = []; state.roundScores.push(roundScore()); render();
   if (state.round === 2) return showSummary(true);
@@ -52,9 +78,13 @@ function finishRound() {
 function showSummary(done) {
   const current = state.roundScores.at(-1); const totalScore = state.roundScores.reduce((sum, value) => sum + value, 0);
   el.summary.hidden = false; el.summary.innerHTML = done
-    ? `<h2>MATCH COMPLETE</h2><p>Round 1: ${state.roundScores[0]} | Round 2: ${state.roundScores[1]}</p><p><strong>Cumulative total: ${totalScore}</strong></p><button class="arcade-btn" type="button">PLAY AGAIN</button>`
+    ? `<h2>MATCH COMPLETE</h2><p>Round 1: ${state.roundScores[0]} | Round 2: ${state.roundScores[1]}</p><p><strong>Cumulative total: ${totalScore}</strong></p><button class="arcade-btn" type="button">SAVE SCORE</button><button class="arcade-btn" type="button">PLAY AGAIN</button>`
     : `<h2>ROUND 1 COMPLETE</h2><p>Round 1 score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND 2</button>`;
-  el.summary.querySelector('button').addEventListener('click', () => done ? startMatch() : startRound(2));
+  const buttons = el.summary.querySelectorAll('button');
+  if (done) {
+    buttons[0].addEventListener('click', () => saveLeaderboardScore(totalScore));
+    buttons[1].addEventListener('click', startMatch);
+  } else buttons[0].addEventListener('click', () => startRound(2));
 }
 function startRound(round) {
   clearInterval(state.timer); state.round = round; state.seconds = BOGGLE_SECONDS; state.tiles = Array.from({length:25}, () => BOGGLE_BAG[Math.floor(Math.random() * BOGGLE_BAG.length)]);
@@ -69,4 +99,5 @@ async function loadDictionary() {
 el.backspace.addEventListener('click', () => { state.path.pop(); message('Last tile removed.'); render(); });
 el.clear.addEventListener('click', () => { state.path = []; message('Word cleared.'); render(); });
 el.enter.addEventListener('click', submit);
+loadLeaderboard();
 loadDictionary();
