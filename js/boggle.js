@@ -17,8 +17,11 @@ const el = {
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
   viewScores: document.getElementById('boggle-view-scores'),
+  helpButton: document.getElementById('boggle-help-button'),
   found: document.getElementById('boggle-found-list'),
   summary: document.getElementById('boggle-summary'),
+  help: document.getElementById('boggle-help-modal'),
+  closeHelp: document.getElementById('boggle-close-help'),
   previewPanel: document.querySelector('.boggle-preview'),
   foundPanel: document.querySelector('.boggle-found')
 };
@@ -138,7 +141,7 @@ function render() {
     return button;
   });
 
-  el.grid.replaceChildren(...tileButtons, el.summary);
+  el.grid.replaceChildren(...tileButtons, el.summary, el.help);
   el.preview.replaceChildren(...state.path.map(index => {
     const tile = document.createElement('span');
     tile.className = 'boggle-preview-tile';
@@ -353,6 +356,7 @@ function triggerHighScoreBurst() {
 async function showLeaderboard(isTopScore = false) {
   el.previewPanel.hidden = true;
   el.foundPanel.hidden = true;
+  el.help.hidden = true;
   el.summary.hidden = false;
   el.summary.classList.add('is-leaderboard');
   el.summary.classList.toggle('is-celebration', isTopScore);
@@ -493,6 +497,7 @@ function startRound(round) {
   state.selectionFeedback = null;
   el.previewPanel.hidden = false;
   el.foundPanel.hidden = false;
+  el.help.hidden = true;
   el.summary.hidden = true;
   el.summary.classList.remove('is-leaderboard');
   el.summary.classList.remove('is-celebration');
@@ -516,6 +521,17 @@ function startMatch() {
   startRound(1);
 }
 
+function showStartScreen() {
+  el.previewPanel.hidden = true;
+  el.foundPanel.hidden = true;
+  el.help.hidden = true;
+  el.summary.hidden = false;
+  el.summary.classList.remove('is-leaderboard', 'is-celebration');
+  el.summary.innerHTML = '<h2>BIG BOGGLE</h2><p>Three rounds. Two minutes each.</p><p>Find words of four letters or more.</p><button class="arcade-btn" type="button">START GAME</button>';
+  el.summary.querySelector('button').addEventListener('click', startMatch);
+  render();
+}
+
 function viewHighScores() {
   if (!state.locked) {
     clearInterval(state.timer);
@@ -535,7 +551,7 @@ async function loadDictionary() {
     const text = await response.text();
     text.trim().split(/\r?\n/).forEach(entry => state.dictionary.add(entry));
     if (state.dictionary.size === 0) throw new Error('Dictionary empty');
-    startMatch();
+    showStartScreen();
   } catch (error) {
     message('Dictionary failed to load. Refresh or contact the site owner.', true);
   }
@@ -558,6 +574,12 @@ el.clear.addEventListener('click', () => {
   render();
 });
 el.viewScores.addEventListener('click', viewHighScores);
+el.helpButton.addEventListener('click', () => {
+  el.help.hidden = false;
+});
+el.closeHelp.addEventListener('click', () => {
+  el.help.hidden = true;
+});
 el.grid.addEventListener('pointermove', event => {
   if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
 
