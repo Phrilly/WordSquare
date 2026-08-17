@@ -59,6 +59,7 @@ function render() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'grid-cell boggle-tile';
+    button.dataset.index = String(index);
     button.textContent = letter === 'Q' ? 'Qu' : letter;
     button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
     button.classList.toggle('is-selected', state.path.includes(index));
@@ -69,9 +70,6 @@ function render() {
       state.desktopPathDrawing = true;
       state.ignoreNextMouseClick = true;
       select(index);
-    });
-    button.addEventListener('pointerenter', event => {
-      if (event.pointerType === 'mouse' && state.desktopPathDrawing && state.path.at(-1) !== index) select(index);
     });
     button.addEventListener('click', event => {
       if (event.detail !== 0 && state.ignoreNextMouseClick) {
@@ -408,6 +406,15 @@ el.clear.addEventListener('click', () => {
   render();
 });
 el.enter.addEventListener('click', submit);
+el.grid.addEventListener('pointermove', event => {
+  if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
+
+  const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest('.boggle-tile');
+  if (!tile || !el.grid.contains(tile)) return;
+
+  const index = Number.parseInt(tile.dataset.index ?? '', 10);
+  if (Number.isInteger(index) && state.path.at(-1) !== index) select(index);
+});
 el.grid.addEventListener('pointerleave', event => {
   if (!el.grid.contains(event.relatedTarget)) state.desktopPathDrawing = false;
 });
