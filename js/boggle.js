@@ -119,6 +119,14 @@ function render() {
       }
       select(index);
     });
+    button.addEventListener('dblclick', event => {
+      event.preventDefault();
+      state.desktopPathDrawing = false;
+      state.selectionComplete = false;
+      state.path = [];
+      message('Word selection cleared.');
+      render();
+    });
     return button;
   });
 
