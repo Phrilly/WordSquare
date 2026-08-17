@@ -33,7 +33,6 @@ function autoVer(string $url): string
         <div class="boggle-controls">
           <button id="boggle-backspace" class="arcade-btn mini-btn boggle-icon-button" type="button" aria-label="Remove last tile" title="Remove last tile">&#9003;</button>
           <button id="boggle-clear" class="arcade-btn mini-btn mini-btn-warn boggle-icon-button" type="button" aria-label="Clear word" title="Clear word">&#215;</button>
-          <button id="boggle-enter" class="arcade-btn mini-btn boggle-icon-button" type="button" aria-label="Enter word" title="Enter word">&#8629;</button>
         </div>
       </div>
       <p id="boggle-status" role="status" aria-live="polite">Loading British English dictionary...</p>
