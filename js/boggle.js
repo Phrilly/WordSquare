@@ -1,9 +1,10 @@
 const BOGGLE_SIZE = 5;
-const BOGGLE_SECONDS = 180;
+const BOGGLE_ROUNDS = 3;
+const BOGGLE_SECONDS = 120;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, ignoreNextMouseClick: false
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -58,11 +59,25 @@ function render() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'grid-cell boggle-tile';
+    button.dataset.index = String(index);
     button.textContent = letter === 'Q' ? 'Qu' : letter;
     button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
     button.classList.toggle('is-selected', state.path.includes(index));
     button.disabled = state.locked;
-    button.addEventListener('click', () => select(index));
+    button.addEventListener('pointerdown', event => {
+      if (event.pointerType !== 'mouse' || state.locked) return;
+      event.preventDefault();
+      state.desktopPathDrawing = true;
+      state.ignoreNextMouseClick = true;
+      select(index);
+    });
+    button.addEventListener('click', event => {
+      if (event.detail !== 0 && state.ignoreNextMouseClick) {
+        state.ignoreNextMouseClick = false;
+        return;
+      }
+      select(index);
+    });
     return button;
   });
 
@@ -77,7 +92,7 @@ function render() {
   el.clear.disabled = state.locked || state.path.length === 0;
   el.enter.disabled = state.locked || state.path.length === 0;
   el.score.textContent = String(total());
-  el.round.textContent = `ROUND ${state.round} OF 2`;
+  el.round.textContent = `ROUND ${state.round} OF ${BOGGLE_ROUNDS}`;
   el.timer.textContent = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
 }
 
@@ -95,7 +110,7 @@ function select(index) {
   }
 
   state.path.push(index);
-  message('Select more tiles or enter the word.');
+  message(state.desktopPathDrawing ? 'Move across adjacent tiles, or enter the word.' : 'Select more tiles or enter the word.');
   render();
 }
 
@@ -274,6 +289,7 @@ function openScoreEntry(score) {
   el.summary.classList.remove('is-celebration');
   el.summary.innerHTML = `
     <h2>GAME OVER</h2>
+    <p>${state.roundScores.map((roundScore, index) => `Round ${index + 1}: ${roundScore}`).join(' | ')}</p>
     <p>Final Score: <strong>${score}</strong></p>
     <div class="initials-wrapper">
       <input id="boggle-initials-input" class="hidden-initials-input" type="text" maxlength="3" autocomplete="off" aria-label="Enter your initials">
@@ -316,7 +332,7 @@ function finishRound() {
   state.path = [];
   state.roundScores.push(roundScore());
   render();
-  showSummary(state.round === 2);
+  showSummary(state.round === BOGGLE_ROUNDS);
 }
 
 function showSummary(done) {
@@ -329,8 +345,9 @@ function showSummary(done) {
 
   el.summary.hidden = false;
   el.summary.classList.remove('is-celebration');
-  el.summary.innerHTML = `<h2>ROUND 1 COMPLETE</h2><p>Round 1 score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND 2</button>`;
-  el.summary.querySelector('button').addEventListener('click', () => startRound(2));
+  const nextRound = state.round + 1;
+  el.summary.innerHTML = `<h2>ROUND ${state.round} COMPLETE</h2><p>Round ${state.round} score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND ${nextRound}</button>`;
+  el.summary.querySelector('button').addEventListener('click', () => startRound(nextRound));
 }
 
 function startRound(round) {
@@ -377,15 +394,32 @@ async function loadDictionary() {
 }
 
 el.backspace.addEventListener('click', () => {
+  state.desktopPathDrawing = false;
   state.path.pop();
   message('Last tile removed.');
   render();
 });
 el.clear.addEventListener('click', () => {
+  state.desktopPathDrawing = false;
   state.path = [];
   message('Word cleared.');
   render();
 });
 el.enter.addEventListener('click', submit);
+el.grid.addEventListener('pointermove', event => {
+  if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
+
+  const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest('.boggle-tile');
+  if (!tile || !el.grid.contains(tile)) return;
+
+  const index = Number.parseInt(tile.dataset.index ?? '', 10);
+  if (Number.isInteger(index) && state.path.at(-1) !== index) select(index);
+});
+el.grid.addEventListener('pointerleave', event => {
+  if (!el.grid.contains(event.relatedTarget)) state.desktopPathDrawing = false;
+});
+window.addEventListener('blur', () => {
+  state.desktopPathDrawing = false;
+});
 loadLeaderboard();
 loadDictionary();
