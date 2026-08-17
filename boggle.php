@@ -44,10 +44,6 @@ function autoVer(string $url): string
       <h2 id="boggle-found-title">WORDS FOUND</h2>
       <ul id="boggle-found-list"></ul>
     </section>
-    <section class="boggle-leaderboard" aria-labelledby="boggle-leaderboard-title">
-      <h2 id="boggle-leaderboard-title">BIG BOGGLE HIGH SCORES</h2>
-      <ul id="boggle-leaderboard-list" class="leaderboard-list"></ul>
-    </section>
   </main>
   <script src="<?= htmlspecialchars(autoVer('js/boggle.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 </body>
