@@ -1,0 +1,18 @@
+# British English Big Boggle dictionary
+
+`boggle-uk-scowl-60.txt` contains 86,935 uppercase alphabetic words of 4 through
+25 letters. It is generated from the English Speller Database / SCOWL at size 60
+using the British (`B`) spelling profile and variant level 1:
+
+```text
+./scowl --db scowl.db word-list 60 B 1 --deaccent --wo-poses=abbr --categories=
+```
+
+The generated output is filtered to alphabetic words only, uppercased, restricted
+to 4 through 25 characters, and de-duplicated. This retains UK spellings such as
+`COLOUR`, `ORGANISE`, and `THEATRE`.
+
+Source: https://github.com/en-wl/wordlist
+
+SCOWL is distributed under an MIT-like, BSD-compatible license. See the upstream
+`Copyright` file for the complete license and source attribution.
