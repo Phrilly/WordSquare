@@ -36,12 +36,13 @@ function autoVer(string $url): string
       </div>
       <p id="boggle-status" role="status" aria-live="polite">Loading British English dictionary...</p>
     </section>
-    <section id="boggle-grid" class="grid-container boggle-grid" aria-label="Boggle letter board"></section>
+    <section id="boggle-grid" class="grid-container boggle-grid" aria-label="Boggle letter board">
+      <section id="boggle-summary" class="boggle-summary" hidden aria-live="polite"></section>
+    </section>
     <section class="boggle-found" aria-labelledby="boggle-found-title">
       <h2 id="boggle-found-title">WORDS FOUND</h2>
       <ul id="boggle-found-list"></ul>
     </section>
-    <section id="boggle-summary" class="boggle-summary" hidden aria-live="polite"></section>
     <section class="boggle-leaderboard" aria-labelledby="boggle-leaderboard-title">
       <h2 id="boggle-leaderboard-title">BIG BOGGLE HIGH SCORES</h2>
       <ul id="boggle-leaderboard-list" class="leaderboard-list"></ul>

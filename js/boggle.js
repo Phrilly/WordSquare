@@ -18,12 +18,13 @@ function total() { return state.roundScores.reduce((sum, value) => sum + value, 
 function roundScore() { return [...state.words.values()].reduce((sum, value) => sum + value, 0); }
 function message(text, invalid = false) { el.status.textContent = text; el.status.style.color = invalid ? '#fecaca' : '#ffffff'; }
 function render() {
-  el.grid.replaceChildren(...state.tiles.map((letter, index) => {
+  const tileButtons = state.tiles.map((letter, index) => {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'grid-cell boggle-tile';
     button.textContent = letter === 'Q' ? 'Qu' : letter; button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
     button.classList.toggle('is-selected', state.path.includes(index)); button.disabled = state.locked;
     button.addEventListener('click', () => select(index)); return button;
-  }));
+  });
+  el.grid.replaceChildren(...tileButtons, el.summary);
   el.preview.replaceChildren(...state.path.map(index => { const tile = document.createElement('span'); tile.className = 'boggle-preview-tile'; tile.textContent = tileText(index); return tile; }));
   el.backspace.disabled = state.locked || state.path.length === 0; el.clear.disabled = state.locked || state.path.length === 0; el.enter.disabled = state.locked || state.path.length === 0;
   el.score.textContent = String(total()); el.round.textContent = `ROUND ${state.round} OF 2`; el.timer.textContent = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
