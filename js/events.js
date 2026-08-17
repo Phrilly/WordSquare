@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'lookahead') return 'Lookahead';
     if (mode === 'tetris') return 'Tetris';
     if (mode === 'mfd') return 'My First Dictionary (MFD)';
+    if (mode === 'boggle') return 'Big Boggle';
     return 'Classic';
   };
 
@@ -40,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'mfd') {
       return 'MFD mode is active: gameplay is Classic, but only words flagged in the MFD dictionary are valid.';
     }
+    if (mode === 'boggle') {
+      return 'Big Boggle uses three timed 5x5 word-path boards with cumulative scoring.';
+    }
     return 'Classic mode is active: standard WordSquare rules and scoring.';
   };
 
@@ -48,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     const todayUtcMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0);
     const daysSinceEpoch = Math.floor((todayUtcMs - epochUtcMs) / 86400000);
-    const cycleDay = ((daysSinceEpoch % 6) + 6) % 6;
+    const cycleDay = ((daysSinceEpoch % 7) + 7) % 7;
 
     let computedMode = 'classic';
     if (daysSinceEpoch > 0 && cycleDay === 0) computedMode = 'bomb';
@@ -56,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (daysSinceEpoch > 0 && cycleDay === 2) computedMode = 'lookahead';
     else if (daysSinceEpoch > 0 && cycleDay === 3) computedMode = 'mfd';
     else if (daysSinceEpoch > 0 && cycleDay === 4) computedMode = 'tetris';
+    else if (daysSinceEpoch > 0 && cycleDay === 6) computedMode = 'boggle';
 
     const utcDate = now.toISOString().slice(0, 10);
 
@@ -98,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Letters stay on the board unless removed by a mode mechanic (for example, Tetris clears or bombs).</li>
       </ul>
 
-      <h3>Daily Schedule (6-Day)</h3>
+      <h3>Daily Schedule (7-Day)</h3>
       <ul>
         <li>Day 0: Bomb</li>
         <li>Day 1: Scrabble</li>
@@ -106,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Day 3: MFD (My First Dictionary)</li>
         <li>Day 4: Tetris</li>
         <li>Day 5: Classic</li>
+        <li>Day 6: Big Boggle</li>
       </ul>
 
       <h3>Scoring Notes</h3>
@@ -151,6 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Survival reward: +1 bomb every 60 seconds survived, up to a cap of 3 bombs.</li>
         <li>Bomb top-up cue: bright strip blast, icon flash/pop, expanding rings, and +1 BOMB READY text near the bomb bar.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
+      </ul>
+
+      <h3>Big Boggle Notes</h3>
+      <ul>
+        <li>Big Boggle is played over three two-minute rounds on fixed daily 5x5 boards.</li>
+        <li>Words use adjacent horizontal, vertical, or diagonal tiles without reusing a tile.</li>
+        <li>Words must have at least four letters. Scores are 1 / 2 / 3 / 5 / 11 for lengths 4 / 5 / 6 / 7 / 8+.</li>
+        <li>Every player receives the same three boards for the UTC day; Play Again repeats them.</li>
       </ul>
 
       <h3>Scheduler Debug</h3>
