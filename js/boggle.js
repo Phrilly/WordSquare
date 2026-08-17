@@ -62,14 +62,31 @@ async function loadLeaderboard() {
     renderLeaderboard(Array.isArray(data.highscores) ? data.highscores : []);
   } catch (error) { el.leaderboard.innerHTML = '<li>Unable to load scores.</li>'; }
 }
-async function saveLeaderboardScore(score) {
-  const initials = (window.prompt('Enter three initials for the Big Boggle leaderboard:', '') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
-  if (!initials) return loadLeaderboard();
+async function saveLeaderboardScore(score, initials) {
+  if (!initials) return;
   try {
     const response = await fetch('validate.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save_boggle_highscore', initials, score }) });
     if (!response.ok) throw new Error('Save failed');
     await loadLeaderboard();
   } catch (error) { message('Score could not be saved.', true); }
+}
+function openScoreEntry(score) {
+  el.summary.innerHTML = `<h2>ENTER INITIALS</h2><p>Final score: <strong>${score}</strong></p><div class="initials-wrapper"><input id="boggle-initials-input" class="hidden-initials-input" type="text" maxlength="3" autocomplete="off" aria-label="Enter your initials"><div class="initial-tile" id="boggle-initial-1"></div><div class="initial-tile" id="boggle-initial-2"></div><div class="initial-tile" id="boggle-initial-3"></div></div><button id="boggle-save-score" class="arcade-btn" type="button">SAVE SCORE</button><button id="boggle-cancel-score" class="arcade-btn" type="button">CANCEL</button>`;
+  const input = document.getElementById('boggle-initials-input');
+  const updateTiles = () => {
+    const initials = input.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+    input.value = initials;
+    for (let index = 0; index < 3; index += 1) document.getElementById(`boggle-initial-${index + 1}`).textContent = initials[index] || '';
+  };
+  input.addEventListener('input', updateTiles);
+  document.getElementById('boggle-save-score').addEventListener('click', async () => {
+    const initials = input.value;
+    if (initials.length !== 3) { message('Enter three initials to save your score.', true); input.focus(); return; }
+    await saveLeaderboardScore(score, initials);
+    el.summary.hidden = true;
+  });
+  document.getElementById('boggle-cancel-score').addEventListener('click', () => showSummary(true));
+  input.focus();
 }
 function finishRound() {
   if (state.locked) return; state.locked = true; clearInterval(state.timer); state.path = []; state.roundScores.push(roundScore()); render();
@@ -83,7 +100,7 @@ function showSummary(done) {
     : `<h2>ROUND 1 COMPLETE</h2><p>Round 1 score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND 2</button>`;
   const buttons = el.summary.querySelectorAll('button');
   if (done) {
-    buttons[0].addEventListener('click', () => saveLeaderboardScore(totalScore));
+    buttons[0].addEventListener('click', () => openScoreEntry(totalScore));
     buttons[1].addEventListener('click', startMatch);
   } else buttons[0].addEventListener('click', () => startRound(2));
 }
