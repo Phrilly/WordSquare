@@ -4,7 +4,7 @@ const BOGGLE_SECONDS = 120;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, ignoreNextMouseClick: false
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, ignoreNextMouseClick: false
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -63,12 +63,23 @@ function render() {
     button.textContent = letter === 'Q' ? 'Qu' : letter;
     button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
     button.classList.toggle('is-selected', state.path.includes(index));
+    button.classList.toggle('is-last-selected', state.selectionComplete && state.path.at(-1) === index);
     button.disabled = state.locked;
     button.addEventListener('pointerdown', event => {
       if (event.pointerType !== 'mouse' || state.locked) return;
       event.preventDefault();
-      state.desktopPathDrawing = true;
       state.ignoreNextMouseClick = true;
+      if (state.desktopPathDrawing) {
+        if (state.path.at(-1) !== index) select(index);
+        state.desktopPathDrawing = false;
+        state.selectionComplete = true;
+        render();
+        message('Word selection complete. Press Enter Word.');
+        return;
+      }
+
+      state.desktopPathDrawing = true;
+      state.selectionComplete = false;
       select(index);
     });
     button.addEventListener('click', event => {
@@ -110,11 +121,14 @@ function select(index) {
   }
 
   state.path.push(index);
+  state.selectionComplete = false;
   message(state.desktopPathDrawing ? 'Move across adjacent tiles, or enter the word.' : 'Select more tiles or enter the word.');
   render();
 }
 
 function submit() {
+  state.desktopPathDrawing = false;
+  state.selectionComplete = false;
   const candidate = word();
   if (candidate.length < 4) {
     message('Words need at least 4 letters.', true);
@@ -358,6 +372,7 @@ function startRound(round) {
   state.path = [];
   state.words = new Map();
   state.locked = false;
+  state.selectionComplete = false;
   el.summary.hidden = true;
   el.summary.classList.remove('is-celebration');
   el.summary.replaceChildren();
@@ -395,12 +410,14 @@ async function loadDictionary() {
 
 el.backspace.addEventListener('click', () => {
   state.desktopPathDrawing = false;
+  state.selectionComplete = false;
   state.path.pop();
   message('Last tile removed.');
   render();
 });
 el.clear.addEventListener('click', () => {
   state.desktopPathDrawing = false;
+  state.selectionComplete = false;
   state.path = [];
   message('Word cleared.');
   render();
@@ -414,9 +431,6 @@ el.grid.addEventListener('pointermove', event => {
 
   const index = Number.parseInt(tile.dataset.index ?? '', 10);
   if (Number.isInteger(index) && state.path.at(-1) !== index) select(index);
-});
-el.grid.addEventListener('pointerleave', event => {
-  if (!el.grid.contains(event.relatedTarget)) state.desktopPathDrawing = false;
 });
 window.addEventListener('blur', () => {
   state.desktopPathDrawing = false;
