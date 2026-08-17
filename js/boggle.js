@@ -16,6 +16,7 @@ const el = {
   timer: document.getElementById('boggle-timer'),
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
+  viewScores: document.getElementById('boggle-view-scores'),
   found: document.getElementById('boggle-found-list'),
   summary: document.getElementById('boggle-summary'),
   previewPanel: document.querySelector('.boggle-preview'),
@@ -515,6 +516,18 @@ function startMatch() {
   startRound(1);
 }
 
+function viewHighScores() {
+  if (!state.locked) {
+    clearInterval(state.timer);
+    state.locked = true;
+    state.path = [];
+    state.selectionComplete = false;
+    state.selectionFeedback = null;
+    render();
+  }
+  showLeaderboard();
+}
+
 async function loadDictionary() {
   try {
     const response = await fetch('data/boggle-uk-scowl-60.txt', { cache: 'force-cache' });
@@ -544,6 +557,7 @@ el.clear.addEventListener('click', () => {
   message('Word cleared.');
   render();
 });
+el.viewScores.addEventListener('click', viewHighScores);
 el.grid.addEventListener('pointermove', event => {
   if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
 
