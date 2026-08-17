@@ -5,7 +5,7 @@ const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUU
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, ignoreNextMouseClick: false
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -92,11 +92,14 @@ function render() {
     button.classList.toggle('is-selected', state.path.includes(index));
     button.classList.toggle('is-first-selected', state.desktopPathDrawing && state.path[0] === index);
     button.classList.toggle('is-last-selected', state.selectionComplete && state.path.at(-1) === index);
+    button.classList.toggle('is-invalid-selection', state.selectionFeedback === 'invalid' && state.path.includes(index));
+    button.classList.toggle('is-duplicate-selection', state.selectionFeedback === 'duplicate' && state.path.includes(index));
     button.disabled = state.locked;
     button.addEventListener('pointerdown', event => {
       if (event.pointerType !== 'mouse' || state.locked) return;
       event.preventDefault();
       state.ignoreNextMouseClick = true;
+      if (clearRejectedSelection()) return;
       if (state.desktopPathDrawing) {
         if (state.path.at(-1) !== index) select(index);
         completeSelection();
@@ -113,6 +116,7 @@ function render() {
         state.ignoreNextMouseClick = false;
         return;
       }
+      if (clearRejectedSelection()) return;
       if (state.path.at(-1) === index && state.path.length > 0) {
         completeSelection();
         return;
@@ -123,6 +127,7 @@ function render() {
       event.preventDefault();
       state.desktopPathDrawing = false;
       state.selectionComplete = false;
+      state.selectionFeedback = null;
       state.path = [];
       message('Word selection cleared.');
       render();
@@ -146,6 +151,7 @@ function render() {
 
 function select(index) {
   if (state.locked) return;
+  if (clearRejectedSelection()) return;
 
   const last = state.path.at(-1);
   if (state.path.includes(index)) {
@@ -159,6 +165,7 @@ function select(index) {
 
   state.path.push(index);
   state.selectionComplete = false;
+  state.selectionFeedback = null;
   if (state.desktopPathDrawing) {
     message('Move across adjacent tiles, then click the final tile.');
   } else if (word().length >= 4) {
@@ -186,26 +193,45 @@ function completeSelection() {
   }, 120);
 }
 
+function clearRejectedSelection() {
+  if (!state.selectionFeedback) return false;
+
+  state.desktopPathDrawing = false;
+  state.selectionComplete = false;
+  state.selectionFeedback = null;
+  state.path = [];
+  message('Word selection cleared.');
+  render();
+  return true;
+}
+
 function submit() {
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
   const candidate = word();
   if (candidate.length < 4) {
+    state.selectionFeedback = 'invalid';
+    render();
     message('Words need at least 4 letters.', true);
     return;
   }
   if (state.words.has(candidate)) {
-    message('Already found this round.', true);
+    state.selectionFeedback = 'duplicate';
+    render();
+    message('Already found this round. Click any tile to clear it.', true);
     return;
   }
   if (!state.dictionary.has(candidate)) {
-    message('Not in the British English dictionary. Use Backspace to correct it.', true);
+    state.selectionFeedback = 'invalid';
+    render();
+    message('Not in the British English dictionary. Click any tile to clear it.', true);
     return;
   }
 
   const earned = points(candidate.length);
   state.words.set(candidate, earned);
   state.path = [];
+  state.selectionFeedback = null;
   message(`+${earned} ${earned === 1 ? 'point' : 'points'}: ${candidate}`);
   renderWords();
   render();
@@ -424,6 +450,7 @@ function startRound(round) {
   state.words = new Map();
   state.locked = false;
   state.selectionComplete = false;
+  state.selectionFeedback = null;
   el.summary.hidden = true;
   el.summary.classList.remove('is-celebration');
   el.summary.replaceChildren();
@@ -462,6 +489,7 @@ async function loadDictionary() {
 el.backspace.addEventListener('click', () => {
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
+  state.selectionFeedback = null;
   state.path.pop();
   message('Last tile removed.');
   render();
@@ -469,6 +497,7 @@ el.backspace.addEventListener('click', () => {
 el.clear.addEventListener('click', () => {
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
+  state.selectionFeedback = null;
   state.path = [];
   message('Word cleared.');
   render();
