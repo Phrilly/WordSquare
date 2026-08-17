@@ -33,6 +33,12 @@
 .boggle-summary .leaderboard-list { max-width:380px; margin:8px 0 4px; }
 .boggle-summary .leaderboard-list li { cursor:default; }
 .boggle-summary .leaderboard-list li:hover { filter:none; }
+.boggle-summary .lb-row-container { padding:2px 4px; }
+.boggle-summary .leaderboard-list li.is-top-score .lb-row-container { padding:3px 5px; }
 .boggle-summary .initials-wrapper { margin:14px 0 4px; }
 .boggle-summary.is-celebration h2 { color:#FFD700; animation:titleShimmer 1.3s ease-in-out infinite; }
+.boggle-summary.is-leaderboard { justify-content:flex-start; padding:10px; overflow-y:hidden; }
+.boggle-summary.is-leaderboard h2 { margin-bottom:4px; font-size:clamp(18px,5vw,26px); }
+.boggle-summary.is-leaderboard .leaderboard-list { width:100%; margin:2px 0; gap:2px; }
+.boggle-summary.is-leaderboard button { margin:6px auto 0; }
 @media (max-width:500px) { .boggle-header { gap:6px; } .boggle-label { font-size:8px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }
