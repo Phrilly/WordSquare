@@ -2,6 +2,7 @@ const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
 const BOGGLE_SECONDS = 120;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
+const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
   dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, ignoreNextMouseClick: false
@@ -29,6 +30,34 @@ function word() {
 
 function points(length) {
   return length === 4 ? 1 : length === 5 ? 2 : length === 6 ? 3 : length === 7 ? 5 : length >= 8 ? 11 : 0;
+}
+
+function hashSeed(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createSeededRandom(seed) {
+  let value = seed;
+  return () => {
+    value += 0x6D2B79F5;
+    let result = value;
+    result = Math.imul(result ^ (result >>> 15), result | 1);
+    result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function createRoundBoard(round) {
+  const random = createSeededRandom(hashSeed(`${BOGGLE_DAILY_SEED}:round:${round}`));
+  return Array.from(
+    { length: BOGGLE_SIZE * BOGGLE_SIZE },
+    () => BOGGLE_BAG[Math.floor(random() * BOGGLE_BAG.length)]
+  );
 }
 
 function adjacent(a, b) {
@@ -382,7 +411,7 @@ function startRound(round) {
   clearInterval(state.timer);
   state.round = round;
   state.seconds = BOGGLE_SECONDS;
-  state.tiles = Array.from({ length: BOGGLE_SIZE * BOGGLE_SIZE }, () => BOGGLE_BAG[Math.floor(Math.random() * BOGGLE_BAG.length)]);
+  state.tiles = createRoundBoard(round);
   state.path = [];
   state.words = new Map();
   state.locked = false;
