@@ -14,6 +14,8 @@ function autoVer(string $url): string
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Square - Big Boggle Sandbox</title>
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/base.css'), ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/board.css'), ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/leaderboard.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/boggle.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body class="boggle-page">
@@ -24,20 +26,26 @@ function autoVer(string $url): string
       <div><div class="boggle-label">TIME</div><time id="boggle-timer">3:00</time></div>
     </header>
     <section class="boggle-preview" aria-label="Current word">
-      <div id="boggle-preview-tiles" class="boggle-preview-tiles"></div>
+      <div class="boggle-preview-row">
+        <div id="boggle-preview-tiles" class="boggle-preview-tiles"></div>
+        <div class="boggle-controls">
+          <button id="boggle-backspace" class="arcade-btn mini-btn" type="button">BACKSPACE</button>
+          <button id="boggle-clear" class="arcade-btn mini-btn mini-btn-warn" type="button">CLEAR</button>
+          <button id="boggle-enter" class="arcade-btn mini-btn" type="button">ENTER WORD</button>
+        </div>
+      </div>
       <p id="boggle-status" role="status" aria-live="polite">Loading British English dictionary...</p>
     </section>
-    <section id="boggle-grid" class="boggle-grid" aria-label="Boggle letter board"></section>
-    <div class="boggle-controls">
-      <button id="boggle-backspace" class="arcade-btn mini-btn" type="button">BACKSPACE</button>
-      <button id="boggle-clear" class="arcade-btn mini-btn mini-btn-warn" type="button">CLEAR</button>
-      <button id="boggle-enter" class="arcade-btn mini-btn" type="button">ENTER WORD</button>
-    </div>
+    <section id="boggle-grid" class="grid-container boggle-grid" aria-label="Boggle letter board"></section>
     <section class="boggle-found" aria-labelledby="boggle-found-title">
       <h2 id="boggle-found-title">WORDS FOUND</h2>
       <ul id="boggle-found-list"></ul>
     </section>
     <section id="boggle-summary" class="boggle-summary" hidden aria-live="polite"></section>
+    <section class="boggle-leaderboard" aria-labelledby="boggle-leaderboard-title">
+      <h2 id="boggle-leaderboard-title">BIG BOGGLE HIGH SCORES</h2>
+      <ul id="boggle-leaderboard-list" class="leaderboard-list"></ul>
+    </section>
   </main>
   <script src="<?= htmlspecialchars(autoVer('js/boggle.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 </body>
