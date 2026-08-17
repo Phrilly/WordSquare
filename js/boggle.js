@@ -16,8 +16,7 @@ const el = {
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
   found: document.getElementById('boggle-found-list'),
-  summary: document.getElementById('boggle-summary'),
-  leaderboard: document.getElementById('boggle-leaderboard-list')
+  summary: document.getElementById('boggle-summary')
 };
 
 function tileText(index) {
@@ -216,7 +215,7 @@ function createLeaderboardRow(entry, index) {
   return item;
 }
 
-function renderLeaderboard(scores, target = el.leaderboard) {
+function renderLeaderboard(scores, target) {
   if (scores.length === 0) {
     const item = document.createElement('li');
     item.textContent = 'No scores today.';
@@ -236,14 +235,6 @@ async function getLeaderboardScores() {
 
   const data = await response.json();
   return Array.isArray(data.highscores) ? data.highscores : [];
-}
-
-async function loadLeaderboard() {
-  try {
-    renderLeaderboard(await getLeaderboardScores());
-  } catch (error) {
-    el.leaderboard.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Unable to load scores.' }));
-  }
 }
 
 async function saveLeaderboardScore(score, initials) {
@@ -316,7 +307,6 @@ async function showLeaderboard(isTopScore = false) {
 
   try {
     renderLeaderboard(await getLeaderboardScores(), scores);
-    await loadLeaderboard();
   } catch (error) {
     scores.textContent = 'Unable to load scores.';
   }
@@ -458,5 +448,4 @@ el.grid.addEventListener('pointermove', event => {
 window.addEventListener('blur', () => {
   state.desktopPathDrawing = false;
 });
-loadLeaderboard();
 loadDictionary();
