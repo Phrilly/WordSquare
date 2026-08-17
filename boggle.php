@@ -26,6 +26,7 @@ function autoVer(string $url): string
       <div><div class="boggle-label">BIG BOGGLE SANDBOX</div><div id="boggle-round">ROUND 1 OF 3</div></div>
       <div><div class="boggle-label">CUMULATIVE</div><output id="boggle-score">0</output></div>
       <div><div class="boggle-label">TIME</div><time id="boggle-timer">2:00</time></div>
+      <button id="boggle-view-scores" class="arcade-btn mini-btn boggle-scores-button" type="button">HIGH SCORES</button>
     </header>
     <section class="boggle-preview" aria-label="Current word">
       <div class="boggle-preview-row">
