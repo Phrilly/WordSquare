@@ -17,6 +17,7 @@ function autoVer(string $url): string
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/board.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/leaderboard.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/modals.css'), ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/effects.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/boggle.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body class="boggle-page">

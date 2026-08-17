@@ -465,7 +465,21 @@ if (isset($input['action'])) {
                 VALUES (:initials, :score)
             ");
             $stmt->execute([':initials' => $initials, ':score' => $score]);
-            jsonResponse(['success' => true]);
+            $newId = (int)$pdo->lastInsertId();
+
+            $topScoreStmt = $pdo->query("
+                SELECT id
+                FROM boggle_highscores
+                WHERE DATE(created_at) = CURDATE()
+                ORDER BY score DESC, created_at ASC, id ASC
+                LIMIT 1
+            ");
+            $topScoreId = (int)$topScoreStmt->fetchColumn();
+
+            jsonResponse([
+                'success' => true,
+                'is_top_score' => $newId === $topScoreId
+            ]);
         } catch (PDOException $e) {
             error_log('validate.php save_boggle_highscore failed: ' . $e->getMessage());
             jsonResponse(['error' => 'Failed to save Boggle high score.'], 500);
