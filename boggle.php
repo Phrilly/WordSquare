@@ -57,11 +57,12 @@ function autoVer(string $url): string
       <section id="boggle-help-modal" class="boggle-help-modal" hidden aria-modal="true" aria-label="Boggle rules">
         <h2>HOW TO PLAY</h2>
         <ul>
+          <li><strong>Dictionary:</strong> boggle-uk-game v1.0</li>
+          <li>SCOWL-derived UK game dictionary. Proper nouns, offensive entries, and non-game words are filtered out.</li>
+          <li>UK spellings are normalised: COLOUR, ORGANISE, THEATRE.</li>
           <li>Play three two-minute rounds on 5x5 boards.</li>
           <li>Join touching tiles horizontally, vertically, or diagonally. Do not reuse a tile.</li>
           <li>Words need at least four letters: 4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11 points.</li>
-          <li>Dictionary: UK game dictionary (boggle-uk-game v1.0). Source is SCOWL-derived, then filtered for legal game words only.</li>
-          <li>Filter rules: place names and proper nouns are removed; offensive entries are removed; UK spellings are normalised (for example COLOUR, ORGANISE, THEATRE).</li>
           <li>Desktop: click the first tile, glide through the path, then click the final tile.</li>
           <li>Mobile: tap the final selected tile again to submit.</li>
           <li>The first tile is green while a desktop path is active; the final clicked tile is gold.</li>
