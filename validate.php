@@ -23,6 +23,51 @@ function normaliseInitials(?string $initials): string
     return str_pad($initials, 3, '-');
 }
 
+/**
+ * @param mixed $words
+ * @return list<string>
+ */
+function normaliseBoggleWords(mixed $words): array
+{
+    if (!is_array($words) || count($words) > 750) {
+        throw new InvalidArgumentException('Invalid Boggle word list.');
+    }
+
+    $normalisedWords = [];
+    foreach ($words as $word) {
+        if (!is_string($word)) {
+            throw new InvalidArgumentException('Invalid Boggle word.');
+        }
+
+        $normalisedWord = strtoupper(trim($word));
+        if (!preg_match('/^[A-Z]{4,25}$/', $normalisedWord) || isset($normalisedWords[$normalisedWord])) {
+            throw new InvalidArgumentException('Invalid Boggle word.');
+        }
+
+        $normalisedWords[$normalisedWord] = true;
+    }
+
+    return array_keys($normalisedWords);
+}
+
+function getBoggleWordPoints(string $word): int
+{
+    $length = strlen($word);
+    if ($length === 4) {
+        return 1;
+    }
+    if ($length === 5) {
+        return 2;
+    }
+    if ($length === 6) {
+        return 3;
+    }
+    if ($length === 7) {
+        return 5;
+    }
+    return $length >= 8 ? 11 : 0;
+}
+
 function normaliseGridString(?string $grid): string
 {
     $grid = trim((string)$grid);
@@ -439,13 +484,20 @@ if (isset($input['action'])) {
     if ($action === 'get_boggle_highscores') {
         try {
             $stmt = $pdo->query("
-                SELECT initials, score
+                SELECT id, initials, score, words_json
                 FROM boggle_highscores
                 WHERE DATE(created_at) = CURDATE()
                 ORDER BY score DESC, created_at ASC, id ASC
                 LIMIT 8
             ");
-            jsonResponse(['highscores' => $stmt->fetchAll()]);
+            $scores = $stmt->fetchAll();
+            foreach ($scores as &$score) {
+                $words = json_decode((string)($score['words_json'] ?? '[]'), true);
+                $score['words'] = is_array($words) ? array_values(array_filter($words, 'is_string')) : [];
+                unset($score['words_json']);
+            }
+            unset($score);
+            jsonResponse(['highscores' => $scores]);
         } catch (PDOException $e) {
             error_log('validate.php get_boggle_highscores failed: ' . $e->getMessage());
             jsonResponse(['error' => 'Failed to load Boggle high scores.'], 500);
@@ -458,13 +510,28 @@ if (isset($input['action'])) {
         if ($score < 0 || $score > 100000) {
             jsonResponse(['error' => 'Invalid Boggle score.'], 400);
         }
+        try {
+            $words = normaliseBoggleWords($input['words'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            jsonResponse(['error' => $e->getMessage()], 400);
+        }
+        $calculatedScore = array_sum(array_map('getBoggleWordPoints', $words));
+        if ($score !== $calculatedScore) {
+            jsonResponse(['error' => 'Boggle score does not match submitted words.'], 400);
+        }
+        try {
+            $wordsJson = json_encode($words, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            error_log('validate.php boggle word encoding failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Unable to save Boggle words.'], 500);
+        }
 
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO boggle_highscores (initials, score)
-                VALUES (:initials, :score)
+                INSERT INTO boggle_highscores (initials, score, words_json)
+                VALUES (:initials, :score, :words_json)
             ");
-            $stmt->execute([':initials' => $initials, ':score' => $score]);
+            $stmt->execute([':initials' => $initials, ':score' => $score, ':words_json' => $wordsJson]);
             $newId = (int)$pdo->lastInsertId();
 
             $topScoreStmt = $pdo->query("
