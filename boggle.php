@@ -25,7 +25,7 @@ function autoVer(string $url): string
     <header class="boggle-header">
       <div>
         <div class="boggle-label">BOGGLE</div>
-        <div id="boggle-round">ROUND <span id="round-val">1</span> OF 3</div>
+        <div id="boggle-round"><span>ROUND</span><span id="round-val">1</span><span>OF</span><span>3</span></div>
       </div>
       <div>
         <div class="boggle-label">CUMULATIVE</div>

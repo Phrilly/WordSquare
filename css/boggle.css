@@ -3,9 +3,11 @@
 .boggle-header { position:relative; display:flex; justify-content:space-between; gap:6px; align-items:end; min-height:42px; margin-bottom:8px; padding-right:32px; text-align:center; }
 .boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; margin-bottom: 2px; }
 #boggle-score, #boggle-timer, #boggle-round { display:flex; justify-content:center; align-items:center; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
-#boggle-timer { gap:2px; cursor:default; touch-action:manipulation; }
-#boggle-timer .mini-tile { min-width:1.1em; padding:0 2px; }
-.timer-separator { margin:0 -1px; }
+#boggle-round { gap:4px; }
+#boggle-timer { gap:0; cursor:default; touch-action:manipulation; }
+#boggle-timer .mini-tile { min-width:1.1em; margin:0; padding:0 2px; border-radius:2px; }
+.timer-separator { margin:0; padding:0 1px; }
+.header-tile { background:linear-gradient(180deg, #e6a354 0%, #c87820 100%); color:#1a1a1a; box-shadow:inset 1px 1px 3px rgba(255,255,255,.45), inset -1px -1px 3px rgba(0,0,0,.22), 1px 2px 4px rgba(0,0,0,.4); text-shadow:0 1px 0 rgba(255,255,255,.35); }
 .boggle-help-button { position:absolute; top:0; right:0; width:26px; height:26px; padding:0; font-size:18px; line-height:1; }
 .boggle-preview { min-height:64px; padding:8px; border:1px solid rgba(255,255,255,.25); border-radius:10px; background:rgba(0,0,0,.14); }
 .boggle-preview-row { display:flex; align-items:center; gap:6px; }
