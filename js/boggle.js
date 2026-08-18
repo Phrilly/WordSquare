@@ -5,7 +5,7 @@ const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUU
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, lastSelectedTime: 0
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -131,6 +131,11 @@ function render() {
     });
     button.addEventListener('dblclick', event => {
       event.preventDefault();
+      
+      // Restrict "remove selection" to only trigger when double-clicking the currently active tile,
+      // and ensure the tile wasn't just added (prevents rapid tap on empty tile from clearing board).
+      if (state.path.at(-1) !== index || Date.now() - state.lastSelectedTime < 400) return;
+
       state.desktopPathDrawing = false;
       state.selectionComplete = false;
       state.selectionFeedback = null;
@@ -170,6 +175,7 @@ function select(index) {
   }
 
   state.path.push(index);
+  state.lastSelectedTime = Date.now();
   state.selectionComplete = false;
   state.selectionFeedback = null;
   if (state.desktopPathDrawing) {
