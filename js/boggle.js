@@ -5,7 +5,7 @@ const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUU
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, lastSelectedTime: 0
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, lastTileClickIndex: null, lastTileClickTime: 0
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -103,6 +103,7 @@ function render() {
       if (event.pointerType !== 'mouse' || state.locked) return;
       event.preventDefault();
       state.ignoreNextMouseClick = true;
+      if (isAbandonDoubleClick(index)) return;
       if (clearRejectedSelection()) return;
       if (state.desktopPathDrawing) {
         if (state.path.at(-1) !== index) select(index);
@@ -120,26 +121,13 @@ function render() {
         state.ignoreNextMouseClick = false;
         return;
       }
+      if (isAbandonDoubleClick(index)) return;
       if (clearRejectedSelection()) return;
       if (state.path.at(-1) === index && state.path.length > 0) {
         completeSelection();
         return;
       }
       select(index);
-    });
-    button.addEventListener('dblclick', event => {
-      event.preventDefault();
-      
-      // Restrict "remove selection" to only trigger when double-clicking the currently active tile,
-      // and ensure the tile wasn't just added (prevents rapid tap on empty tile from clearing board).
-      if (state.path.at(-1) !== index || Date.now() - state.lastSelectedTime < 400) return;
-
-      state.desktopPathDrawing = false;
-      state.selectionComplete = false;
-      state.selectionFeedback = null;
-      state.path = [];
-      message('Word selection cleared.');
-      render();
     });
     return button;
   });
@@ -193,7 +181,6 @@ function select(index) {
   }
 
   state.path.push(index);
-  state.lastSelectedTime = Date.now();
   state.selectionComplete = false;
   state.selectionFeedback = null;
   if (state.desktopPathDrawing) {
@@ -204,6 +191,27 @@ function select(index) {
     message('Select more adjacent tiles.');
   }
   render();
+}
+
+function isAbandonDoubleClick(index) {
+  const now = Date.now();
+  const isSecondClick = state.path.length > 0
+    && state.lastTileClickIndex === index
+    && now - state.lastTileClickTime <= 400;
+
+  state.lastTileClickIndex = index;
+  state.lastTileClickTime = now;
+  if (!isSecondClick) return false;
+
+  state.desktopPathDrawing = false;
+  state.selectionComplete = false;
+  state.selectionFeedback = null;
+  state.path = [];
+  state.lastTileClickIndex = null;
+  state.lastTileClickTime = 0;
+  message('Word selection cleared.');
+  render();
+  return true;
 }
 
 function completeSelection() {
