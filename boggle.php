@@ -12,7 +12,7 @@ function autoVer(string $url): string
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Word Square - Big Boggle</title>
+  <title>Word Square - Boggle</title>
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/base.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/board.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/leaderboard.css'), ENT_QUOTES, 'UTF-8') ?>">
@@ -23,11 +23,21 @@ function autoVer(string $url): string
 <body class="boggle-page">
   <main class="boggle-app">
     <header class="boggle-header">
-      <div><div class="boggle-label">BIG BOGGLE</div><div id="boggle-round">ROUND 1 OF 3</div></div>
-      <div><div class="boggle-label">CUMULATIVE</div><output id="boggle-score">0</output></div>
-      <div><div class="boggle-label">TIME</div><time id="boggle-timer">2:00</time></div>
-      <button id="boggle-view-scores" class="arcade-btn mini-btn boggle-scores-button" type="button">SCORES</button>
-      <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open Big Boggle help" title="Help">?</button>
+      <div>
+        <div class="boggle-label">BOGGLE</div>
+        <div id="boggle-round">ROUND <span id="round-val" class="mini-tile header-tile">1</span> OF <span class="mini-tile header-tile">3</span></div>
+      </div>
+      <div>
+        <div class="boggle-label">CUMULATIVE</div>
+        <output id="boggle-score"><span class="mini-tile header-tile">0</span></output>
+      </div>
+      <div>
+        <div class="boggle-label">TIME</div>
+        <time id="boggle-timer">
+          <span id="timer-min" class="mini-tile header-tile">2</span><span style="margin:0 2px; font-weight:bold;">:</span><span id="timer-sec1" class="mini-tile header-tile">0</span><span id="timer-sec2" class="mini-tile header-tile">0</span>
+        </time>
+      </div>
+      <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open Boggle help" title="Help">?</button>
     </header>
     <section class="boggle-preview" aria-label="Current word">
       <div class="boggle-preview-row">
@@ -41,7 +51,7 @@ function autoVer(string $url): string
     </section>
     <section id="boggle-grid" class="grid-container boggle-grid" aria-label="Boggle letter board">
       <section id="boggle-summary" class="boggle-summary" hidden aria-live="polite"></section>
-      <section id="boggle-help-modal" class="boggle-help-modal" hidden aria-modal="true" aria-label="Big Boggle rules">
+      <section id="boggle-help-modal" class="boggle-help-modal" hidden aria-modal="true" aria-label="Boggle rules">
         <h2>HOW TO PLAY</h2>
         <ul>
           <li>Play three two-minute rounds on 5x5 boards.</li>
@@ -53,7 +63,6 @@ function autoVer(string $url): string
           <li>Double-click any board tile to clear the full current selection. Backspace removes one tile and X clears the path.</li>
           <li>Invalid words show red outlines. Already-found words show yellow outlines. Click any tile to clear either rejected path.</li>
           <li>Every player receives the same three daily boards.</li>
-          <li>SCORES ends an unsaved match and opens the daily leaderboard.</li>
         </ul>
         <button id="boggle-close-help" class="arcade-btn" type="button">CLOSE</button>
       </section>
