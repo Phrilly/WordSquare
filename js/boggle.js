@@ -533,7 +533,7 @@ function showStartScreen() {
   el.help.hidden = true;
   el.summary.hidden = false;
   el.summary.classList.remove('is-leaderboard', 'is-celebration');
-  el.summary.innerHTML = '<h2>BIG BOGGLE</h2><p>Three rounds. Two minutes each.</p><p>Find words of four letters or more.</p><button class="arcade-btn" type="button">START GAME</button>';
+  el.summary.innerHTML = '<h2>BOGGLE</h2><p>Three rounds. Two minutes each.</p><p>Find words of four letters or more.</p><button class="arcade-btn" type="button">START GAME</button>';
   el.summary.querySelector('button').addEventListener('click', startMatch);
   render();
 }
