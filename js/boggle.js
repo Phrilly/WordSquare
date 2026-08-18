@@ -4,7 +4,7 @@ const BOGGLE_SECONDS = 120;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const state = {
-  tiles: [], path: [], words: new Map(), round: 1, roundScores: [], seconds: BOGGLE_SECONDS,
+  tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], seconds: BOGGLE_SECONDS,
   dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, lastTileClickIndex: null, lastTileClickTime: 0
 };
 const el = {
@@ -300,9 +300,35 @@ function renderWords() {
   }));
 }
 
+function renderWordTiles(container, words) {
+  const sortedWords = [...words].sort((left, right) => right.length - left.length || left.localeCompare(right));
+  container.replaceChildren(...sortedWords.map(candidate => {
+    const item = document.createElement('li');
+    item.className = 'found-word-row';
+    const length = Math.min(candidate.length, 10);
+
+    for (const letter of candidate) {
+      const tile = document.createElement('span');
+      tile.className = `mini-tile word-${length}`;
+      tile.textContent = letter;
+      item.append(tile);
+    }
+
+    const score = document.createElement('span');
+    score.className = 'mini-tile points-tile';
+    score.textContent = `+${points(candidate.length)}`;
+    item.append(score);
+    return item;
+  }));
+}
+
 function createLeaderboardRow(entry, index) {
   const item = document.createElement('li');
+  item.classList.add('boggle-score-entry');
   if (index === 0) item.classList.add('is-top-score');
+  item.tabIndex = 0;
+  item.setAttribute('role', 'button');
+  item.setAttribute('aria-label', `View words for ${entry.initials || 'unknown'} score ${entry.score}`);
 
   const initials = String(entry.initials || '---').padEnd(3, '-').slice(0, 3);
   const row = document.createElement('div');
@@ -326,6 +352,13 @@ function createLeaderboardRow(entry, index) {
   score.textContent = String(entry.score);
   row.append(rank, initialsGroup, score);
   item.append(row);
+  item.addEventListener('click', () => showLeaderboardWords(entry));
+  item.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      showLeaderboardWords(entry);
+    }
+  });
   return item;
 }
 
@@ -355,7 +388,7 @@ async function saveLeaderboardScore(score, initials) {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'save_boggle_highscore', initials, score })
+    body: JSON.stringify({ action: 'save_boggle_highscore', initials, score, words: state.roundWords.flat() })
   });
   if (!response.ok) throw new Error('Unable to save Boggle score.');
 
@@ -404,6 +437,7 @@ async function showLeaderboard(isTopScore = false) {
   el.help.hidden = true;
   el.summary.hidden = false;
   el.summary.classList.add('is-leaderboard');
+  el.summary.classList.remove('is-word-list');
   el.summary.classList.toggle('is-celebration', isTopScore);
   el.summary.replaceChildren();
 
@@ -428,9 +462,41 @@ async function showLeaderboard(isTopScore = false) {
   }
 }
 
+function showLeaderboardWords(entry) {
+  const initials = String(entry.initials || '---').padEnd(3, '-').slice(0, 3);
+  const words = Array.isArray(entry.words) ? entry.words.filter(word => typeof word === 'string') : [];
+
+  el.summary.hidden = false;
+  el.summary.classList.remove('is-celebration');
+  el.summary.classList.add('is-leaderboard', 'is-word-list');
+  el.summary.replaceChildren();
+
+  const title = document.createElement('h2');
+  title.textContent = `WORDS BY ${initials}`;
+  const score = document.createElement('p');
+  score.textContent = `Score: ${entry.score}`;
+  const wordList = document.createElement('ul');
+  wordList.className = 'boggle-score-words';
+
+  if (words.length === 0) {
+    const item = document.createElement('li');
+    item.textContent = 'Word details are unavailable for this earlier score.';
+    wordList.append(item);
+  } else {
+    renderWordTiles(wordList, words);
+  }
+
+  const backButton = document.createElement('button');
+  backButton.className = 'arcade-btn';
+  backButton.type = 'button';
+  backButton.textContent = 'HIGH SCORES';
+  backButton.addEventListener('click', () => showLeaderboard());
+  el.summary.append(title, score, wordList, backButton);
+}
+
 function openScoreEntry(score) {
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard');
+  el.summary.classList.remove('is-leaderboard', 'is-word-list');
   el.summary.classList.remove('is-celebration');
   el.summary.innerHTML = `
     <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
@@ -510,6 +576,7 @@ function finishRound() {
   clearInterval(state.timer);
   state.path = [];
   state.roundScores.push(roundScore());
+  state.roundWords.push([...state.words.keys()]);
   render();
   showSummary(state.round === BOGGLE_ROUNDS);
 }
@@ -523,7 +590,7 @@ function showSummary(done) {
   }
 
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard');
+  el.summary.classList.remove('is-leaderboard', 'is-word-list');
   el.summary.classList.remove('is-celebration');
   const nextRound = state.round + 1;
   el.summary.innerHTML = `<h2>ROUND ${state.round} COMPLETE</h2><p>Round ${state.round} score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND ${nextRound}</button>`;
@@ -544,7 +611,7 @@ function startRound(round) {
   el.foundPanel.hidden = false;
   el.help.hidden = true;
   el.summary.hidden = true;
-  el.summary.classList.remove('is-leaderboard');
+  el.summary.classList.remove('is-leaderboard', 'is-word-list');
   el.summary.classList.remove('is-celebration');
   el.summary.replaceChildren();
   renderWords();
@@ -563,6 +630,7 @@ function startRound(round) {
 
 function startMatch() {
   state.roundScores = [];
+  state.roundWords = [];
   startRound(1);
 }
 

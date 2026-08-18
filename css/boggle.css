@@ -56,6 +56,12 @@
 .boggle-summary.is-leaderboard h2 { margin-bottom:4px; font-size:clamp(18px,5vw,26px); }
 .boggle-summary.is-leaderboard .leaderboard-list { width:100%; margin:2px 0; gap:2px; }
 .boggle-summary.is-leaderboard button { margin:6px auto 0; }
+.boggle-summary .leaderboard-list li.boggle-score-entry { cursor:pointer; }
+.boggle-score-entry:focus-visible { outline:3px solid var(--gold-1); outline-offset:2px; }
+.boggle-summary.is-word-list { overflow-y:auto; }
+.boggle-summary.is-word-list .boggle-score-words { display:grid; grid-template-columns:1fr; width:100%; max-width:440px; margin:2px 0; padding:0; list-style:none; }
+.boggle-summary.is-word-list .found-word-row { justify-content:center; }
+.boggle-summary.is-word-list .boggle-score-words > li:not(.found-word-row) { padding:12px; text-align:center; }
 .boggle-help-modal { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; box-sizing:border-box; padding:46px 20px 20px; border-radius:12px; background-color:rgba(22,47,78,.96); color:#fff; font-family:'Courier New',Courier,monospace; text-align:left; overflow-y:auto; }
 .boggle-help-modal[hidden] { display:none; }
 .boggle-help-modal h2 { margin:0 0 12px; color:var(--highlight); font-size:clamp(22px,7vw,34px); text-align:center; }
