@@ -1,0 +1,11 @@
+Boggle UK game dictionary
+
+This file is the runtime dictionary used by the Boggle variant.
+
+It is intentionally generated from the SCOWL corpus, then filtered to remove:
+- proper nouns and place names such as CHESHIRE and LONDON
+- offensive or unsuitable words
+- non-letter or out-of-range entries
+- US spellings that are normalised to UK game spellings such as COLOUR and ORGANISE
+
+This file is the canonical gameplay dictionary. The raw SCOWL source remains available for reference and rebuilds, but it is not used directly by the game.

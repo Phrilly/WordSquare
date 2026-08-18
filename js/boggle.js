@@ -3,6 +3,32 @@ const BOGGLE_ROUNDS = 3;
 const BOGGLE_SECONDS = 120;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
+const BOGGLE_PROPER_NOUN_DENYLIST = new Set([
+  'AMERICA','AUSTRALIA','BELGIUM','BERLIN','BIRMINGHAM','BRITAIN','CANADA','CHESHIRE','CHICAGO','CHINA','DUBLIN','ENGLAND','FRANCE','GERMANY','INDIA','IRELAND','JAPAN','LIVERPOOL','LONDON','MANCHESTER','MEXICO','NORWAY','OXFORD','PARIS','PORTUGAL','RUSSIA','SCOTLAND','SPAIN','SWEDEN','TOKYO','WALES','YORK'
+]);
+const BOGGLE_OFFENSIVE_DENYLIST = new Set([
+  'ARSE','ASS','BASTARD','BITCH','CRAP','DAMN','FUCK','SHIT','SLUT'
+]);
+const BOGGLE_UK_SPELLING_MAP = {
+  'COLOR': 'COLOUR',
+  'COLORS': 'COLOURS',
+  'ORGANIZE': 'ORGANISE',
+  'ORGANIZES': 'ORGANISES',
+  'THEATER': 'THEATRE',
+  'THEATERS': 'THEATRES',
+  'FAVOR': 'FAVOUR',
+  'FAVORS': 'FAVOURS',
+  'BEHAVIOR': 'BEHAVIOUR',
+  'BEHAVIORS': 'BEHAVIOURS',
+  'HONOR': 'HONOUR',
+  'HONORS': 'HONOURS',
+  'LABOR': 'LABOUR',
+  'LABORS': 'LABOURS',
+  'CENTER': 'CENTRE',
+  'CENTERS': 'CENTRES',
+  'METER': 'METRE',
+  'METERS': 'METRES'
+};
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], seconds: BOGGLE_SECONDS,
   dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, lastTileClickIndex: null, lastTileClickTime: 0
@@ -70,6 +96,22 @@ function adjacent(a, b) {
   const br = Math.floor(b / BOGGLE_SIZE);
   const bc = b % BOGGLE_SIZE;
   return Math.abs(ar - br) <= 1 && Math.abs(ac - bc) <= 1 && a !== b;
+}
+
+function isGameSafeWord(word) {
+  if (typeof word !== 'string') return false;
+
+  const upper = word.trim().toUpperCase();
+  if (!/^[A-Z]{4,25}$/.test(upper)) return false;
+  if (BOGGLE_PROPER_NOUN_DENYLIST.has(upper)) return false;
+  if (BOGGLE_OFFENSIVE_DENYLIST.has(upper)) return false;
+  return true;
+}
+
+function normaliseDictionaryWord(word) {
+  if (typeof word !== 'string') return '';
+  const upper = word.trim().toUpperCase();
+  return BOGGLE_UK_SPELLING_MAP[upper] || upper;
 }
 
 function roundScore() {
@@ -659,10 +701,20 @@ function viewHighScores() {
 
 async function loadDictionary() {
   try {
-    const response = await fetch('data/boggle-uk-scowl-60.txt', { cache: 'force-cache' });
+    const response = await fetch('data/boggle-uk-game.txt', { cache: 'force-cache' });
     if (!response.ok) throw new Error('Dictionary unavailable');
     const text = await response.text();
-    text.trim().split(/\r?\n/).forEach(entry => state.dictionary.add(entry));
+
+    const seen = new Set();
+    for (const rawEntry of text.trim().split(/\r?\n/)) {
+      const word = normaliseDictionaryWord(rawEntry);
+      if (!isGameSafeWord(word)) continue;
+      if (!seen.has(word)) {
+        seen.add(word);
+        state.dictionary.add(word);
+      }
+    }
+
     if (state.dictionary.size === 0) throw new Error('Dictionary empty');
     showStartScreen();
   } catch (error) {
