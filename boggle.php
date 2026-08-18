@@ -25,17 +25,15 @@ function autoVer(string $url): string
     <header class="boggle-header">
       <div>
         <div class="boggle-label">BOGGLE</div>
-        <div id="boggle-round">ROUND <span id="round-val" class="mini-tile header-tile">1</span> OF <span class="mini-tile header-tile">3</span></div>
+        <div id="boggle-round">ROUND 1 OF 3</div>
       </div>
       <div>
         <div class="boggle-label">CUMULATIVE</div>
-        <output id="boggle-score"><span class="mini-tile header-tile">0</span></output>
+        <output id="boggle-score">0</output>
       </div>
       <div>
         <div class="boggle-label">TIME</div>
-        <time id="boggle-timer">
-          <span id="timer-min" class="mini-tile header-tile">2</span><span style="margin:0 2px; font-weight:bold;">:</span><span id="timer-sec1" class="mini-tile header-tile">0</span><span id="timer-sec2" class="mini-tile header-tile">0</span>
-        </time>
+        <time id="boggle-timer">2:00</time>
       </div>
       <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open Boggle help" title="Help">?</button>
     </header>
