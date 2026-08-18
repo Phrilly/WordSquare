@@ -12,11 +12,9 @@ const el = {
   preview: document.getElementById('boggle-preview-tiles'),
   status: document.getElementById('boggle-status'),
   score: document.getElementById('boggle-score'),
-  round: document.getElementById('boggle-round'),
   timer: document.getElementById('boggle-timer'),
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
-  viewScores: document.getElementById('boggle-view-scores'),
   helpButton: document.getElementById('boggle-help-button'),
   found: document.getElementById('boggle-found-list'),
   summary: document.getElementById('boggle-summary'),
@@ -155,9 +153,29 @@ function render() {
   }));
   el.backspace.disabled = state.locked || state.path.length === 0;
   el.clear.disabled = state.locked || state.path.length === 0;
-  el.score.textContent = String(total());
-  el.round.textContent = `ROUND ${state.round} OF ${BOGGLE_ROUNDS}`;
-  el.timer.textContent = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
+  
+  // Render Score as mini-tiles
+  const scoreStr = String(total());
+  el.score.replaceChildren(...scoreStr.split('').map(char => {
+    const span = document.createElement('span');
+    span.className = 'mini-tile header-tile';
+    span.textContent = char;
+    return span;
+  }));
+
+  // Update specific Round and Timer nodes directly to avoid thrashing
+  const roundVal = document.getElementById('round-val');
+  if (roundVal) roundVal.textContent = state.round;
+
+  const tMin = document.getElementById('timer-min');
+  const tSec1 = document.getElementById('timer-sec1');
+  const tSec2 = document.getElementById('timer-sec2');
+  if (tMin && tSec1 && tSec2) {
+    const s = String(state.seconds % 60).padStart(2, '0');
+    tMin.textContent = Math.floor(state.seconds / 60);
+    tSec1.textContent = s[0];
+    tSec2.textContent = s[1];
+  }
 }
 
 function select(index) {
@@ -253,10 +271,23 @@ function renderWords() {
   const entries = [...state.words].sort(([a], [b]) => a.localeCompare(b));
   el.found.replaceChildren(...entries.map(([candidate, earned]) => {
     const item = document.createElement('li');
-    item.textContent = candidate;
-    const score = document.createElement('strong');
+    item.className = 'found-word-row';
+    
+    // Cap at 10 to ensure the CSS class resolves safely
+    const len = Math.min(candidate.length, 10);
+    
+    for (const letter of candidate) {
+      const tile = document.createElement('span');
+      tile.className = `mini-tile word-${len}`;
+      tile.textContent = letter;
+      item.append(tile);
+    }
+
+    const score = document.createElement('span');
+    score.className = 'mini-tile points-tile';
     score.textContent = `+${earned}`;
     item.append(score);
+    
     return item;
   }));
 }
@@ -579,7 +610,7 @@ el.clear.addEventListener('click', () => {
   message('Word cleared.');
   render();
 });
-el.viewScores.addEventListener('click', viewHighScores);
+el.timer.addEventListener('click', viewHighScores);
 el.helpButton.addEventListener('click', () => {
   el.help.hidden = false;
 });
