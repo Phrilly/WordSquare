@@ -78,7 +78,7 @@
 - Desktop: click the first tile, glide across adjacent tiles, then click the final tile to submit.
 - Mobile: tap the final selected tile again to submit.
 - A green outline marks the first tile of an active desktop path; a gold outline marks the final tile before submission.
-- Double-click the same board tile to abandon a selected path. Backspace removes one tile and X clears the full path.
+- Backspace removes one tile and X clears the full selected path.
 - Invalid dictionary words receive red outlines. Duplicate words receive yellow outlines. Click any tile to clear a rejected path.
 - SCORES ends an unsaved match and opens the daily high-score table.
 
