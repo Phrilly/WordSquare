@@ -193,7 +193,8 @@ function render() {
     return button;
   });
 
-  el.grid.replaceChildren(...tileButtons, el.summary, el.help);
+  el.grid.querySelectorAll('.boggle-tile').forEach(tile => tile.remove());
+  el.grid.prepend(...tileButtons);
   el.preview.replaceChildren(...state.path.map(index => {
     const tile = document.createElement('span');
     tile.className = 'boggle-preview-tile';
