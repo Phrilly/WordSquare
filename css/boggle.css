@@ -62,8 +62,9 @@
 .boggle-score-entry:focus-visible { outline:3px solid var(--gold-1); outline-offset:2px; }
 .boggle-opening-rules { max-width:360px; font-size:13px; }
 .boggle-champion { color:#FFD700; font-size:clamp(32px,11vw,54px); font-weight:bold; letter-spacing:.15em; text-shadow:0 0 12px rgba(255,215,0,.65); }
-.boggle-summary.is-word-list { overflow-y:auto; }
-.boggle-summary.is-word-list .boggle-score-words { display:grid; grid-template-columns:1fr; width:100%; max-width:440px; margin:2px 0; padding:0; list-style:none; }
+.boggle-summary.is-word-list { overflow:hidden; }
+.boggle-summary.is-word-list h2, .boggle-summary.is-word-list p, .boggle-summary.is-word-list button { flex:0 0 auto; }
+.boggle-summary.is-word-list .boggle-score-words { display:grid; grid-template-columns:1fr; flex:1 1 0; width:100%; max-width:440px; min-height:0; margin:2px 0; padding:0 4px; overflow-y:scroll; overscroll-behavior-y:contain; scrollbar-gutter:stable; touch-action:pan-y; list-style:none; }
 .boggle-summary.is-word-list .found-word-row { justify-content:center; }
 .boggle-summary.is-word-list .boggle-score-words > li:not(.found-word-row) { padding:12px; text-align:center; }
 .boggle-help-modal { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; box-sizing:border-box; padding:46px 20px 20px; border-radius:12px; background-color:rgba(22,47,78,.96); color:#fff; font-family:'Courier New',Courier,monospace; text-align:left; overflow-y:scroll; overscroll-behavior-y:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
