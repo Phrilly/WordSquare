@@ -32,7 +32,7 @@ const BOGGLE_UK_SPELLING_MAP = {
 };
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, longPressTimer: null, suppressNextTouchClick: false
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, longPressTimer: null, suppressNextTouchClick: false, scoreScreen: 'opening'
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -435,6 +435,18 @@ async function getLeaderboardScores() {
   return Array.isArray(data.highscores) ? data.highscores : [];
 }
 
+async function getYesterdaysBoggleWinner() {
+  const response = await fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_boggle_yesterdays_winner' })
+  });
+  if (!response.ok) throw new Error('Unable to load yesterday\'s Boggle winner.');
+
+  const data = await response.json();
+  return data.winner && typeof data.winner === 'object' ? data.winner : null;
+}
+
 async function saveLeaderboardScore(score, initials) {
   const response = await fetch('validate.php', {
     method: 'POST',
@@ -483,6 +495,7 @@ function triggerHighScoreBurst() {
 }
 
 async function showLeaderboard(isTopScore = false) {
+  state.scoreScreen = 'postgame';
   el.previewPanel.hidden = true;
   el.foundPanel.hidden = true;
   el.help.hidden = true;
@@ -540,8 +553,14 @@ function showLeaderboardWords(entry) {
   const backButton = document.createElement('button');
   backButton.className = 'arcade-btn';
   backButton.type = 'button';
-  backButton.textContent = 'HIGH SCORES';
-  backButton.addEventListener('click', () => showLeaderboard());
+  backButton.textContent = state.scoreScreen === 'opening' ? 'TODAY\'S SCORES' : 'HIGH SCORES';
+  backButton.addEventListener('click', () => {
+    if (state.scoreScreen === 'opening') {
+      showOpeningLeaderboard();
+      return;
+    }
+    showLeaderboard();
+  });
   el.summary.append(title, score, wordList, backButton);
 }
 
@@ -688,15 +707,85 @@ function startMatch() {
   startRound(1);
 }
 
-function showStartScreen() {
+async function showOpeningLeaderboard(initialScores = null) {
+  state.scoreScreen = 'opening';
   el.previewPanel.hidden = true;
   el.foundPanel.hidden = true;
   el.help.hidden = true;
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard', 'is-celebration');
-  el.summary.innerHTML = '<h2>BOGGLE</h2><p>Three rounds. Two minutes each.</p><p>Find words of four letters or more.</p><button class="arcade-btn" type="button">START GAME</button>';
-  el.summary.querySelector('button').addEventListener('click', startMatch);
-  render();
+  el.summary.classList.add('is-leaderboard');
+  el.summary.classList.remove('is-word-list', 'is-celebration');
+  el.summary.replaceChildren();
+
+  const title = document.createElement('h2');
+  title.textContent = 'TODAY\'S HIGH SCORES';
+  const scores = document.createElement('ul');
+  scores.className = 'leaderboard-list';
+  scores.textContent = 'Loading...';
+  const rules = document.createElement('p');
+  rules.className = 'boggle-opening-rules';
+  rules.textContent = 'Three rounds. Two minutes each. Find words of four letters or more.';
+  const startButton = document.createElement('button');
+  startButton.className = 'arcade-btn';
+  startButton.type = 'button';
+  startButton.textContent = 'START GAME';
+  startButton.addEventListener('click', startMatch);
+  el.summary.append(title, scores, rules, startButton);
+
+  if (Array.isArray(initialScores)) {
+    renderLeaderboard(initialScores, scores);
+    return;
+  }
+
+  try {
+    renderLeaderboard(await getLeaderboardScores(), scores);
+  } catch (error) {
+    scores.textContent = 'Unable to load scores.';
+  }
+}
+
+function showArrivalCelebration(winner) {
+  const initials = String(winner.initials || '---').padEnd(3, '-').slice(0, 3);
+  state.scoreScreen = 'opening';
+  el.previewPanel.hidden = true;
+  el.foundPanel.hidden = true;
+  el.help.hidden = true;
+  el.summary.hidden = false;
+  el.summary.classList.remove('is-leaderboard', 'is-word-list');
+  el.summary.classList.add('is-celebration');
+  el.summary.replaceChildren();
+
+  const title = document.createElement('h2');
+  title.textContent = 'YESTERDAY\'S CHAMPION';
+  const champion = document.createElement('p');
+  champion.className = 'boggle-champion';
+  champion.textContent = initials;
+  const score = document.createElement('p');
+  score.textContent = `Score: ${winner.score}`;
+  const continueButton = document.createElement('button');
+  continueButton.className = 'arcade-btn';
+  continueButton.type = 'button';
+  continueButton.textContent = 'VIEW TODAY\'S SCORES';
+  continueButton.addEventListener('click', showOpeningLeaderboard);
+  el.summary.append(title, champion, score, continueButton);
+  triggerHighScoreBurst();
+}
+
+async function showStartScreen() {
+  try {
+    const [winner, scores] = await Promise.all([
+      getYesterdaysBoggleWinner().catch(() => null),
+      getLeaderboardScores()
+    ]);
+    if (winner) {
+      showArrivalCelebration(winner);
+      return;
+    }
+
+    await showOpeningLeaderboard(scores);
+  } catch (error) {
+    await showOpeningLeaderboard();
+  }
 }
 
 function viewHighScores() {
@@ -728,7 +817,7 @@ async function loadDictionary() {
     }
 
     if (state.dictionary.size === 0) throw new Error('Dictionary empty');
-    showStartScreen();
+    await showStartScreen();
   } catch (error) {
     message('Dictionary failed to load. Refresh or contact the site owner.', true);
   }
