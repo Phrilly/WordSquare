@@ -1,6 +1,5 @@
 html { overflow-y:auto; }
 .boggle-page { display:block; height:auto; min-height:100vh; overflow-y:auto; padding:16px; }
-.boggle-page.is-embedded { padding-top:120px; }
 .boggle-app { width:min(100%, 540px); margin:0 auto; padding-bottom:32px; }
 .boggle-header { position:relative; display:flex; justify-content:space-between; gap:6px; align-items:end; min-height:42px; margin-bottom:8px; padding-right:32px; text-align:center; }
 .boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; margin-bottom: 2px; }
