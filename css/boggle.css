@@ -58,6 +58,8 @@
 .boggle-summary.is-leaderboard button { margin:6px auto 0; }
 .boggle-summary .leaderboard-list li.boggle-score-entry { cursor:pointer; }
 .boggle-score-entry:focus-visible { outline:3px solid var(--gold-1); outline-offset:2px; }
+.boggle-opening-rules { max-width:360px; font-size:13px; }
+.boggle-champion { color:#FFD700; font-size:clamp(32px,11vw,54px); font-weight:bold; letter-spacing:.15em; text-shadow:0 0 12px rgba(255,215,0,.65); }
 .boggle-summary.is-word-list { overflow-y:auto; }
 .boggle-summary.is-word-list .boggle-score-words { display:grid; grid-template-columns:1fr; width:100%; max-width:440px; margin:2px 0; padding:0; list-style:none; }
 .boggle-summary.is-word-list .found-word-row { justify-content:center; }

@@ -504,6 +504,30 @@ if (isset($input['action'])) {
         }
     }
 
+    if ($action === 'get_boggle_yesterdays_winner') {
+        try {
+            $stmt = $pdo->query("
+                SELECT initials, score, words_json
+                FROM boggle_highscores
+                WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                ORDER BY score DESC, created_at ASC, id ASC
+                LIMIT 1
+            ");
+            $winner = $stmt->fetch();
+            if (!is_array($winner)) {
+                jsonResponse(['winner' => null]);
+            }
+
+            $words = json_decode((string)($winner['words_json'] ?? '[]'), true);
+            $winner['words'] = is_array($words) ? array_values(array_filter($words, 'is_string')) : [];
+            unset($winner['words_json']);
+            jsonResponse(['winner' => $winner]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_boggle_yesterdays_winner failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to load yesterday\'s Boggle winner.'], 500);
+        }
+    }
+
     if ($action === 'save_boggle_highscore') {
         $initials = normaliseInitials($input['initials'] ?? null);
         $score = isset($input['score']) ? (int)$input['score'] : -1;
