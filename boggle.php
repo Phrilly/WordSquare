@@ -66,7 +66,7 @@ function autoVer(string $url): string
           <li>Desktop: click the first tile, glide through the path, then click the final tile.</li>
           <li>Mobile: tap the final selected tile again to submit.</li>
           <li>The first tile is green while a desktop path is active; the final clicked tile is gold.</li>
-          <li>Backspace removes one tile. X clears the full current selection.</li>
+          <li>Backspace removes one tile. Press Escape on desktop, press and hold any board tile on touch devices, or use X to clear the full selection.</li>
           <li>Invalid words show red outlines. Already-found words show yellow outlines. Click any tile to clear either rejected path.</li>
           <li>Every player receives the same three daily boards.</li>
         </ul>
