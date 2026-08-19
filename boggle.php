@@ -57,6 +57,7 @@ function autoVer(string $url): string
       <section id="boggle-help-modal" class="boggle-help-modal" hidden aria-modal="true" aria-label="Boggle rules">
         <h2>HOW TO PLAY</h2>
         <ul>
+          <li><strong>Help Version:</strong> v1.1</li>
           <li><strong>Dictionary:</strong> boggle-uk-game v1.0</li>
           <li>SCOWL-derived UK game dictionary. Proper nouns, offensive entries, and non-game words are filtered out.</li>
           <li>UK spellings are normalised: COLOUR, ORGANISE, THEATRE.</li>
