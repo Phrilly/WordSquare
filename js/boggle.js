@@ -508,7 +508,7 @@ async function showLeaderboard(isTopScore = false) {
   el.summary.replaceChildren();
 
   const title = document.createElement('h2');
-  title.textContent = isTopScore ? 'NEW DAILY HIGH SCORE!' : 'HIGH SCORES';
+  title.textContent = isTopScore ? 'NEW DAILY HIGH SCORE!' : 'DETAILED HIGH SCORES';
   const scores = document.createElement('ul');
   scores.className = 'leaderboard-list';
   scores.textContent = 'Loading...';
