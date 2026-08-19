@@ -2,6 +2,8 @@ const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
 const BOGGLE_SECONDS = 120;
 const BOGGLE_LONG_PRESS_MS = 650;
+const BOGGLE_DRAG_SAFE_ZONE_RATIO = 0.6;
+const BOGGLE_DIAGONAL_INTENT_RATIO = 0.55;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const BOGGLE_PROPER_NOUN_DENYLIST = new Set([
@@ -97,6 +99,42 @@ function adjacent(a, b) {
   const br = Math.floor(b / BOGGLE_SIZE);
   const bc = b % BOGGLE_SIZE;
   return Math.abs(ar - br) <= 1 && Math.abs(ac - bc) <= 1 && a !== b;
+}
+
+function getDragTile(event) {
+  const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest('.boggle-tile');
+  if (!tile || !el.grid.contains(tile)) return null;
+
+  const rect = tile.getBoundingClientRect();
+  const horizontalInset = rect.width * (1 - BOGGLE_DRAG_SAFE_ZONE_RATIO) / 2;
+  const verticalInset = rect.height * (1 - BOGGLE_DRAG_SAFE_ZONE_RATIO) / 2;
+  const isInsideSafeZone = event.clientX >= rect.left + horizontalInset
+    && event.clientX <= rect.right - horizontalInset
+    && event.clientY >= rect.top + verticalInset
+    && event.clientY <= rect.bottom - verticalInset;
+  return isInsideSafeZone ? tile : null;
+}
+
+function getDiagonalIntent(index, event) {
+  const lastTile = el.grid.querySelector(`.boggle-tile[data-index="${index}"]`);
+  if (!lastTile) return null;
+
+  const rect = lastTile.getBoundingClientRect();
+  const horizontalDistance = event.clientX - (rect.left + (rect.width / 2));
+  const verticalDistance = event.clientY - (rect.top + (rect.height / 2));
+  const horizontalMagnitude = Math.abs(horizontalDistance);
+  const verticalMagnitude = Math.abs(verticalDistance);
+  const largerMagnitude = Math.max(horizontalMagnitude, verticalMagnitude);
+  const smallerMagnitude = Math.min(horizontalMagnitude, verticalMagnitude);
+
+  if (largerMagnitude < rect.width * 0.25 || smallerMagnitude / largerMagnitude < BOGGLE_DIAGONAL_INTENT_RATIO) {
+    return null;
+  }
+
+  const row = Math.floor(index / BOGGLE_SIZE) + Math.sign(verticalDistance);
+  const column = (index % BOGGLE_SIZE) + Math.sign(horizontalDistance);
+  if (row < 0 || row >= BOGGLE_SIZE || column < 0 || column >= BOGGLE_SIZE) return null;
+  return (row * BOGGLE_SIZE) + column;
 }
 
 function isGameSafeWord(word) {
@@ -846,11 +884,16 @@ el.closeHelp.addEventListener('click', () => {
 el.grid.addEventListener('pointermove', event => {
   if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
 
-  const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest('.boggle-tile');
-  if (!tile || !el.grid.contains(tile)) return;
+  const tile = getDragTile(event);
+  if (!tile) return;
 
   const index = Number.parseInt(tile.dataset.index ?? '', 10);
-  if (Number.isInteger(index) && state.path.at(-1) !== index) select(index);
+  const lastIndex = state.path.at(-1);
+  if (!Number.isInteger(index) || lastIndex === index) return;
+
+  const diagonalIntent = getDiagonalIntent(lastIndex, event);
+  if (diagonalIntent !== null && diagonalIntent !== index) return;
+  select(index);
 });
 window.addEventListener('blur', () => {
   cancelLongPress();
