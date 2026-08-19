@@ -53,6 +53,10 @@ const el = {
   foundPanel: document.querySelector('.boggle-found')
 };
 
+if (window.self !== window.top) {
+  document.body.classList.add('is-embedded');
+}
+
 function tileText(index) {
   return state.tiles[index] === 'Q' ? 'QU' : state.tiles[index];
 }

@@ -1,5 +1,6 @@
 html { overflow-y:auto; }
 .boggle-page { display:block; height:auto; min-height:100vh; overflow-y:auto; padding:16px; }
+.boggle-page.is-embedded { padding-top:120px; }
 .boggle-app { width:min(100%, 540px); margin:0 auto; padding-bottom:32px; }
 .boggle-header { position:relative; display:flex; justify-content:space-between; gap:6px; align-items:end; min-height:42px; margin-bottom:8px; padding-right:32px; text-align:center; }
 .boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; margin-bottom: 2px; }
@@ -33,6 +34,7 @@ html { overflow-y:auto; }
 .boggle-found { margin-top:22px; }
 .boggle-found h2 { margin:0 0 8px; color:var(--highlight); font-size:18px; }
 #boggle-found-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:6px; margin:0; padding:0; list-style:none; }
+.boggle-page.is-embedded #boggle-found-list { max-height:min(38vh,360px); align-content:start; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; padding-right:4px; }
 .found-word-row { display:flex; align-items:center; flex-wrap:wrap; gap:3px; padding:4px 2px; }
 .mini-tile { display:inline-flex; justify-content:center; align-items:center; min-width:1.2em; height:1.2em; padding:0 3px; border-radius:4px; font-family:Arial,sans-serif; font-weight:bold; font-size:0.95em; box-shadow:inset 1px 1px 3px rgba(255,255,255,0.4), inset -1px -1px 3px rgba(0,0,0,0.2), 1px 2px 4px rgba(0,0,0,0.4); text-shadow:1px 1px 1px rgba(0,0,0,0.3); color:#ffffff; user-select:none; }
 .points-tile { background-color:#d4af37; margin-left:5px; padding:0 6px; }
