@@ -373,13 +373,10 @@ function renderWordTiles(container, words) {
   }));
 }
 
-function createLeaderboardRow(entry, index) {
+function createLeaderboardRow(entry, index, isInteractive = true) {
   const item = document.createElement('li');
   item.classList.add('boggle-score-entry');
   if (index === 0) item.classList.add('is-top-score');
-  item.tabIndex = 0;
-  item.setAttribute('role', 'button');
-  item.setAttribute('aria-label', `View words for ${entry.initials || 'unknown'} score ${entry.score}`);
 
   const initials = String(entry.initials || '---').padEnd(3, '-').slice(0, 3);
   const row = document.createElement('div');
@@ -403,6 +400,11 @@ function createLeaderboardRow(entry, index) {
   score.textContent = String(entry.score);
   row.append(rank, initialsGroup, score);
   item.append(row);
+  if (!isInteractive) return item;
+
+  item.tabIndex = 0;
+  item.setAttribute('role', 'button');
+  item.setAttribute('aria-label', `View words for ${entry.initials || 'unknown'} score ${entry.score}`);
   item.addEventListener('click', () => showLeaderboardWords(entry));
   item.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -413,14 +415,14 @@ function createLeaderboardRow(entry, index) {
   return item;
 }
 
-function renderLeaderboard(scores, target) {
+function renderLeaderboard(scores, target, isInteractive = true) {
   if (scores.length === 0) {
     const item = document.createElement('li');
     item.textContent = 'No scores today.';
     target.replaceChildren(item);
     return;
   }
-  target.replaceChildren(...scores.map(createLeaderboardRow));
+  target.replaceChildren(...scores.map((entry, index) => createLeaderboardRow(entry, index, isInteractive)));
 }
 
 async function getLeaderboardScores() {
@@ -733,12 +735,12 @@ async function showOpeningLeaderboard(initialScores = null) {
   el.summary.append(title, scores, rules, startButton);
 
   if (Array.isArray(initialScores)) {
-    renderLeaderboard(initialScores, scores);
+    renderLeaderboard(initialScores, scores, false);
     return;
   }
 
   try {
-    renderLeaderboard(await getLeaderboardScores(), scores);
+    renderLeaderboard(await getLeaderboardScores(), scores, false);
   } catch (error) {
     scores.textContent = 'Unable to load scores.';
   }
