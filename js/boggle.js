@@ -1,6 +1,7 @@
 const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
 const BOGGLE_SECONDS = 120;
+const BOGGLE_LONG_PRESS_MS = 650;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
 const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
 const BOGGLE_PROPER_NOUN_DENYLIST = new Set([
@@ -31,7 +32,7 @@ const BOGGLE_UK_SPELLING_MAP = {
 };
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, longPressTimer: null, suppressNextTouchClick: false
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -142,7 +143,19 @@ function render() {
     button.classList.toggle('is-duplicate-selection', state.selectionFeedback === 'duplicate' && state.path.includes(index));
     button.disabled = state.locked;
     button.addEventListener('pointerdown', event => {
-      if (event.pointerType !== 'mouse' || state.locked) return;
+      if (state.locked) return;
+      if (event.pointerType === 'touch') {
+        state.suppressNextTouchClick = false;
+        cancelLongPress();
+        state.longPressTimer = window.setTimeout(() => {
+          state.longPressTimer = null;
+          if (state.locked || state.path.length === 0) return;
+          state.suppressNextTouchClick = true;
+          clearCurrentSelection('Word selection cleared.');
+        }, BOGGLE_LONG_PRESS_MS);
+        return;
+      }
+      if (event.pointerType !== 'mouse') return;
       event.preventDefault();
       state.ignoreNextMouseClick = true;
       if (clearRejectedSelection()) return;
@@ -157,7 +170,15 @@ function render() {
       select(index);
       message('Path started. Move across adjacent tiles, then click the final tile.');
     });
+    button.addEventListener('pointerup', cancelLongPress);
+    button.addEventListener('pointercancel', cancelLongPress);
+    button.addEventListener('pointerleave', cancelLongPress);
+    button.addEventListener('contextmenu', event => event.preventDefault());
     button.addEventListener('click', event => {
+      if (state.suppressNextTouchClick) {
+        state.suppressNextTouchClick = false;
+        return;
+      }
       if (event.detail !== 0 && state.ignoreNextMouseClick) {
         state.ignoreNextMouseClick = false;
         return;
@@ -250,15 +271,25 @@ function completeSelection() {
   }, 120);
 }
 
-function clearRejectedSelection() {
-  if (!state.selectionFeedback) return false;
+function cancelLongPress() {
+  if (state.longPressTimer === null) return;
+  window.clearTimeout(state.longPressTimer);
+  state.longPressTimer = null;
+}
 
+function clearCurrentSelection(text) {
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
   state.selectionFeedback = null;
   state.path = [];
-  message('Word selection cleared.');
+  message(text);
   render();
+}
+
+function clearRejectedSelection() {
+  if (!state.selectionFeedback) return false;
+
+  clearCurrentSelection('Word selection cleared.');
   return true;
 }
 
@@ -591,6 +622,7 @@ function openScoreEntry(score) {
 function finishRound() {
   if (state.locked) return;
 
+  cancelLongPress();
   state.locked = true;
   clearInterval(state.timer);
   state.path = [];
@@ -617,6 +649,7 @@ function showSummary(done) {
 }
 
 function startRound(round) {
+  cancelLongPress();
   clearInterval(state.timer);
   state.round = round;
   state.seconds = BOGGLE_SECONDS;
@@ -626,6 +659,7 @@ function startRound(round) {
   state.locked = false;
   state.selectionComplete = false;
   state.selectionFeedback = null;
+  state.suppressNextTouchClick = false;
   el.previewPanel.hidden = false;
   el.foundPanel.hidden = false;
   el.help.hidden = true;
@@ -708,12 +742,7 @@ el.backspace.addEventListener('click', () => {
   render();
 });
 el.clear.addEventListener('click', () => {
-  state.desktopPathDrawing = false;
-  state.selectionComplete = false;
-  state.selectionFeedback = null;
-  state.path = [];
-  message('Word cleared.');
-  render();
+  clearCurrentSelection('Word cleared.');
 });
 el.timer.addEventListener('click', viewHighScores);
 el.helpButton.addEventListener('click', () => {
@@ -732,6 +761,13 @@ el.grid.addEventListener('pointermove', event => {
   if (Number.isInteger(index) && state.path.at(-1) !== index) select(index);
 });
 window.addEventListener('blur', () => {
+  cancelLongPress();
   state.desktopPathDrawing = false;
+});
+window.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || state.locked || state.path.length === 0 || !el.help.hidden) return;
+  event.preventDefault();
+  cancelLongPress();
+  clearCurrentSelection('Word selection cleared.');
 });
 loadDictionary();
