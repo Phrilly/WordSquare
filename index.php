@@ -22,9 +22,9 @@ $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 $isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0);       // Day 0
 $isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0); // Day 1
 $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // Day 2
-$isCommonDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0); // Day 3 (MFD)
+$isCommonDay    = false;                                                    // Day 3 is now Boggle (MFD retired from natural cycle)
 $isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
-$isBoggleDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 6) % 7 === 0); // Day 6
+$isBoggleDay    = ($daysSinceEpoch > 0 && (($daysSinceEpoch - 6) % 7 === 0 || ($daysSinceEpoch - 3) % 7 === 0)); // Day 6 & Day 3
 
 // DEV OVERRIDES: Strict Input Validation
 $rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
