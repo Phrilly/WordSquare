@@ -57,15 +57,13 @@
   height: clamp(42px, calc(var(--game-size) * 0.13), 66px);
   font-family: Arial, sans-serif;
   font-weight: bold;
-  font-size: clamp(24px, calc(var(--game-size) * 0.095), 48px);
+  font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
   background-color: #16a34a;
   color: #ffffff;
   border-radius: 8px;
   box-shadow:
     inset 3px 3px 5px rgba(255, 255, 255, 1),
-    inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-    0 0 0 3px var(--tetris-active-ring),
-    0 0 14px 4px var(--tetris-active-glow-soft);
+    inset -3px -3px 5px rgba(0, 0, 0, 0.15);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, color 0.15s ease-out;
   flex-shrink: 0;
@@ -109,16 +107,12 @@
   0% {
     box-shadow:
       inset 3px 3px 5px rgba(255, 255, 255, 1),
-      inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-      0 0 0 3px var(--tetris-active-ring),
-      0 0 10px 2px var(--tetris-active-glow-soft);
+      inset -3px -3px 5px rgba(0, 0, 0, 0.15);
   }
   100% {
     box-shadow:
       inset 3px 3px 5px rgba(255, 255, 255, 1),
-      inset -3px -3px 5px rgba(0, 0, 0, 0.15),
-      0 0 0 4px var(--tetris-active-ring-strong),
-      0 0 18px 5px var(--tetris-active-glow-strong);
+      inset -3px -3px 5px rgba(0, 0, 0, 0.15);
   }
 }
 
