@@ -886,6 +886,7 @@ async function animateDropToCell(col, targetIdx, letter) {
   const targetRect = targetCell.getBoundingClientRect();
   const animTile = document.createElement('div');
   animTile.className = 'tetris-falling-tile';
+  animTile.classList.add(`is-tone-${tetrisActiveTone}`);
   animTile.textContent = letter;
   animTile.style.width = `${sourceRect.width}px`;
   animTile.style.height = `${sourceRect.height}px`;

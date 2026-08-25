@@ -285,6 +285,21 @@
   animation-fill-mode: forwards;
 }
 
+.tetris-falling-tile.is-tone-green {
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+.tetris-falling-tile.is-tone-amber {
+  background-color: #d98b00;
+  color: #ffffff;
+}
+
+.tetris-falling-tile.is-tone-red {
+  background-color: #c41f2f;
+  color: #ffffff;
+}
+
 .tetris-falling-tile.is-drop {
   animation-name: tetrisDropTile;
   animation-timing-function: cubic-bezier(0.18, 0.7, 0.22, 1);
