@@ -28,8 +28,17 @@ $isBoggleDay    = ($daysSinceEpoch > 0 && (($daysSinceEpoch - 6) % 7 === 0 || ($
 
 // DEV OVERRIDES: Strict Input Validation
 $rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
+if ($rawQuery === '') {
+  $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '');
+  $requestQuery = parse_url($requestUri, PHP_URL_QUERY);
+  $rawQuery = is_string($requestQuery) ? $requestQuery : '';
+}
 parse_str($rawQuery, $queryParams);
 $rawRequestedMode = $queryParams['mode'] ?? $queryParams[''] ?? '';
+if (!is_string($rawRequestedMode)) {
+  $getMode = $_GET['mode'] ?? $_GET[''] ?? '';
+  $rawRequestedMode = is_string($getMode) ? $getMode : '';
+}
 $requestedMode = is_string($rawRequestedMode) ? trim($rawRequestedMode) : '';
 if ($requestedMode === '' && $rawQuery === '=boggle') {
   $requestedMode = 'boggle';
