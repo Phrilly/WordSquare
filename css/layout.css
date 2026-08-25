@@ -58,8 +58,8 @@
   font-family: Arial, sans-serif;
   font-weight: bold;
   font-size: clamp(24px, calc(var(--game-size) * 0.095), 48px);
-  background-color: #fdf6e3;
-  color: #1a1a1a;
+  background-color: #16a34a;
+  color: #ffffff;
   border-radius: 8px;
   box-shadow:
     inset 3px 3px 5px rgba(255, 255, 255, 1),
@@ -78,6 +78,8 @@
   --tetris-active-glow-soft: rgba(62, 177, 92, 0.46);
   --tetris-active-ring-strong: rgba(62, 177, 92, 0.86);
   --tetris-active-glow-strong: rgba(62, 177, 92, 0.62);
+  background-color: #16a34a;
+  color: #ffffff;
 }
 
 .top-bar.tetris-mode #tetris-active-tile.is-tone-amber {
@@ -85,6 +87,8 @@
   --tetris-active-glow-soft: rgba(225, 155, 28, 0.5);
   --tetris-active-ring-strong: rgba(237, 171, 43, 0.9);
   --tetris-active-glow-strong: rgba(237, 171, 43, 0.66);
+  background-color: #d98b00;
+  color: #ffffff;
 }
 
 .top-bar.tetris-mode #tetris-active-tile.is-tone-red {
@@ -92,7 +96,8 @@
   --tetris-active-glow-soft: rgba(208, 48, 64, 0.56);
   --tetris-active-ring-strong: rgba(226, 66, 83, 0.94);
   --tetris-active-glow-strong: rgba(226, 66, 83, 0.74);
-  color: #231114;
+  background-color: #c41f2f;
+  color: #ffffff;
   animation-duration: 0.72s;
 }
 

@@ -459,7 +459,7 @@ function syncTetrisActiveSlot(letter) {
 
   const slots = getDropSlots();
   slots.forEach((slot, col) => {
-    const active = col === tetrisSweepColumn && !tetrisBusy;
+    const active = tetrisGameplayArmed && col === tetrisSweepColumn && !tetrisBusy;
     slot.classList.toggle('is-sweep-active', active);
     slot.classList.toggle('is-tone-green', active && tetrisActiveTone === 'green');
     slot.classList.toggle('is-tone-amber', active && tetrisActiveTone === 'amber');
@@ -642,7 +642,7 @@ function syncDropSlots() {
   slots.forEach((slot, col) => {
     const topIdx = col;
     const blocked = Boolean(cells[topIdx]) || tetrisBusy;
-    const active = col === tetrisSweepColumn && !tetrisBusy;
+    const active = tetrisGameplayArmed && col === tetrisSweepColumn && !tetrisBusy;
     slot.classList.toggle('is-blocked', Boolean(cells[topIdx]));
     slot.classList.toggle('is-sweep-active', active);
     slot.disabled = blocked || !active;
@@ -969,7 +969,7 @@ function ensureDeckBufferForTetris() {
 }
 
 async function handleDropClick(col) {
-  if (!isTetrisMode() || isGameOver || tetrisBusy) return;
+  if (!isTetrisMode() || !tetrisGameplayArmed || isGameOver || tetrisBusy) return;
   const sessionToken = tetrisSessionToken;
 
   const targetIdx = findDropTargetIndex(col);
@@ -987,6 +987,7 @@ async function handleDropClick(col) {
   const slot = getDropSlot(col);
   if (slot) slot.classList.add('is-engaged');
   tetrisBusy = true;
+  setNextLetter();
   clearTetrisRoundTimers();
   stopTetrisBalloonPulse();
   syncDropSlots();
