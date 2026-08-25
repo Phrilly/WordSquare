@@ -33,6 +33,11 @@ if ($rawQuery === '') {
   $requestQuery = parse_url($requestUri, PHP_URL_QUERY);
   $rawQuery = is_string($requestQuery) ? $requestQuery : '';
 }
+if ($rawQuery === '') {
+  $referrer = (string)($_SERVER['HTTP_REFERER'] ?? '');
+  $referrerQuery = parse_url($referrer, PHP_URL_QUERY);
+  $rawQuery = is_string($referrerQuery) ? $referrerQuery : '';
+}
 parse_str($rawQuery, $queryParams);
 $rawRequestedMode = $queryParams['mode'] ?? $queryParams[''] ?? '';
 if (!is_string($rawRequestedMode)) {
