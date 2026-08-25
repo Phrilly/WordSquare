@@ -68,6 +68,8 @@
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, color 0.15s ease-out;
   flex-shrink: 0;
   align-self: flex-end;
+  transform: scale(1.1);
+  transform-origin: center bottom;
   animation: activeTileGlow 1.4s ease-in-out infinite alternate;
 }
 
@@ -100,7 +102,7 @@
 }
 
 .top-bar.tetris-mode #tetris-active-tile:active {
-  transform: scale(0.96);
+  transform: scale(1.06);
 }
 
 @keyframes activeTileGlow {
