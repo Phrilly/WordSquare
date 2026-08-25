@@ -356,7 +356,7 @@
   .top-bar.tetris-mode #tetris-active-tile {
     width: clamp(36px, calc(var(--game-size) * 0.11), 54px);
     height: clamp(36px, calc(var(--game-size) * 0.11), 54px);
-    font-size: clamp(22px, calc(var(--game-size) * 0.08), 36px);
+    font-size: clamp(20px, calc(var(--game-size) * 0.09), 46px);
     margin-right: 6px;
   }
 
