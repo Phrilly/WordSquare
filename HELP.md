@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.3.1
-- Change Log: 1.3.1 fixes Scrabble leaderboard score ranking for random DL/DW boards and updates help notes.
+- Help Version: 1.3.2
+- Change Log: 1.3.2 updates the visible application and help versions for deployment verification.
 
 ## Core Rules
 - The board is always 5x5.

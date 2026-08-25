@@ -75,9 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.3.1';
+    const helpVersion = '1.3.2';
     const helpChanges = [
-      '1.3.1 fixes Scrabble leaderboard score ranking for random DL/DW boards and updates help notes.',
+      '1.3.2 updates the visible application and help versions for deployment verification.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
