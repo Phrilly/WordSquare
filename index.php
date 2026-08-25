@@ -28,8 +28,15 @@ $isBoggleDay    = ($daysSinceEpoch > 0 && (($daysSinceEpoch - 6) % 7 === 0 || ($
 
 // DEV OVERRIDES: Strict Input Validation
 $rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
-if (isset($_GET['mode']) || isset($_GET['']) || $rawQuery === '=boggle') {
-    $mode = trim((string)($_GET['mode'] ?? $_GET[''] ?? ($rawQuery === '=boggle' ? 'boggle' : '')));
+parse_str($rawQuery, $queryParams);
+$rawRequestedMode = $queryParams['mode'] ?? $queryParams[''] ?? '';
+$requestedMode = is_string($rawRequestedMode) ? trim($rawRequestedMode) : '';
+if ($requestedMode === '' && $rawQuery === '=boggle') {
+  $requestedMode = 'boggle';
+}
+
+if ($requestedMode !== '') {
+  $mode = $requestedMode;
   if ($mode === 'classic') {
     $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
   } elseif ($mode === 'bomb') {
