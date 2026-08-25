@@ -29,6 +29,7 @@ let tetrisClockDeadline = 0;
 let tetrisRoundToken = 0;
 let tetrisActiveLetter = '';
 let tetrisActiveTone = 'green';
+let tetrisNextLetterReady = false;
 let tetrisSuccessfulPlacements = 0;
 let tetrisTurnIndex = 0;
 let tetrisGameplayArmed = false;
@@ -210,6 +211,16 @@ function getTetrisSweepStepMs(turnIndex = tetrisTurnIndex) {
 
 function formatTetrisClock(ms) {
   return `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
+}
+
+function syncTetrisActiveTileUI() {
+  const tileEl = getTetrisActiveTileEl();
+  if (!tileEl) return;
+
+  tileEl.textContent = tetrisActiveLetter || '';
+  tileEl.classList.toggle('is-tone-green', tetrisActiveTone === 'green');
+  tileEl.classList.toggle('is-tone-amber', tetrisActiveTone === 'amber');
+  tileEl.classList.toggle('is-tone-red', tetrisActiveTone === 'red');
 }
 
 function reportTetrisInvariant(code, details) {
@@ -444,13 +455,7 @@ function setTetrisClockDisplay(remainingMs, roundMs) {
   }
 
   clockValueEl.textContent = formatTetrisClock(remainingMs);
-  const tileEl = getTetrisActiveTileEl();
-  if (tileEl) {
-    tileEl.textContent = tetrisActiveLetter || '';
-    tileEl.classList.toggle('is-tone-green', tetrisActiveTone === 'green');
-    tileEl.classList.toggle('is-tone-amber', tetrisActiveTone === 'amber');
-    tileEl.classList.toggle('is-tone-red', tetrisActiveTone === 'red');
-  }
+  syncTetrisActiveTileUI();
   syncTetrisActiveSlot(tetrisActiveLetter);
 }
 
@@ -530,7 +535,13 @@ function startTetrisRound() {
 
   maybeTopUpTetrisBombs();
 
-  const letter = claimNextTetrisLetterForBar();
+  let letter = '';
+  if (tetrisNextLetterReady) {
+    letter = tetrisActiveLetter;
+    tetrisNextLetterReady = false;
+  } else {
+    letter = claimNextTetrisLetterForBar();
+  }
   if (!letter) return;
 
   validateTetrisClockState('startTetrisRound');
@@ -877,7 +888,7 @@ function showScoreGainFeedback(scoreGain, matchedMap) {
   setTimeout(() => label.remove(), 950);
 }
 
-async function animateDropToCell(col, targetIdx, letter) {
+async function animateDropToCell(col, targetIdx, letter, tone) {
   const sourceSlot = getDropSlot(col);
   const targetCell = document.querySelector(`.grid-cell[data-index='${targetIdx}']`);
   if (!sourceSlot || !targetCell) return;
@@ -886,7 +897,7 @@ async function animateDropToCell(col, targetIdx, letter) {
   const targetRect = targetCell.getBoundingClientRect();
   const animTile = document.createElement('div');
   animTile.className = 'tetris-falling-tile';
-  animTile.classList.add(`is-tone-${tetrisActiveTone}`);
+  animTile.classList.add(`is-tone-${tone}`);
   animTile.textContent = letter;
   animTile.style.width = `${sourceRect.width}px`;
   animTile.style.height = `${sourceRect.height}px`;
@@ -983,16 +994,27 @@ async function handleDropClick(col) {
 
   const letter = tetrisActiveLetter || (document.getElementById('next-letter') ? document.getElementById('next-letter').innerText : '');
   if (!letter) return;
+  const dropTone = tetrisActiveTone;
   const cellEl = document.querySelector(`.grid-cell[data-index='${targetIdx}']`);
 
   const slot = getDropSlot(col);
   if (slot) slot.classList.add('is-engaged');
   tetrisBusy = true;
-  setNextLetter();
+  const nextLetter = claimNextTetrisLetterForBar();
+  if (!nextLetter) {
+    tetrisBusy = false;
+    if (slot) clearSlotLoadedLetter(slot);
+    syncDropSlots();
+    return;
+  }
+  tetrisActiveLetter = nextLetter;
+  tetrisActiveTone = 'green';
+  tetrisNextLetterReady = true;
+  syncTetrisActiveTileUI();
   clearTetrisRoundTimers();
   stopTetrisBalloonPulse();
   syncDropSlots();
-  await animateDropToCell(col, targetIdx, letter);
+  await animateDropToCell(col, targetIdx, letter, dropTone);
   if (sessionToken !== tetrisSessionToken || isGameOver) {
     if (slot) clearSlotLoadedLetter(slot);
     tetrisBusy = false;
@@ -1134,6 +1156,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisBombsRemaining = TETRIS_BOMB_MAX;
   tetrisActiveLetter = '';
   tetrisActiveTone = 'green';
+  tetrisNextLetterReady = false;
   tetrisSuccessfulPlacements = 0;
   tetrisTurnIndex = 0;
   tetrisGameplayArmed = false;
