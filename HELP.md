@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.3.2
-- Change Log: 1.3.2 updates the visible application and help versions for deployment verification.
+- Help Version: 1.3.3
+- Change Log: 1.3.3 updates Tetris timing documentation and the application version.
 
 ## Core Rules
 - The board is always 5x5.
@@ -63,7 +63,7 @@
 - 4-letter clear: 5 points.
 - 5-letter clear: 20 points.
 - Cleared letters are removed, then gravity pulls letters down.
-- Turn timer starts at 10.0s and drops by 0.2s per round to a 2.8s minimum.
+- Turn timer starts at 10.0s and drops by 0.15s per round to a 4.0s minimum.
 - You start with 3 bombs; one bomb removes one occupied tile.
 - Survival top-up: +1 bomb every 60 seconds survived, up to the cap of 3.
 - Bomb top-up cue: a bright strip blast, icon flash/pop, expanding rings, and a +1 BOMB READY label near the bomb bar.

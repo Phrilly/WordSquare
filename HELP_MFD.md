@@ -1,8 +1,8 @@
 # MFD Help (My First Dictionary)
 
 ## Help Version
-- Help Version: 1.3.2
-- Change Log: 1.3.2 updates the visible application and help versions for deployment verification.
+- Help Version: 1.3.3
+- Change Log: 1.3.3 updates Tetris timing documentation and the application version.
 
 ## What MFD Is
 MFD is a daily variant that plays exactly like Classic mode.

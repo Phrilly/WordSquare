@@ -75,9 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.3.2';
+    const helpVersion = '1.3.3';
     const helpChanges = [
-      '1.3.2 updates the visible application and help versions for deployment verification.',
+      '1.3.3 updates Tetris timing documentation and the application version.',
     ];
 
     const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <ul>
         <li>Click a DROP slot above the grid to let the current letter fall into that column.</li>
         <li>4-letter and 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
-        <li>Turn timer starts at 10.0s and drops by 0.2s per round to a 2.8s minimum.</li>
+        <li>Turn timer starts at 10.0s and drops by 0.15s per round to a 4.0s minimum.</li>
         <li>You start with 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
         <li>Survival reward: +1 bomb every 60 seconds survived, up to a cap of 3 bombs.</li>
         <li>Bomb top-up cue: bright strip blast, icon flash/pop, expanding rings, and +1 BOMB READY text near the bomb bar.</li>

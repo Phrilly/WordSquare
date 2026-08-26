@@ -337,7 +337,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   </div>
   <?php endif; ?>
 
-  <div class="version-tag">Version 1.3.2</div>
+  <div class="version-tag">Version 1.3.3</div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>
