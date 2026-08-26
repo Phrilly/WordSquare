@@ -480,7 +480,7 @@ function syncTetrisDangerIndicators() {
   const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
   cellEls.forEach((cellEl) => cellEl.classList.remove('is-tetris-danger'));
 
-  if (!tetrisGameplayArmed || tetrisBusy) return;
+  if (!tetrisGameplayArmed) return;
 
   for (let col = 0; col < gridSize; col++) {
     const targetIdx = findDropTargetIndex(col);
