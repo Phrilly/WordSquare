@@ -482,9 +482,11 @@ function syncTetrisDangerIndicators() {
 
   if (!tetrisGameplayArmed || tetrisBusy) return;
 
-  const targetIdx = findDropTargetIndex(tetrisSweepColumn);
-  if (targetIdx >= 0 && targetIdx < gridSize) {
-    cellEls[targetIdx]?.classList.add('is-tetris-danger');
+  for (let col = 0; col < gridSize; col++) {
+    const targetIdx = findDropTargetIndex(col);
+    if (targetIdx >= 0 && targetIdx < gridSize) {
+      cellEls[targetIdx]?.classList.add('is-tetris-danger');
+    }
   }
 }
 
