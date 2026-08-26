@@ -462,6 +462,7 @@ function setTetrisClockDisplay(remainingMs, roundMs) {
 function syncTetrisActiveSlot(letter) {
   if (!isTetrisMode()) return;
 
+  syncTetrisDangerIndicators();
   const slots = getDropSlots();
   slots.forEach((slot, col) => {
     const active = tetrisGameplayArmed && col === tetrisSweepColumn && !tetrisBusy;
@@ -471,6 +472,20 @@ function syncTetrisActiveSlot(letter) {
     slot.classList.toggle('is-tone-red', active && tetrisActiveTone === 'red');
     slot.disabled = tetrisBusy;
   });
+}
+
+function syncTetrisDangerIndicators() {
+  if (!isTetrisMode() || !gridEl) return;
+
+  const cellEls = gridEl.querySelectorAll('.grid-cell:not(.alpha-cell)');
+  cellEls.forEach((cellEl) => cellEl.classList.remove('is-tetris-danger'));
+
+  if (!tetrisGameplayArmed || tetrisBusy) return;
+
+  const targetIdx = findDropTargetIndex(tetrisSweepColumn);
+  if (targetIdx >= 0 && targetIdx < gridSize) {
+    cellEls[targetIdx]?.classList.add('is-tetris-danger');
+  }
 }
 
 function isAnyTetrisColumnFull() {
@@ -648,6 +663,7 @@ function renderTetrisPreRoundPreview() {
 function syncDropSlots() {
   if (!isTetrisMode()) return;
 
+  syncTetrisDangerIndicators();
   const slots = getDropSlots();
   const letter = tetrisActiveLetter || (document.getElementById('next-letter') ? document.getElementById('next-letter').innerText : '');
   slots.forEach((slot, col) => {
