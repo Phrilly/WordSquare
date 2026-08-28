@@ -94,7 +94,8 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Square - <?= htmlspecialchars($modeDisplayName, ENT_QUOTES, 'UTF-8') ?></title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
 
   <link rel="stylesheet" href="<?= autoVer('css/base.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/layout.css') ?>">

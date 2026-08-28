@@ -18,7 +18,8 @@ function autoVer($url) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Square: Bomb Variant</title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
 
   <link rel="stylesheet" href="<?= autoVer('css/base.css') ?>">
   <link rel="stylesheet" href="<?= autoVer('css/layout.css') ?>">
