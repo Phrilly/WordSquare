@@ -11,6 +11,7 @@ function isTopUpMode() {
 let topUpActiveMatches = [];
 let topUpHighlightedIndices = new Set();
 let topUpScoredWordKeys = new Set();
+let topUpShortWordClasses = new Map();
 
 // ---------------------------------------------------------
 // WORD DETECTION (all straight-line directions)
@@ -81,6 +82,36 @@ function awardTopUpScoringWords() {
   });
 
   topUpScoredWordKeys = activeKeys;
+  applyTopUpShortWordColors(words);
+}
+
+function applyTopUpShortWordColors(words) {
+  const nextClasses = new Map();
+
+  words.forEach(word => {
+    const className = word.length === 3 ? 'word-3' : 'word-4';
+    word.key.split('-').forEach(index => {
+      const previousClass = nextClasses.get(index);
+      nextClasses.set(index, previousClass === 'word-4' ? previousClass : className);
+    });
+  });
+
+  topUpShortWordClasses.forEach((className, index) => {
+    if (nextClasses.get(index) !== className) {
+      const cellEl = document.querySelector(`.grid-cell[data-index='${index}']`);
+      if (cellEl) cellEl.classList.remove(className);
+    }
+  });
+
+  nextClasses.forEach((className, index) => {
+    if (topUpShortWordClasses.get(index) !== className) {
+      const cellEl = document.querySelector(`.grid-cell[data-index='${index}']`);
+      if (cellEl) cellEl.classList.remove('word-3', 'word-4');
+      if (cellEl) cellEl.classList.add(className);
+    }
+  });
+
+  topUpShortWordClasses = nextClasses;
 }
 
 // ---------------------------------------------------------
@@ -163,6 +194,7 @@ document.addEventListener('ws:beforeInit', () => {
   topUpActiveMatches = [];
   topUpHighlightedIndices = new Set();
   topUpScoredWordKeys = new Set();
+  topUpShortWordClasses = new Map();
 });
 
 document.addEventListener('ws:afterInit', () => {
@@ -233,7 +265,7 @@ document.addEventListener('ws:occupiedCellClick', (e) => {
     if (cellEl) {
       cellEl.innerText = '';
       delete cellEl.dataset.letter;
-      cellEl.classList.remove('highlight-active', 'is-undoable', 'is-wildcard');
+      cellEl.classList.remove('highlight-active', 'is-undoable', 'is-wildcard', 'word-3', 'word-4');
       cellEl.classList.add('topup-cleared');
       setTimeout(() => cellEl.classList.remove('topup-cleared'), 300);
     }
@@ -248,6 +280,7 @@ document.addEventListener('ws:occupiedCellClick', (e) => {
 
   // Re-evaluating here (rather than waiting for the next placement) is what drops an
   // intersecting word's highlight the instant its shared letter is cleared away.
+  awardTopUpScoringWords();
   refreshTopUpBoardState();
 
   // Reopen the queue gate now that the board has room again.
