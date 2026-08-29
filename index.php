@@ -25,6 +25,7 @@ $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // D
 $isCommonDay    = false;                                                    // Day 3 is now Boggle (MFD retired from natural cycle)
 $isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
 $isBoggleDay    = ($daysSinceEpoch > 0 && (($daysSinceEpoch - 6) % 7 === 0 || ($daysSinceEpoch - 3) % 7 === 0)); // Day 6 & Day 3
+$isTopUpDay     = false;
 
 // DEV OVERRIDES: Strict Input Validation
 $rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
@@ -52,19 +53,21 @@ if ($requestedMode === '' && $rawQuery === '=boggle') {
 if ($requestedMode !== '') {
   $mode = $requestedMode;
   if ($mode === 'classic') {
-    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
+    $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = false;
   } elseif ($mode === 'bomb') {
-      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
+      $isBombDay = true; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = false;
     } elseif ($mode === 'lookahead') {
-      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
+      $isBombDay = false; $isLookaheadDay = true; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = false;
     } elseif ($mode === 'scrabble') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = true; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = false;
     } elseif ($mode === 'mfd' || $mode === 'common') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false; $isBoggleDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = true; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = false;
     } elseif ($mode === 'tetris') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true; $isBoggleDay = false;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = true; $isBoggleDay = false; $isTopUpDay = false;
     } elseif ($mode === 'boggle') {
-      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = true;
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = true; $isTopUpDay = false;
+    } elseif ($mode === 'topup') {
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = true;
     }
 }
 
@@ -84,6 +87,8 @@ if ($isBombDay) {
     $modeDisplayName = 'My First Dictionary';
 } elseif ($isTetrisDay) {
   $modeDisplayName = 'Tetris';
+} elseif ($isTopUpDay) {
+  $modeDisplayName = 'Top Up';
 }
 
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH SCORES";
@@ -124,6 +129,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
       isScrabbleDay: <?= json_encode($isScrabbleDay) ?>,
       isCommonDay: <?= json_encode($isCommonDay) ?>,
       isTetrisDay: <?= json_encode($isTetrisDay) ?>,
+      isTopUpDay: <?= json_encode($isTopUpDay) ?>,
       modeDisplayName: <?= json_encode($modeDisplayName) ?>
     };
   </script>
@@ -363,6 +369,10 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
 
   <?php if ($isTetrisDay): ?>
   <script src="<?= autoVer('js/gameplay-tetris.js') ?>" defer></script>
+  <?php endif; ?>
+
+  <?php if (!empty($isTopUpDay)): ?>
+  <script src="<?= autoVer('js/gameplay-topup.js') ?>" defer></script>
   <?php endif; ?>
   
   <script src="<?= autoVer('js/leaderboard.js') ?>" defer></script>

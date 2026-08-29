@@ -63,7 +63,7 @@ function showGoGate() {
 }
 
 function syncDefaultQueueUI() {
-  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isLookaheadDay || window.GAME_CONFIG.isBombDay)) {
+  if (window.GAME_CONFIG && (window.GAME_CONFIG.isScrabbleDay || window.GAME_CONFIG.isLookaheadDay || window.GAME_CONFIG.isBombDay || window.GAME_CONFIG.isTopUpDay)) {
     return;
   }
 
@@ -259,12 +259,14 @@ function setNextLetter() {
 
 function renderNextLetterWindow() {
   if (currentDeckIndex >= gameDeck.length) {
-      triggerEndGame();
+      const deckExhaustedEvent = new CustomEvent('ws:deckExhausted', { cancelable: true });
+      if (document.dispatchEvent(deckExhaustedEvent)) triggerEndGame();
       return;
   }
   
   if (placedCount >= 25) {
-      triggerEndGame();
+      const boardFullEvent = new CustomEvent('ws:boardFull', { cancelable: true });
+      if (document.dispatchEvent(boardFullEvent)) triggerEndGame();
       return;
   }
   
@@ -323,15 +325,16 @@ function handleHoverLeave(cellEl) {
 
 function handleCellClick(index, cellEl) {
   if (!isRoundArmed) return;
-  if (isGameOver || placedCount >= 25) return;
+  if (isGameOver) return;
   if (cells[index] !== '') {
-    if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {
+    if (window.GAME_CONFIG && (window.GAME_CONFIG.isTetrisDay || window.GAME_CONFIG.isTopUpDay)) {
       document.dispatchEvent(new CustomEvent('ws:occupiedCellClick', {
         detail: { index: index, cellEl: cellEl }
       }));
     }
     return;
   }
+  if (placedCount >= 25) return;
   
   const clickEvent = new CustomEvent('ws:cellClick', { 
       detail: { index: index, cellEl: cellEl }, 

@@ -81,7 +81,7 @@ function normaliseMode(?string $mode): string
     if ($mode === 'common') {
         $mode = 'mfd';
     }
-    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd', 'tetris'];
+    $allowedModes = ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd', 'tetris', 'topup'];
     return in_array($mode, $allowedModes, true) ? $mode : 'classic';
 }
 
@@ -375,7 +375,7 @@ function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
     $mode = normaliseMode($mode);
 
     foreach ($rows as &$row) {
-        if ($mode === 'tetris' || $mode === 'scrabble') {
+        if ($mode === 'tetris' || $mode === 'topup' || $mode === 'scrabble') {
             $row['score'] = (int)($row['score'] ?? 0);
             continue;
         }
@@ -612,9 +612,9 @@ if (isset($input['action'])) {
         
         $score = calculateGridScoreForMode($grid, $mode, $pdo, $dlIndices, $dwIndices);
 
-        if ($mode === 'tetris') {
+        if ($mode === 'tetris' || $mode === 'topup') {
             if ($sessionId === '') {
-                jsonResponse(['error' => 'Missing session id for tetris score verification.'], 400);
+            jsonResponse(['error' => 'Missing session id for score verification.'], 400);
             }
 
             try {
@@ -639,7 +639,7 @@ if (isset($input['action'])) {
 
                 $score = $proofScore;
             } catch (PDOException $e) {
-                error_log('validate.php tetris score verification failed: ' . $e->getMessage());
+                error_log('validate.php score verification failed: ' . $e->getMessage());
                 jsonResponse(['error' => 'Failed to verify tetris score.'], 500);
             }
         }
