@@ -31,8 +31,8 @@
     font-size: 14px;
   }
 
-  /* Expands the modal outwards to provide enough vertical room for the board */
+  /* Gives board-view score breakdowns room below the grid. */
   #best-board-modal {
-    inset: -45px -10px;
+    inset: -65px -10px -345px;
   }
 }

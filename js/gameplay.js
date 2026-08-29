@@ -201,14 +201,6 @@ function triggerEndGame() {
     const finalScoreEl = document.getElementById('final-score-display');
     if (finalScoreEl) finalScoreEl.innerText = currentScore;
 
-    if (window.GAME_CONFIG && window.GAME_CONFIG.isTopUpDay) {
-      document.dispatchEvent(new CustomEvent('ws:topUpGameOver'));
-    } else if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {
-      document.dispatchEvent(new CustomEvent('ws:tetrisGameOver'));
-    } else {
-      renderScoreBreakdown(getCurrentGridScoreEvents());
-    }
-
     dailySect = document.getElementById('daily-save-section');
     nonDailySect = document.getElementById('non-daily-section');
 
