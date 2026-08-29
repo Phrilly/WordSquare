@@ -30,7 +30,13 @@ function cancelMobilePreview() {
     mobilePreviewTimer = null;
   }
   if (mobilePreviewCell) {
-    handleHoverLeave(mobilePreviewCell);
+    const cancelEvent = new CustomEvent('ws:mobilePreviewCancel', {
+      detail: { cellEl: mobilePreviewCell },
+      cancelable: true
+    });
+    if (document.dispatchEvent(cancelEvent)) {
+      handleHoverLeave(mobilePreviewCell);
+    }
     mobilePreviewCell = null;
   }
 }
@@ -190,18 +196,7 @@ function initGame() {
     cell.addEventListener('pointerdown', (event) => {
       if (event.pointerType === 'touch') startMobilePreview(i, cell);
     });
-    cell.addEventListener('pointerup', () => {
-      if (window.GAME_CONFIG && window.GAME_CONFIG.isTopUpDay) {
-        // Top Up: keep the hover color visible after long-press release
-        if (mobilePreviewTimer !== null) {
-          clearTimeout(mobilePreviewTimer);
-          mobilePreviewTimer = null;
-        }
-        mobilePreviewCell = null;
-      } else {
-        cancelMobilePreview();
-      }
-    });
+    cell.addEventListener('pointerup', cancelMobilePreview);
     cell.addEventListener('pointercancel', cancelMobilePreview);
     cell.addEventListener('pointerleave', cancelMobilePreview);
     if (gridEl) gridEl.appendChild(cell);

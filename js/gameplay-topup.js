@@ -13,6 +13,14 @@ let topUpHighlightedIndices = new Set();
 let topUpScoredWordKeys = new Set();
 let topUpShortWordClasses = new Map();
 let topUpScoreEvents = [];
+let topUpStickyPreviewCell = null;
+
+// Removes the persistent long-press hover preview from the board.
+function clearTopUpStickyPreview() {
+  if (!topUpStickyPreviewCell) return;
+  topUpStickyPreviewCell.classList.remove('hover-3', 'hover-4', 'hover-5');
+  topUpStickyPreviewCell = null;
+}
 
 // ---------------------------------------------------------
 // WORD DETECTION (all straight-line directions)
@@ -220,6 +228,7 @@ document.addEventListener('ws:beforeInit', () => {
   topUpScoredWordKeys = new Set();
   topUpShortWordClasses = new Map();
   topUpScoreEvents = [];
+  topUpStickyPreviewCell = null;
 });
 
 document.addEventListener('ws:afterInit', () => {
@@ -237,11 +246,46 @@ document.addEventListener('ws:tileUndone', () => {
   syncTopUpQueueUI();
 });
 
-// Hover preview: let the default handler apply color-coded hover classes
-// (hover-3 / hover-4 / hover-5) matching the word length that would be formed.
+// Apply hover color previews matching the word length that would be formed.
+// On touch devices the preview sticks after long-press release (see
+// ws:mobilePreviewCancel below) so players can inspect it before committing.
 document.addEventListener('ws:applyHover', (e) => {
   if (!isTopUpMode()) return;
-  // Pass-through: default hover logic applies the matching color class.
+  e.preventDefault();
+  const maxLen = e.detail.maxLen;
+  const cellEl = e.detail.cellEl;
+  if (topUpStickyPreviewCell && topUpStickyPreviewCell !== cellEl) {
+    clearTopUpStickyPreview();
+  }
+  topUpStickyPreviewCell = cellEl;
+  if (maxLen === 3) cellEl.classList.add('hover-3');
+  else if (maxLen === 4) cellEl.classList.add('hover-4');
+  else if (maxLen === 5) cellEl.classList.add('hover-5');
+});
+
+// Keep the long-press preview visible after the finger lifts.
+document.addEventListener('ws:mobilePreviewCancel', (e) => {
+  if (!isTopUpMode()) return;
+  if (e.detail.cellEl === topUpStickyPreviewCell) {
+    e.preventDefault();
+  }
+});
+
+// The sticky preview is only truthful for the letter it was computed with;
+// clear it whenever the queued letter changes or the board resets.
+document.addEventListener('ws:tilePlaced', () => {
+  if (!isTopUpMode()) return;
+  clearTopUpStickyPreview();
+});
+
+document.addEventListener('ws:tileUndone', () => {
+  if (!isTopUpMode()) return;
+  clearTopUpStickyPreview();
+});
+
+document.addEventListener('ws:nextLetterUpdated', () => {
+  if (!isTopUpMode()) return;
+  clearTopUpStickyPreview();
 });
 
 // Top Up awards short words once when formed; five-letter words pay out on clear.
