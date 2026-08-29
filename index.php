@@ -289,6 +289,21 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
       </div>
     </div>
 
+    <div class="overlay-modal" id="topup-opening-modal" style="display: none;">
+      <h2 style="color: var(--highlight); margin-top: 0; margin-bottom: 20px;">TOP UP</h2>
+      <p style="font-size: 15px; line-height: 1.7; margin: 0 0 20px 0; max-width: 420px;">
+        <strong>3-letter words:</strong> 1 point (auto-score, stay on board)<br>
+        <strong>4-letter words:</strong> 5 points (auto-score, stay on board)<br>
+        <strong>5-letter words:</strong> 20 points (click to score and clear the cells)
+      </p>
+      <p style="font-size: 14px; color: #aaa; margin: 20px 0; max-width: 420px;">
+        Game ends when the board fills and no 5-letter word can be cleared.
+      </p>
+      <div class="overlay-actions">
+        <button class="arcade-btn" id="topup-start-btn" type="button">START GAME</button>
+      </div>
+    </div>
+
     <div class="overlay-modal" id="best-board-modal">
       <div id="back-to-leaderboard-btn" class="back-arrow" title="Back to Leaderboard">&#8592;</div>
       <h2 id="board-viewer-title" class="board-title top-score-mode" style="margin-top:0; padding: 0 40px;">🏆 #1 BOARD 🏆</h2>
@@ -383,6 +398,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
   <script src="<?= autoVer('js/ai.js') ?>" defer></script>
   <script src="<?= autoVer('js/startup.js') ?>" defer></script>
   <script src="<?= autoVer('js/try-it.js') ?>" defer></script>
+  <script src="<?= autoVer('js/topup-opening.js') ?>" defer></script>
   <script src="<?= autoVer('js/events.js') ?>" defer></script>
 </body>
 </html>

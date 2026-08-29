@@ -226,10 +226,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
   // 6. Initialize the main game state safely
-  try {
-    if (typeof initGame === 'function') initGame();
-  } catch (e) {
-    console.error("initGame failed:", e);
+  // Top Up shows a rules modal before calling initGame, so skip it here for that mode
+  const isTopUpMode = window.GAME_CONFIG && window.GAME_CONFIG.isTopUpDay;
+  if (!isTopUpMode) {
+    try {
+      if (typeof initGame === 'function') initGame();
+    } catch (e) {
+      console.error("initGame failed:", e);
+    }
   }
   
   // SEQUENCE ENFORCEMENT: Only drop the loading mask here
