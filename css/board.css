@@ -132,6 +132,47 @@
   box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4), inset 0 0 20px rgba(176, 48, 128, 0.8) !important;
 }
 
+.score-breakdown-list {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  max-height: 190px;
+  margin: 0 0 18px;
+  padding: 0 4px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.score-breakdown-list .found-word-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 2px;
+}
+
+.score-breakdown-list .mini-tile {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 1.2em;
+  height: 1.2em;
+  padding: 0 3px;
+  border-radius: 4px;
+  font-family: Arial, sans-serif;
+  font-size: 0.95em;
+  font-weight: bold;
+  color: #ffffff;
+  box-shadow: inset 1px 1px 3px rgba(255,255,255,0.4), inset -1px -1px 3px rgba(0,0,0,0.2), 1px 2px 4px rgba(0,0,0,0.4);
+}
+
+.score-breakdown-list .points-tile {
+  margin-left: 5px;
+  padding: 0 6px;
+  background-color: #d4af37;
+}
+
 .grid-cell.highlight-active {
   background-color: #ffd700 !important;
   color: #1a1a1a !important;

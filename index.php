@@ -257,6 +257,8 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
         Final Score: <strong id="final-score-display" style="color:var(--highlight)">0</strong>
       </div>
 
+      <ul id="score-breakdown-list" class="score-breakdown-list"></ul>
+
       <div id="daily-save-section">
         <div class="initials-wrapper">
           <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">

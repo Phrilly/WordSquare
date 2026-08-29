@@ -12,6 +12,7 @@ let topUpActiveMatches = [];
 let topUpHighlightedIndices = new Set();
 let topUpScoredWordKeys = new Set();
 let topUpShortWordClasses = new Map();
+let topUpScoreEvents = [];
 
 // ---------------------------------------------------------
 // WORD DETECTION (all straight-line directions)
@@ -38,7 +39,7 @@ function computeTopUpScoringWords() {
           const path = Array.from({ length }, (_, step) => ((r + (step * rowStep)) * gridSize) + c + (step * columnStep));
           const word = path.map(index => cells[index]).join('');
           if (word.length === length && isTopUpDictionaryWord(word)) {
-            words.push({ key: path.join('-'), length });
+            words.push({ key: path.join('-'), length, text: word });
           }
         }
       });
@@ -77,7 +78,9 @@ function awardTopUpScoringWords() {
 
   words.forEach(word => {
     if (!topUpScoredWordKeys.has(word.key)) {
-      currentScore += word.length === 3 ? 1 : 5;
+      const points = word.length === 3 ? 1 : 5;
+      currentScore += points;
+      topUpScoreEvents.push({ word: word.text, points });
     }
   });
 
@@ -112,6 +115,27 @@ function applyTopUpShortWordColors(words) {
   });
 
   topUpShortWordClasses = nextClasses;
+}
+
+function renderTopUpScoreList() {
+  const listEl = document.getElementById('topup-score-list');
+  if (!listEl) return;
+
+  listEl.replaceChildren(...topUpScoreEvents.map(event => {
+    const item = document.createElement('li');
+    item.className = 'found-word-row';
+    for (const letter of event.word) {
+      const tile = document.createElement('span');
+      tile.className = `mini-tile word-${event.word.length}`;
+      tile.textContent = letter;
+      item.append(tile);
+    }
+    const points = document.createElement('span');
+    points.className = 'mini-tile points-tile';
+    points.textContent = `+${event.points}`;
+    item.append(points);
+    return item;
+  }));
 }
 
 // ---------------------------------------------------------
@@ -195,6 +219,7 @@ document.addEventListener('ws:beforeInit', () => {
   topUpHighlightedIndices = new Set();
   topUpScoredWordKeys = new Set();
   topUpShortWordClasses = new Map();
+  topUpScoreEvents = [];
 });
 
 document.addEventListener('ws:afterInit', () => {
@@ -276,6 +301,7 @@ document.addEventListener('ws:occupiedCellClick', (e) => {
   }
 
   currentScore += 20;
+  topUpScoreEvents.push({ word: matchingWord.word, points: 20 });
   if (scoreEl) scoreEl.innerText = currentScore;
 
   // Re-evaluating here (rather than waiting for the next placement) is what drops an
@@ -286,3 +312,5 @@ document.addEventListener('ws:occupiedCellClick', (e) => {
   // Reopen the queue gate now that the board has room again.
   if (typeof setNextLetter === 'function') setNextLetter();
 });
+
+document.addEventListener('ws:topUpGameOver', () => renderScoreBreakdown(topUpScoreEvents));

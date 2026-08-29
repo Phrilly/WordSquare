@@ -38,6 +38,7 @@ let tetrisSpeedControlsBound = false;
 let tetrisSessionToken = 0;
 let tetrisSurvivalStartMs = 0;
 let tetrisNextBombTopUpAtMs = 0;
+let tetrisScoreEvents = [];
 
 function isTetrisMode() {
   return Boolean(window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay);
@@ -810,7 +811,7 @@ function createMatchedWordResult() {
     scoreGain += getTetrisWordScore(word.length);
   });
 
-  return { matchedMap, scoreGain };
+  return { matchedMap, scoreGain, words: Array.from(canonicalWords) };
 }
 
 function collectMatchedWordIndices() {
@@ -964,6 +965,9 @@ async function resolveTetrisClears() {
     if (toClear.length === 0) break;
 
     comboCount++;
+    matchedResult.words.forEach(word => {
+      tetrisScoreEvents.push({ word, points: getTetrisWordScore(word.length) });
+    });
     currentScore += matchedResult.scoreGain;
     if (scoreEl) scoreEl.innerText = currentScore;
     showScoreGainFeedback(matchedResult.scoreGain, matchedResult.matchedMap);
@@ -1167,6 +1171,10 @@ document.addEventListener('ws:calculateScore', (e) => {
   if (scoreEl) scoreEl.innerText = currentScore;
 });
 
+document.addEventListener('ws:tetrisGameOver', () => {
+  renderScoreBreakdown(tetrisScoreEvents);
+});
+
 document.addEventListener('ws:beforeInit', () => {
   if (!isTetrisMode()) return;
   tetrisSessionToken++;
@@ -1180,6 +1188,7 @@ document.addEventListener('ws:beforeInit', () => {
   tetrisGameplayArmed = false;
   tetrisSurvivalStartMs = 0;
   tetrisNextBombTopUpAtMs = 0;
+  tetrisScoreEvents = [];
   tetrisSweepColumn = 0;
   tetrisSweepDirection = 1;
   tetrisDirectionalSpeed = TETRIS_DIRECTIONAL_SPEED_MIN;

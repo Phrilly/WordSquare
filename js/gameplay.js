@@ -201,6 +201,14 @@ function triggerEndGame() {
     const finalScoreEl = document.getElementById('final-score-display');
     if (finalScoreEl) finalScoreEl.innerText = currentScore;
 
+    if (window.GAME_CONFIG && window.GAME_CONFIG.isTopUpDay) {
+      document.dispatchEvent(new CustomEvent('ws:topUpGameOver'));
+    } else if (window.GAME_CONFIG && window.GAME_CONFIG.isTetrisDay) {
+      document.dispatchEvent(new CustomEvent('ws:tetrisGameOver'));
+    } else {
+      renderScoreBreakdown(getCurrentGridScoreEvents());
+    }
+
     dailySect = document.getElementById('daily-save-section');
     nonDailySect = document.getElementById('non-daily-section');
 
@@ -250,6 +258,40 @@ function triggerEndGame() {
         }
     }
 
+}
+
+function getCurrentGridScoreEvents() {
+  const grouped = new Map();
+  findValidWordsLocalArray(cells).forEach(word => {
+    const reverse = word.split('').reverse().join('');
+    const key = word < reverse ? word : reverse;
+    if (!grouped.has(key)) grouped.set(key, key);
+  });
+
+  return Array.from(grouped.values())
+    .filter(word => word.length >= 3 && word.length <= 5)
+    .map(word => ({ word, points: word.length === 3 ? 1 : word.length === 4 ? 5 : 20 }));
+}
+
+function renderScoreBreakdown(events) {
+  const listEl = document.getElementById('score-breakdown-list');
+  if (!listEl) return;
+
+  listEl.replaceChildren(...events.map(event => {
+    const item = document.createElement('li');
+    item.className = 'found-word-row';
+    for (const letter of event.word) {
+      const tile = document.createElement('span');
+      tile.className = `mini-tile word-${event.word.length}`;
+      tile.textContent = letter;
+      item.append(tile);
+    }
+    const points = document.createElement('span');
+    points.className = 'mini-tile points-tile';
+    points.textContent = `+${event.points}`;
+    item.append(points);
+    return item;
+  }));
 }
 
 function setNextLetter() {
