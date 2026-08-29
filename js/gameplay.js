@@ -20,6 +20,32 @@ let nonDailySect = null;
 let lastPlacedInfo = null;
 let isGameOver = false;
 let isRoundArmed = false;
+let mobilePreviewTimer = null;
+let mobilePreviewCell = null;
+let suppressNextMobileCellClick = false;
+
+function cancelMobilePreview() {
+  if (mobilePreviewTimer !== null) {
+    clearTimeout(mobilePreviewTimer);
+    mobilePreviewTimer = null;
+  }
+  if (mobilePreviewCell) {
+    handleHoverLeave(mobilePreviewCell);
+    mobilePreviewCell = null;
+  }
+}
+
+function startMobilePreview(index, cellEl) {
+  if (cells[index] !== '' || isGameOver || !isRoundArmed) return;
+
+  cancelMobilePreview();
+  mobilePreviewTimer = setTimeout(() => {
+    mobilePreviewTimer = null;
+    mobilePreviewCell = cellEl;
+    suppressNextMobileCellClick = true;
+    handleHoverEnter(index, cellEl);
+  }, 450);
+}
 
 function hideGoGate() {
   const gate = document.getElementById('go-gate-modal');
@@ -152,9 +178,21 @@ function initGame() {
     cell.className = 'grid-cell';
     cell.dataset.index = i;
     cell.style.position = 'relative'; 
-    cell.addEventListener('click', () => handleCellClick(i, cell));
+    cell.addEventListener('click', () => {
+      if (suppressNextMobileCellClick) {
+        suppressNextMobileCellClick = false;
+        return;
+      }
+      handleCellClick(i, cell);
+    });
     cell.addEventListener('mouseenter', () => handleHoverEnter(i, cell));
     cell.addEventListener('mouseleave', () => handleHoverLeave(cell));
+    cell.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch') startMobilePreview(i, cell);
+    });
+    cell.addEventListener('pointerup', cancelMobilePreview);
+    cell.addEventListener('pointercancel', cancelMobilePreview);
+    cell.addEventListener('pointerleave', cancelMobilePreview);
     if (gridEl) gridEl.appendChild(cell);
   }
 
