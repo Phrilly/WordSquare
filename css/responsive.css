@@ -31,8 +31,19 @@
     font-size: 14px;
   }
 
-  /* Gives board-view score breakdowns room below the grid. */
+  /* The board viewer owns scrolling so saved word rows are always reachable. */
   #best-board-modal {
-    inset: -65px -10px -345px;
+    position: fixed;
+    inset: 10px 8px;
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #best-board-modal .score-breakdown-list {
+    flex: none;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
   }
 }
