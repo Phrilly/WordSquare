@@ -273,10 +273,11 @@ function getCurrentGridScoreEvents() {
     .map(word => ({ word, points: word.length === 3 ? 1 : word.length === 4 ? 5 : 20 }));
 }
 
-function renderScoreBreakdown(events) {
-  const listEl = document.getElementById('score-breakdown-list');
+function renderScoreBreakdown(events, listId = 'score-breakdown-list') {
+  const listEl = document.getElementById(listId);
   if (!listEl) return;
 
+  listEl.hidden = events.length === 0;
   listEl.replaceChildren(...events.map(event => {
     const item = document.createElement('li');
     item.className = 'found-word-row';

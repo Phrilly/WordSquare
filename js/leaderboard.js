@@ -11,7 +11,15 @@ function getModeAwareLeaderboardTitle() {
   return "TODAY'S HIGH SCORES";
 }
 
-function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
+function getSubmittedWordEvents() {
+  const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
+  if (mode === 'topup' && typeof topUpScoreEvents !== 'undefined') return topUpScoreEvents;
+  if (mode === 'tetris' && typeof tetrisScoreEvents !== 'undefined') return tetrisScoreEvents;
+  if (typeof getCurrentGridScoreEvents === 'function') return getCurrentGridScoreEvents();
+  return [];
+}
+
+function showBoardViewer(titleText, score, initials, gridChars, themeClass, wordEvents = []) {
   if (!gridChars || gridChars.length !== 25) return;
 
   document.getElementById('leaderboard-modal').classList.remove('active');
@@ -27,6 +35,10 @@ function showBoardViewer(titleText, score, initials, gridChars, themeClass) {
   
   const initialsEl = document.getElementById('best-board-initials');
   if (initialsEl) initialsEl.innerText = initials;
+
+  if (typeof renderScoreBreakdown === 'function') {
+    renderScoreBreakdown(wordEvents, 'best-board-score-breakdown');
+  }
 
   const bg = document.getElementById('best-grid');
   if (bg) {
@@ -89,7 +101,8 @@ async function submitHighscore() {
         mode: typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic',
         session_id: typeof sessionId !== 'undefined' ? sessionId : '',
         score: typeof currentScore !== 'undefined' ? currentScore : 0, 
-        grid: gridString 
+        grid: gridString,
+        word_events: getSubmittedWordEvents()
     };
     
     // Add DL and DW indices for Scrabble mode
@@ -198,7 +211,8 @@ async function loadLeaderboard() {
             entry.score,
             initials,
             entry.grid,
-            index === 0 ? 'top' : 'default'
+            index === 0 ? 'top' : 'default',
+            Array.isArray(entry.word_events) ? entry.word_events : []
           );
         });
         listEl.appendChild(li);

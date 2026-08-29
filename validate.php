@@ -583,6 +583,20 @@ if (isset($input['action'])) {
         $mode = normaliseMode($input['mode'] ?? null);
         $sessionId = trim((string)($input['session_id'] ?? ''));
         $submittedScore = isset($input['score']) ? (int)$input['score'] : 0;
+        $submittedWordEvents = is_array($input['word_events'] ?? null) ? $input['word_events'] : [];
+        $wordEvents = [];
+        foreach (array_slice($submittedWordEvents, 0, 250) as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+
+            $word = strtoupper(trim((string)($event['word'] ?? '')));
+            $points = isset($event['points']) ? (int)$event['points'] : 0;
+            $expectedPoints = strlen($word) === 3 ? 1 : (strlen($word) === 4 ? 5 : (strlen($word) === 5 ? 20 : 0));
+            if (preg_match('/^[A-Z]{3,5}$/', $word) && $points === $expectedPoints) {
+                $wordEvents[] = ['word' => $word, 'points' => $points];
+            }
+        }
 
         // DIAGNOSTIC FIX: Explicit length reporting
         if (strlen($grid) !== 25) {
@@ -644,15 +658,30 @@ if (isset($input['action'])) {
             }
         }
 
+        if ($mode !== 'scrabble') {
+            $wordEventScore = array_sum(array_map(static function (array $event): int {
+                return $event['points'];
+            }, $wordEvents));
+            if ($wordEventScore !== $score) {
+                jsonResponse(['error' => 'Word breakdown does not match the verified score.'], 400);
+            }
+        }
+
+        $wordEventsJson = json_encode($wordEvents);
+        if ($wordEventsJson === false) {
+            jsonResponse(['error' => 'Failed to encode word breakdown.'], 500);
+        }
+
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO highscores (initials, score, grid)
-                VALUES (:initials, :score, :grid)
+                INSERT INTO highscores (initials, score, grid, word_events_json)
+                VALUES (:initials, :score, :grid, :word_events_json)
             ");
             $stmt->execute([
                 ':initials' => $initials,
                 ':score' => $score,
                 ':grid' => $grid,
+                ':word_events_json' => $wordEventsJson,
             ]);
 
             $newId = (int)$pdo->lastInsertId();
@@ -720,12 +749,18 @@ if (isset($input['action'])) {
 
         try {
             $stmt = $pdo->query("
-                SELECT id, initials, score, grid, created_at
+                SELECT id, initials, score, grid, word_events_json, created_at
                 FROM highscores
                 WHERE DATE(created_at) = CURDATE()
             ");
             $scores = $stmt->fetchAll();
             $scores = array_slice(sortRowsByModeScore($scores, $mode, $pdo), 0, 8);
+            foreach ($scores as &$scoreRow) {
+                $events = json_decode((string)($scoreRow['word_events_json'] ?? '[]'), true);
+                $scoreRow['word_events'] = is_array($events) ? $events : [];
+                unset($scoreRow['word_events_json']);
+            }
+            unset($scoreRow);
 
             jsonResponse(['highscores' => $scores]);
         } catch (PDOException $e) {

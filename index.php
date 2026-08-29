@@ -296,6 +296,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
         <strong id="best-board-initials" style="color:var(--highlight)"></strong>
       </div>
       <div class="grid-container" id="best-grid" style="pointer-events:none; opacity:1;"></div>
+      <ul id="best-board-score-breakdown" class="score-breakdown-list" hidden></ul>
     </div>
 
     <div class="overlay-modal" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
