@@ -237,10 +237,11 @@ document.addEventListener('ws:tileUndone', () => {
   syncTopUpQueueUI();
 });
 
-// Diagonal/short-word previews don't apply to Top Up's row/column-only rule.
+// Hover preview: let the default handler apply color-coded hover classes
+// (hover-3 / hover-4 / hover-5) matching the word length that would be formed.
 document.addEventListener('ws:applyHover', (e) => {
   if (!isTopUpMode()) return;
-  e.preventDefault();
+  // Pass-through: default hover logic applies the matching color class.
 });
 
 // Top Up awards short words once when formed; five-letter words pay out on clear.
