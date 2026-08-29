@@ -10,51 +10,77 @@ function isTopUpMode() {
 
 let topUpActiveMatches = [];
 let topUpHighlightedIndices = new Set();
+let topUpScoredWordKeys = new Set();
 
 // ---------------------------------------------------------
-// WORD DETECTION (full rows/columns only, 3- and 4-letter words are ignored)
+// WORD DETECTION (all straight-line directions)
 // ---------------------------------------------------------
 function isTopUpDictionaryWord(word) {
-  if (word.length !== gridSize) return false;
+  if (word.length < 3 || word.length > gridSize) return false;
   if (gameDictionary.has(word)) return true;
   const reversed = word.split('').reverse().join('');
   return gameDictionary.has(reversed);
 }
 
-function computeTopUpMatches() {
-  const matches = [];
+function computeTopUpScoringWords() {
+  const words = [];
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
 
   for (let r = 0; r < gridSize; r++) {
-    let word = '';
-    const indices = [];
     for (let c = 0; c < gridSize; c++) {
-      const idx = (r * gridSize) + c;
-      const letter = cells[idx];
-      if (!letter) { word = null; break; }
-      indices.push(idx);
-      word += letter;
-    }
-    if (word && isTopUpDictionaryWord(word)) {
-      matches.push({ key: `row-${r}`, indices, word });
+      directions.forEach(([rowStep, columnStep]) => {
+        for (let length = 3; length <= 4; length++) {
+          const endRow = r + ((length - 1) * rowStep);
+          const endColumn = c + ((length - 1) * columnStep);
+          if (endRow < 0 || endRow >= gridSize || endColumn < 0 || endColumn >= gridSize) continue;
+
+          const path = Array.from({ length }, (_, step) => ((r + (step * rowStep)) * gridSize) + c + (step * columnStep));
+          const word = path.map(index => cells[index]).join('');
+          if (word.length === length && isTopUpDictionaryWord(word)) {
+            words.push({ key: path.join('-'), length });
+          }
+        }
+      });
     }
   }
 
-  for (let c = 0; c < gridSize; c++) {
-    let word = '';
-    const indices = [];
-    for (let r = 0; r < gridSize; r++) {
-      const idx = (r * gridSize) + c;
-      const letter = cells[idx];
-      if (!letter) { word = null; break; }
-      indices.push(idx);
-      word += letter;
-    }
-    if (word && isTopUpDictionaryWord(word)) {
-      matches.push({ key: `col-${c}`, indices, word });
+  return words;
+}
+
+function computeTopUpMatches() {
+  const matches = [];
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      directions.forEach(([rowStep, columnStep]) => {
+        const endRow = r + ((gridSize - 1) * rowStep);
+        const endColumn = c + ((gridSize - 1) * columnStep);
+        if (endRow < 0 || endRow >= gridSize || endColumn < 0 || endColumn >= gridSize) return;
+
+        const indices = Array.from({ length: gridSize }, (_, step) => ((r + (step * rowStep)) * gridSize) + c + (step * columnStep));
+        const word = indices.map(index => cells[index]).join('');
+        if (word.length === gridSize && isTopUpDictionaryWord(word)) {
+          matches.push({ key: indices.join('-'), indices, word });
+        }
+      });
     }
   }
 
   return matches;
+}
+
+function awardTopUpScoringWords() {
+  const words = computeTopUpScoringWords();
+  const activeKeys = new Set(words.map(word => word.key));
+
+  words.forEach(word => {
+    if (!topUpScoredWordKeys.has(word.key)) {
+      currentScore += word.length === 3 ? 1 : 5;
+    }
+  });
+
+  topUpScoredWordKeys = activeKeys;
 }
 
 // ---------------------------------------------------------
@@ -136,6 +162,7 @@ document.addEventListener('ws:beforeInit', () => {
   gameDeck = drawTopUpLetters(TOPUP_INITIAL_DECK);
   topUpActiveMatches = [];
   topUpHighlightedIndices = new Set();
+  topUpScoredWordKeys = new Set();
 });
 
 document.addEventListener('ws:afterInit', () => {
@@ -159,10 +186,11 @@ document.addEventListener('ws:applyHover', (e) => {
   e.preventDefault();
 });
 
-// Top Up owns scoring: score only changes on a click-to-clear, never from a board scan.
+// Top Up awards short words once when formed; five-letter words pay out on clear.
 document.addEventListener('ws:calculateScore', (e) => {
   if (!isTopUpMode()) return;
   e.preventDefault();
+  awardTopUpScoringWords();
   refreshTopUpBoardState();
   if (scoreEl) scoreEl.innerText = currentScore;
 });
@@ -187,13 +215,12 @@ document.addEventListener('ws:boardFull', (e) => {
   }
 });
 
-// Click-to-clear: a shared cell clears its row first, then its column.
+// Click-to-clear: one highlighted path is cleared per click.
 document.addEventListener('ws:occupiedCellClick', (e) => {
   if (!isTopUpMode() || isGameOver) return;
 
   const index = e.detail.index;
-  const matchingWord = topUpActiveMatches.find(m => m.key.startsWith('row-') && m.indices.includes(index))
-    || topUpActiveMatches.find(m => m.key.startsWith('col-') && m.indices.includes(index));
+  const matchingWord = topUpActiveMatches.find(m => m.indices.includes(index));
   if (!matchingWord) return;
 
   const clearedIndices = new Set(matchingWord.indices);
