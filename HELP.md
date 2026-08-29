@@ -83,9 +83,10 @@
 - SCORES ends an unsaved match and opens the daily high-score table.
 
 ### Top Up
-- 3-letter words score 1 point, 4-letter words score 5 points — both auto-score and stay on the board.
-- 5-letter words score 20 points, but unlike other modes, you must click a completed 5-letter word to collect the score. Clicking clears those cells from the board.
-- Game ends when the board is full and no 5-letter word can be clicked to clear.
+- Top Up is a survival/endurance mode where your goal is to keep playing as long as possible by freeing up board space.
+- 5-letter words are your lifeline: they score 20 points and delete those tiles when clicked, freeing up space. They highlight when complete so you can spot them easily.
+- 3-letter and 4-letter words automatically score (1 / 5 points) but never clear — they stay on the board as permanent obstacles.
+- Game ends when the board reaches 25 tiles and no 5-letter word can be cleared.
 
 ## Validation Notes
 - All words are validated against the server dictionary.

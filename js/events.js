@@ -175,9 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3>Top Up Notes</h3>
       <ul>
-        <li>3-letter and 4-letter words auto-score (1 / 5 pts) and stay on the board.</li>
-        <li>5-letter words must be clicked to score (20 pts) — clicking clears those cells from the board.</li>
-        <li>Game ends when the board fills and no 5-letter word can be cleared.</li>
+        <li>Survival mode: keep playing by clearing space. 5-letter words are your lifeline — click them to score 20 pts and delete those tiles.</li>
+        <li>3-letter and 4-letter words auto-score (1 / 5 pts) but never clear — they pile up as permanent obstacles on the board.</li>
+        <li>Game ends when the board is completely full and no 5-letter word can be cleared.</li>
       </ul>
 
       <h3>Scheduler Debug</h3>

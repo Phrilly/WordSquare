@@ -290,14 +290,18 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
     </div>
 
     <div class="overlay-modal" id="topup-opening-modal" style="display: none;">
-      <h2 style="color: var(--highlight); margin-top: 0; margin-bottom: 20px;">TOP UP</h2>
-      <p style="font-size: 15px; line-height: 1.7; margin: 0 0 20px 0; max-width: 420px;">
-        <strong>3-letter words:</strong> 1 point (auto-score, stay on board)<br>
-        <strong>4-letter words:</strong> 5 points (auto-score, stay on board)<br>
-        <strong>5-letter words:</strong> 20 points (click to score and clear the cells)
+      <h2 style="color: var(--highlight); margin-top: 0; margin-bottom: 20px;">SURVIVAL MODE: CLEAR TO STAY ALIVE</h2>
+      <p style="font-size: 14px; line-height: 1.8; margin: 0 0 20px 0; max-width: 420px;">
+        Unlike Classic or Lookahead, your primary goal in Top Up is endurance. You must continuously clear space to keep playing.
+      </p>
+      <p style="font-size: 14px; line-height: 1.8; margin: 20px 0; max-width: 420px;">
+        <strong style="color: #ffd700;">5-LETTER WORDS (The Lifeline):</strong> When a 5-letter word forms, it highlights. Click it to score 20 points and delete those tiles, freeing up precious grid space.
+      </p>
+      <p style="font-size: 14px; line-height: 1.8; margin: 20px 0; max-width: 420px;">
+        <strong style="color: #aaa;">3 &amp; 4-LETTER WORDS (The Clutter):</strong> These automatically score 1 and 5 points, but they never clear. They remain on the board as permanent obstacles.
       </p>
       <p style="font-size: 14px; color: #aaa; margin: 20px 0; max-width: 420px;">
-        Game ends when the board fills and no 5-letter word can be cleared.
+        <strong>GAME OVER:</strong> The game ends only when the board is completely full (25 tiles) and there are no highlighted 5-letter words left to clear.
       </p>
       <div class="overlay-actions">
         <button class="arcade-btn" id="topup-start-btn" type="button">START GAME</button>
