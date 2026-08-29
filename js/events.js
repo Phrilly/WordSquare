@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'lookahead') return 'Lookahead';
     if (mode === 'tetris') return 'Tetris';
     if (mode === 'mfd') return 'My First Dictionary (MFD)';
-    if (mode === 'boggle') return 'Big Boggle';
+    if (mode === 'boggle') return 'Boggle';
+    if (mode === 'topup') return 'Top Up';
     return 'Classic';
   };
 
@@ -42,7 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return 'MFD mode is active: gameplay is Classic, but only words flagged in the MFD dictionary are valid.';
     }
     if (mode === 'boggle') {
-      return 'Big Boggle uses three timed 5x5 word-path boards with cumulative scoring.';
+      return 'Boggle uses three timed 5x5 word-path boards with cumulative scoring.';
+    }
+    if (mode === 'topup') {
+      return 'Top Up mode is active: click completed 5-letter words to score 20 pts and clear them.';
     }
     return 'Classic mode is active: standard WordSquare rules and scoring.';
   };
@@ -58,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (daysSinceEpoch > 0 && cycleDay === 0) computedMode = 'bomb';
     else if (daysSinceEpoch > 0 && cycleDay === 1) computedMode = 'scrabble';
     else if (daysSinceEpoch > 0 && cycleDay === 2) computedMode = 'lookahead';
-    else if (daysSinceEpoch > 0 && cycleDay === 3) computedMode = 'mfd';
+    else if (daysSinceEpoch > 0 && cycleDay === 3) computedMode = 'topup';
     else if (daysSinceEpoch > 0 && cycleDay === 4) computedMode = 'tetris';
     else if (daysSinceEpoch > 0 && cycleDay === 6) computedMode = 'boggle';
 
@@ -111,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Day 3: MFD (My First Dictionary)</li>
         <li>Day 4: Tetris</li>
         <li>Day 5: Classic</li>
-        <li>Day 6: Big Boggle</li>
+        <li>Day 6: Boggle</li>
       </ul>
 
       <h3>Scoring Notes</h3>
@@ -159,14 +163,21 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
 
-      <h3>Big Boggle Notes</h3>
+      <h3>Boggle Notes</h3>
       <ul>
-        <li>Big Boggle is played over three two-minute rounds on fixed daily 5x5 boards.</li>
+        <li>Boggle is played over three two-minute rounds on fixed daily 5x5 boards.</li>
         <li>Words use adjacent horizontal, vertical, or diagonal tiles without reusing a tile.</li>
         <li>Words must have at least four letters. Scores are 1 / 2 / 3 / 5 / 11 for lengths 4 / 5 / 6 / 7 / 8+.</li>
         <li>Every player receives the same three boards for the UTC day; Play Again repeats them.</li>
         <li>On desktop, green marks the path start and gold marks the final clicked tile. Press Escape on desktop, press and hold any board tile on touch devices, or use X to clear a path.</li>
         <li>Invalid words show red outlines; already-found words show yellow outlines. Click any tile to clear a rejected path.</li>
+      </ul>
+
+      <h3>Top Up Notes</h3>
+      <ul>
+        <li>3-letter and 4-letter words auto-score (1 / 5 pts) and stay on the board.</li>
+        <li>5-letter words must be clicked to score (20 pts) — clicking clears those cells from the board.</li>
+        <li>Game ends when the board fills and no 5-letter word can be cleared.</li>
       </ul>
 
       <h3>Scheduler Debug</h3>

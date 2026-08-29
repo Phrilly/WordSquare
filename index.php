@@ -22,10 +22,10 @@ $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 $isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0);       // Day 0
 $isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0); // Day 1
 $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // Day 2
-$isCommonDay    = false;                                                    // Day 3 is now Boggle (MFD retired from natural cycle)
+$isCommonDay    = false;                                                    // Day 3 retired
 $isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
-$isBoggleDay    = ($daysSinceEpoch > 0 && (($daysSinceEpoch - 6) % 7 === 0 || ($daysSinceEpoch - 3) % 7 === 0)); // Day 6 & Day 3
-$isTopUpDay     = false;
+$isBoggleDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 6) % 7 === 0); // Day 6 only
+$isTopUpDay     = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0); // Day 3
 
 // DEV OVERRIDES: Strict Input Validation
 $rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
@@ -91,7 +91,7 @@ if ($isBombDay) {
   $modeDisplayName = 'Top Up';
 }
 
-$leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH SCORES";
+$leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -187,6 +187,9 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : "TODAY'S HIGH S
     <h1 id="opening-title" style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;"><?= htmlspecialchars($leaderboardHeading, ENT_QUOTES, 'UTF-8') ?></h1>
     <div class="grid-container opening-grid" id="opening-grid">
       </div>
+    <?php if ($isTopUpDay): ?>
+    <p class="topup-opening-rules">5-letter words score 20 pts but you must click them to collect — doing so clears them from the board.</p>
+    <?php endif; ?>
     <div class="play-button-container" id="play-btn-tiles">
       <div class="grid-cell play-tile">P</div>
       <div class="grid-cell play-tile">L</div>

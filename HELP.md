@@ -14,10 +14,10 @@
 - Day 0: Bomb
 - Day 1: Scrabble
 - Day 2: Lookahead
-- Day 3: MFD (My First Dictionary)
+- Day 3: Top Up
 - Day 4: Tetris
 - Day 5: Classic
-- Day 6: Big Boggle
+- Day 6: Boggle
 
 ## Classic / Bomb / Lookahead / MFD Scoring
 - 3-letter word: 1 point
@@ -69,8 +69,8 @@
 - Bomb top-up cue: a bright strip blast, icon flash/pop, expanding rings, and a +1 BOMB READY label near the bomb bar.
 - If any column reaches the top (no legal drop), the run ends.
 
-### Big Boggle
-- Big Boggle uses a fixed 5x5 weighted-letter board for each of three two-minute rounds.
+### Boggle
+- Boggle uses a fixed 5x5 weighted-letter board for each of three two-minute rounds.
 - All players receive the same three boards for the UTC day; Play Again repeats them for fair comparison.
 - Form words by joining horizontally, vertically, or diagonally adjacent tiles without reusing a tile.
 - Words must contain at least four letters.
@@ -81,6 +81,11 @@
 - Backspace removes one tile. Press Escape on desktop, press and hold any board tile on touch devices, or use X to clear the full selected path.
 - Invalid dictionary words receive red outlines. Duplicate words receive yellow outlines. Click any tile to clear a rejected path.
 - SCORES ends an unsaved match and opens the daily high-score table.
+
+### Top Up
+- 3-letter words score 1 point, 4-letter words score 5 points — both auto-score and stay on the board.
+- 5-letter words score 20 points, but unlike other modes, you must click a completed 5-letter word to collect the score. Clicking clears those cells from the board.
+- Game ends when the board is full and no 5-letter word can be clicked to clear.
 
 ## Validation Notes
 - All words are validated against the server dictionary.
