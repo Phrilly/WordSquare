@@ -36,6 +36,7 @@
     position: fixed;
     inset: 10px 8px;
     max-height: calc(100dvh - 20px);
+    padding-bottom: max(120px, env(safe-area-inset-bottom));
     overflow-y: auto;
     overscroll-behavior: contain;
   }
