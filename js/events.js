@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>4-letter and 5-letter words clear. They can run horizontally, vertically, or diagonally.</li>
         <li>Turn timer starts at 10.0s and drops by 0.15s per round to a 4.0s minimum.</li>
         <li>You start with 3 bombs. Click a filled tile to blast it and let the letters above fall down.</li>
-        <li>Survival reward: +1 bomb every 60 seconds survived, up to a cap of 3 bombs.</li>
+        <li>Survival reward: +1 bomb every 45 seconds survived, up to a cap of 3 bombs.</li>
         <li>Bomb top-up cue: bright strip blast, icon flash/pop, expanding rings, and +1 BOMB READY text near the bomb bar.</li>
         <li>If a column is full, its DROP slot greys out. The game ends when no legal drops remain.</li>
       </ul>
