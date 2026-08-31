@@ -345,29 +345,40 @@ function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo, a
     return calculateClassicGridScore($gridString, $pdo, $mode);
 }
 
+/**
+ * Calculate the game mode for a given date based on the 7-day cycle.
+ * This matches the cycle logic in index.php exactly.
+ * 
+ * @param DateTimeImmutable $date The date to calculate the mode for
+ * @return string The mode: 'bomb', 'scrabble', 'lookahead', 'topup', 'tetris', 'boggle', or 'classic'
+ */
 function getModeForDate(DateTimeImmutable $date): string
 {
     $epoch = new DateTimeImmutable('2026-05-21 00:00:00', new DateTimeZone('UTC'));
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
     $daysSinceEpoch = (int) floor(($target->getTimestamp() - $epoch->getTimestamp()) / 86400);
 
-    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 6 === 0) {
-        return 'bomb';
+    // 7-day cycle matching index.php logic exactly
+    if ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0) {
+        return 'bomb';          // Day 0
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 6 === 0) {
-        return 'scrabble';
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0) {
+        return 'scrabble';      // Day 1
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 6 === 0) {
-        return 'lookahead';
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0) {
+        return 'lookahead';     // Day 2
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 6 === 0) {
-        return 'mfd';
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0) {
+        return 'topup';         // Day 3
     }
-    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 6 === 0) {
-        return 'tetris';
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0) {
+        return 'tetris';        // Day 4
+    }
+    if ($daysSinceEpoch > 0 && ($daysSinceEpoch - 6) % 7 === 0) {
+        return 'boggle';        // Day 6
     }
 
-    return 'classic';
+    return 'classic';           // Default / Day 5
 }
 
 function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
