@@ -40,14 +40,15 @@ function normaliseBoggleWords(mixed $words): array
         }
 
         $normalisedWord = strtoupper(trim($word));
-        if (!preg_match('/^[A-Z]{4,25}$/', $normalisedWord) || isset($normalisedWords[$normalisedWord])) {
+        if (!preg_match('/^[A-Z]{4,25}$/', $normalisedWord)) {
             throw new InvalidArgumentException('Invalid Boggle word.');
         }
 
-        $normalisedWords[$normalisedWord] = true;
+        // Allow duplicate words (same word can be found in different rounds and scores each time)
+        $normalisedWords[] = $normalisedWord;
     }
 
-    return array_keys($normalisedWords);
+    return $normalisedWords;
 }
 
 function getBoggleWordPoints(string $word): int
