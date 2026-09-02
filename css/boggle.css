@@ -21,7 +21,7 @@ html { overflow-y:auto; }
 .boggle-preview { min-height:64px; padding:8px; border:1px solid rgba(255,255,255,.25); border-radius:10px; background:rgba(0,0,0,.14); }
 .boggle-preview-row { display:flex; align-items:center; gap:6px; }
 .boggle-preview-tiles { display:flex; flex:1 1 auto; flex-wrap:nowrap; align-items:center; justify-content:flex-start; min-width:0; min-height:44px; gap:5px; overflow-x:auto; overflow-y:hidden; }
-.boggle-preview-tile, .boggle-tile { display:flex; align-items:center; justify-content:center; font:700 clamp(19px,6vw,34px) Arial,sans-serif; }
+.boggle-preview-tile, .boggle-tile { display:flex; align-items:center; justify-content:center; font:700 clamp(22px,calc(var(--game-size) * 0.085),38px) Arial,sans-serif; }
 .boggle-preview-tile { width:44px; height:44px; border-radius:6px; background:#fdf6e3; color:#1a1a1a; }
 #boggle-status { min-height:20px; margin:8px 0 0; text-align:center; font:700 13px Arial,sans-serif; }
 .boggle-grid { margin:16px 0; }
