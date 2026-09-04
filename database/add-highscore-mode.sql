@@ -6,4 +6,4 @@ ALTER TABLE highscores
 
 -- One-shot: plain MySQL has no ADD INDEX IF NOT EXISTS, so re-running errors.
 ALTER TABLE highscores
-    ADD INDEX idx_highscores_created_mode (created_at, mode);
+    ADD INDEX idx_highscores_mode_created (mode, created_at);

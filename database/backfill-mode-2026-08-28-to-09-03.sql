@@ -54,7 +54,8 @@ WHERE DATE(created_at) BETWEEN '2026-08-28' AND '2026-09-03'
 
 
 -- STEP 4: verify. Each date should report exactly one mode.
-SELECT DATE(created_at) AS game_date, mode, COUNT(*) AS rows
+-- NOTE: ROWS is a reserved word in MariaDB/MySQL, hence "row_count".
+SELECT DATE(created_at) AS game_date, mode, COUNT(*) AS row_count
 FROM highscores
 WHERE DATE(created_at) BETWEEN '2026-08-28' AND '2026-09-03'
 GROUP BY DATE(created_at), mode

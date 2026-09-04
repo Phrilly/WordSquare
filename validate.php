@@ -290,6 +290,71 @@ function getModeForDate(DateTimeImmutable $date): string
 
     return 'classic';           // Default / Day 5
 }
+/**
+ * Read the top scoring entry for one UTC day and mode from the daily_scores
+ * view, which unions highscores and boggle_highscores behind a single shape.
+ * Boggle therefore needs no special case anywhere in this file.
+ *
+ * New scores are server-validated before storage. Historic rows are ranked by
+ * their stored score because the unified view intentionally exposes only the
+ * fields shared by the main and Boggle score tables.
+ *
+ * @return array{initials: string, mode: string, score: int}|null
+ */
+function fetchDailyWinner(PDO $pdo, string $day, string $mode): ?array
+{
+    $dayStart = new DateTimeImmutable($day . ' 00:00:00', new DateTimeZone('UTC'));
+    $dayEnd = $dayStart->modify('+1 day');
+
+    $stmt = $pdo->prepare("
+        SELECT initials, mode, score
+        FROM daily_scores
+        WHERE created_at >= :day_start
+          AND created_at < :day_end
+          AND mode = :mode
+        ORDER BY score DESC, created_at ASC, id ASC
+        LIMIT 1
+    ");
+    $stmt->execute([
+        ':day_start' => $dayStart->format('Y-m-d H:i:s'),
+        ':day_end' => $dayEnd->format('Y-m-d H:i:s'),
+        ':mode' => $mode,
+    ]);
+
+    $row = $stmt->fetch();
+    if (!is_array($row)) {
+        return null;
+    }
+
+    return [
+        'initials' => (string)($row['initials'] ?? ''),
+        'mode' => (string)($row['mode'] ?? $mode),
+        'score' => (int)($row['score'] ?? 0),
+    ];
+}
+
+/**
+ * Resolve the champion for one UTC day.
+ *
+ * The expected daily mode is mandatory. This deliberately does not fall back
+ * to another mode found in the view: Boggle can be played directly on any day,
+ * so a dominant-mode fallback could announce an off-schedule Boggle score when
+ * the real daily challenge happened to receive no submissions.
+ *
+ * @return array{initials: string|null, mode: string, score: int|null}
+ */
+function resolveDailyWinner(PDO $pdo, string $day, string $expectedMode): array
+{
+    $winner = fetchDailyWinner($pdo, $day, $expectedMode);
+
+    return [
+        'initials' => $winner['initials'] ?? null,
+        'mode' => $winner['mode'] ?? $expectedMode,
+        'score' => $winner['score'] ?? null,
+    ];
+}
+
+
 
 function sortRowsByModeScore(array $rows, string $mode, PDO $pdo): array
 {
@@ -635,15 +700,24 @@ if (isset($input['action'])) {
 
             $newId = (int)$pdo->lastInsertId();
 
-            $stmtTop = $pdo->query("
-                SELECT id, initials, score, grid, created_at
+            $todayUtc = new DateTimeImmutable('today', new DateTimeZone('UTC'));
+            $tomorrowUtc = $todayUtc->modify('+1 day');
+            $stmtTop = $pdo->prepare("
+                SELECT id
                 FROM highscores
-                WHERE DATE(created_at) = CURDATE()
+                WHERE created_at >= :day_start
+                  AND created_at < :day_end
+                  AND mode = :mode
+                ORDER BY score DESC, created_at ASC, id ASC
+                LIMIT 1
             ");
-            $rows = $stmtTop->fetchAll();
-            $rankedRows = sortRowsByModeScore($rows, $mode, $pdo);
-            $topRow = $rankedRows[0] ?? null;
-            $isTopScore = ($topRow && (int)$topRow['id'] === $newId);
+            $stmtTop->execute([
+                ':day_start' => $todayUtc->format('Y-m-d H:i:s'),
+                ':day_end' => $tomorrowUtc->format('Y-m-d H:i:s'),
+                ':mode' => $mode,
+            ]);
+            $topScoreId = $stmtTop->fetchColumn();
+            $isTopScore = $topScoreId !== false && (int)$topScoreId === $newId;
 
             jsonResponse([
                 'success' => true,
@@ -699,13 +773,23 @@ if (isset($input['action'])) {
         $mode = normaliseMode($input['mode'] ?? null);
 
         try {
-            $stmt = $pdo->query("
+            $todayUtc = new DateTimeImmutable('today', new DateTimeZone('UTC'));
+            $tomorrowUtc = $todayUtc->modify('+1 day');
+            $stmt = $pdo->prepare("
                 SELECT id, initials, score, grid, word_events_json, created_at
                 FROM highscores
-                WHERE DATE(created_at) = CURDATE()
+                WHERE created_at >= :day_start
+                  AND created_at < :day_end
+                  AND mode = :mode
+                ORDER BY score DESC, created_at ASC, id ASC
+                LIMIT 8
             ");
+            $stmt->execute([
+                ':day_start' => $todayUtc->format('Y-m-d H:i:s'),
+                ':day_end' => $tomorrowUtc->format('Y-m-d H:i:s'),
+                ':mode' => $mode,
+            ]);
             $scores = $stmt->fetchAll();
-            $scores = array_slice(sortRowsByModeScore($scores, $mode, $pdo), 0, 8);
             foreach ($scores as &$scoreRow) {
                 $events = json_decode((string)($scoreRow['word_events_json'] ?? '[]'), true);
                 $scoreRow['word_events'] = is_array($events) ? $events : [];
@@ -722,23 +806,53 @@ if (isset($input['action'])) {
 
     if ($action === 'get_yesterdays_winner') {
         try {
-            $yesterday = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-1 day');
-            $mode = getModeForDate($yesterday);
-            $stmt = $pdo->query("
-                SELECT id, initials, score, grid, created_at
-                FROM highscores
-                WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-            ");
-            $rows = $stmt->fetchAll();
-            $rankedRows = sortRowsByModeScore($rows, $mode, $pdo);
-            $row = $rankedRows[0] ?? null;
+            // Derive "yesterday" from UTC so the day window and the mode agree
+            // with the rotation index.php serves, rather than depending on the
+            // MySQL session timezone the way CURDATE() does.
+            $yesterdayUtc = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-1 day');
+            $expectedMode = getModeForDate($yesterdayUtc);
+            $yesterdayDate = $yesterdayUtc->format('Y-m-d');
+
+            // daily_scores unions highscores and boggle_highscores, so a Boggle
+            // day resolves through the same path as every other variant.
+            $winner = resolveDailyWinner($pdo, $yesterdayDate, $expectedMode);
 
             jsonResponse([
-                'winner_initials' => $row ? $row['initials'] : null
+                'winner_initials' => $winner['initials'],
+                'mode' => $winner['mode'],
+                'score' => $winner['score'],
+                'date' => $yesterdayDate
             ]);
         } catch (PDOException $e) {
             error_log('validate.php get_yesterdays_winner failed: ' . $e->getMessage());
             jsonResponse(['winner_initials' => null]);
+        }
+    }
+
+    if ($action === 'get_recent_winners') {
+        try {
+            $todayUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            $winners = [];
+
+            // Day 0 is today, which is still in progress, so start at 1.
+            for ($offset = 1; $offset <= 7; $offset++) {
+                $day = $todayUtc->modify('-' . $offset . ' day');
+                $dayString = $day->format('Y-m-d');
+                $expectedMode = getModeForDate($day);
+                $winner = resolveDailyWinner($pdo, $dayString, $expectedMode);
+
+                $winners[] = [
+                    'date' => $dayString,
+                    'mode' => $winner['mode'],
+                    'initials' => $winner['initials'],
+                    'score' => $winner['score']
+                ];
+            }
+
+            jsonResponse(['winners' => $winners]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_recent_winners failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to load recent winners.'], 500);
         }
     }
 
