@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.3.3
-- Change Log: 1.3.3 updates Tetris timing documentation and the application version.
+- Help Version: 1.3.4
+- Change Log: 1.3.4 marks MFD (My First Dictionary) as retired - it is no longer part of the daily rotation and is not played.
 
 ## Core Rules
 - The board is always 5x5.
@@ -19,7 +19,7 @@
 - Day 5: Classic
 - Day 6: Boggle
 
-## Classic / Bomb / Lookahead / MFD Scoring
+## Classic / Bomb / Lookahead Scoring
 - 3-letter word: 1 point
 - 4-letter word: 5 points
 - 5-letter word: 20 points
@@ -53,9 +53,12 @@
 - All special squares (DL and DW) are separated by at least one square horizontally and vertically.
 - If the same canonical word appears in multiple paths, the best-scoring path is used.
 
-### MFD (My First Dictionary)
-- Gameplay and scoring are the same as Classic (1 / 5 / 20).
-- Only words flagged as MFD in the dictionary are valid.
+### MFD (My First Dictionary) - Retired
+- MFD is retired: it is no longer part of the daily rotation and is not played.
+- MFD previously occupied Day 3; that slot is now Top Up.
+- While active, gameplay and scoring were the same as Classic (1 / 5 / 20).
+- The only difference was dictionary scope: only words flagged as MFD were valid.
+- The mode is now reachable only through the developer `?mode=mfd` override.
 
 ### Tetris
 - You place letters by dropping into columns from the top drop row.
@@ -93,4 +96,4 @@
 - Scrabble uses a dedicated 5-letter scoring pass with letter-value math.
 - Tetris stores and ranks by its live gameplay score.
 
-For MFD-specific details, see HELP_MFD.md.
+MFD (My First Dictionary) is retired and no longer played; see HELP_MFD.md for historic details.

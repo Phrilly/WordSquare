@@ -79,8 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.3.3';
+    const helpVersion = '1.3.4';
     const helpChanges = [
+      '1.3.4 marks MFD (My First Dictionary) as retired - it is no longer part of the daily rotation and is not played.',
       '1.3.3 updates Tetris timing documentation and the application version.',
     ];
 
@@ -146,10 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>If the same canonical word appears in multiple paths, the highest scoring path is used.</li>
       </ul>
 
-      <h3>MFD Notes</h3>
+      <h3>MFD Notes (Retired)</h3>
       <ul>
-        <li>MFD plays the same as Classic mode.</li>
-        <li>The only difference is dictionary scope: only MFD-tagged words are accepted.</li>
+        <li>MFD is retired: it no longer appears in the daily rotation and is not played.</li>
+        <li>MFD previously occupied Day 3; that slot is now Top Up.</li>
+        <li>While active it played the same as Classic mode, with dictionary scope limited to MFD-tagged words.</li>
+        <li>It remains reachable only through the developer <code>?mode=mfd</code> override.</li>
       </ul>
 
       <h3>Tetris Notes</h3>

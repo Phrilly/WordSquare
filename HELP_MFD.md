@@ -1,16 +1,25 @@
-# MFD Help (My First Dictionary)
+# MFD Help (My First Dictionary) - RETIRED
+
+> **MFD is retired.** It is no longer part of the daily rotation and is not played.
+> This file is kept for historic reference only.
 
 ## Help Version
-- Help Version: 1.3.3
-- Change Log: 1.3.3 updates Tetris timing documentation and the application version.
+- Help Version: 1.3.4
+- Change Log: 1.3.4 marks MFD as retired - it no longer appears in the daily rotation.
 
-## What MFD Is
-MFD is a daily variant that plays exactly like Classic mode.
-The only gameplay difference is the dictionary: only words marked as MFD are valid.
+## What MFD Was
+MFD was a daily variant that played exactly like Classic mode.
+The only gameplay difference was the dictionary: only words marked as MFD were valid.
 
-## Schedule Placement
-- MFD appears on Day 3 in the 6-day daily rotation.
-- Day 4 is Tetris and Day 5 is Classic.
+## Schedule Placement (historic)
+- MFD occupied Day 3 in earlier rotations.
+- The daily rotation changed several times: MFD ran on Day 3 under an early 5-day
+  cycle, then under the 7-day cycle introduced when Boggle was added.
+- MFD was subsequently retired from the natural cycle. Day 3 became Boggle, and
+  later Top Up.
+- The current rotation is: Day 0 Bomb, Day 1 Scrabble, Day 2 Lookahead,
+  Day 3 Top Up, Day 4 Tetris, Day 5 Classic, Day 6 Boggle.
+- MFD remains reachable only through the developer `?mode=mfd` override.
 
 ## Dictionary Source
 - Backend dictionary action: get_dict with mode=mfd
