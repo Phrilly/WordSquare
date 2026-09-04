@@ -616,11 +616,12 @@ if (isset($input['action'])) {
 
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO highscores (initials, score, grid, word_events_json)
-                VALUES (:initials, :score, :grid, :word_events_json)
+                INSERT INTO highscores (initials, mode, score, grid, word_events_json)
+                VALUES (:initials, :mode, :score, :grid, :word_events_json)
             ");
             $stmt->execute([
                 ':initials' => $initials,
+                ':mode' => $mode,
                 ':score' => $score,
                 ':grid' => $grid,
                 ':word_events_json' => $wordEventsJson,
