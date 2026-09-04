@@ -503,7 +503,13 @@ if (isset($input['action'])) {
         $grid = normaliseGridString($input['grid'] ?? '');
         $mode = normaliseMode($input['mode'] ?? null);
         $dailyMode = getModeForDate(new DateTimeImmutable('now', new DateTimeZone('UTC')));
-        if ($mode !== $dailyMode) {
+
+        // Boggle runs on its own page and records to boggle_highscores. The main
+        // game exposes no isBoggleDay flag in GAME_CONFIG, so on Boggle days it
+        // falls back to Classic - which is this endpoint's legitimate daily mode.
+        $expectedMode = ($dailyMode === 'boggle') ? 'classic' : $dailyMode;
+
+        if ($mode !== $expectedMode) {
             jsonResponse(['error' => 'Score mode does not match today\'s daily challenge.'], 400);
         }
 

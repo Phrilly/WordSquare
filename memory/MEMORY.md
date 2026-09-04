@@ -1,0 +1,1 @@
+- [WordSquare daily schedule history](wordsquare-daily-schedule-history.md) — rotation changed 5-day→7-day; MFD retired; Boggle days run main game as Classic
