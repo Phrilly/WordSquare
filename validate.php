@@ -8,6 +8,9 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 ini_set('error_log', __DIR__ . '/php-error.log');
 
+// Shared Scrabble rules (seed + daily special-square layout). Side-effect free.
+require_once __DIR__ . '/scrabble.php';
+
 function jsonResponse(array $payload, int $statusCode = 200): void
 {
     http_response_code($statusCode);
@@ -103,31 +106,6 @@ function buildGridCells(string $gridString): array
     }, $cells);
 
     return $cells;
-}
-
-function buildGridCellsWithWildcardInfo(string $gridString): array
-{
-    $rawCells = str_split(trim($gridString));
-    $cells = array_map(function ($cell) {
-        if (preg_match('/^[A-Z]$/', $cell)) {
-            return ['letter' => $cell, 'is_wildcard' => false];
-        }
-        if (preg_match('/^[a-z]$/', $cell)) {
-            return ['letter' => strtoupper($cell), 'is_wildcard' => true];
-        }
-        return ['letter' => '', 'is_wildcard' => false];
-    }, $rawCells);
-
-    return $cells;
-}
-
-function getScrabbleCellAt(int $r, int $c, array $cells, int $gridSize): ?array
-{
-    if ($r >= 0 && $r < $gridSize && $c >= 0 && $c < $gridSize) {
-        $idx = ($r * $gridSize) + $c;
-        return isset($cells[$idx]) && is_array($cells[$idx]) ? $cells[$idx] : null;
-    }
-    return null;
 }
 
 function fetchValidWords(array $candidateWords, PDO $pdo, string $mode = 'classic'): array
@@ -234,105 +212,36 @@ function calculateClassicGridScore(string $gridString, PDO $pdo, string $mode = 
     return $score;
 }
 
+/**
+ * Score a Scrabble grid and return the authoritative per-word breakdown.
+ *
+ * Only five-letter words score. Each word is valued with Scrabble letter
+ * values; a double-letter square doubles that one letter and a double-word
+ * square doubles the finished word. Wildcard tiles are worth 0.
+ *
+ * A word and its reverse are a single scoring entry, so only the highest
+ * scoring path of each pair is counted, and only once.
+ *
+ * @param list<int> $dlIndices
+ * @param list<int> $dwIndices
+ * @return array{score: int, events: list<array{word: string, points: int}>}
+ */
+function calculateScrabbleScoreWithEvents(string $gridString, PDO $pdo, array $dlIndices = [], array $dwIndices = []): array
+{
+    // One batched dictionary lookup for the whole grid keeps the shared scorer
+    // free of any database access.
+    $resolveValidWords = static function (array $candidateWords) use ($pdo): array {
+        return fetchValidWords($candidateWords, $pdo);
+    };
+
+    return calculateScrabbleScoreWithResolver($gridString, $resolveValidWords, $dlIndices, $dwIndices);
+}
+
 function calculateScrabbleGridScore(string $gridString, PDO $pdo, array $dlIndices = [], array $dwIndices = []): int
 {
-    $cells = buildGridCellsWithWildcardInfo($gridString);
+    $result = calculateScrabbleScoreWithEvents($gridString, $pdo, $dlIndices, $dwIndices);
 
-    if (count($cells) !== 25) {
-        return 0;
-    }
-
-    $gridSize = 5;
-    $directions = [
-        [0, 1], [0, -1], [1, 0], [-1, 0],
-        [1, 1], [-1, -1], [-1, 1], [1, -1]
-    ];
-    $scrabbleValues = [
-        'A' => 1, 'B' => 3, 'C' => 3, 'D' => 2, 'E' => 1, 'F' => 4, 'G' => 2,
-        'H' => 4, 'I' => 1, 'J' => 8, 'K' => 5, 'L' => 1, 'M' => 3, 'N' => 1,
-        'O' => 1, 'P' => 3, 'Q' => 10, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1,
-        'V' => 4, 'W' => 4, 'X' => 8, 'Y' => 4, 'Z' => 10,
-    ];
-    // Use provided DL indices or default to hardcoded positions for backward compatibility
-    $doubleLetterIndices = !empty($dlIndices) ? $dlIndices : [5, 9, 15, 19];
-
-    $foundPaths = [];
-    $candidateWords = [];
-
-    for ($r = 0; $r < $gridSize; $r++) {
-        for ($c = 0; $c < $gridSize; $c++) {
-            foreach ($directions as $dir) {
-                $path = [];
-                $word = '';
-
-                for ($step = 0; $step < 5; $step++) {
-                    $nextRow = $r + ($dir[0] * $step);
-                    $nextCol = $c + ($dir[1] * $step);
-                    $cellInfo = getScrabbleCellAt($nextRow, $nextCol, $cells, $gridSize);
-                    $letter = ($cellInfo && isset($cellInfo['letter'])) ? (string)$cellInfo['letter'] : '';
-
-                    if (!$letter) {
-                        break;
-                    }
-
-                    $path[] = ($nextRow * $gridSize) + $nextCol;
-                    $word .= $letter;
-
-                    if (strlen($word) === 5) {
-                        $candidateWords[] = $word;
-                        $foundPaths[] = ['word' => $word, 'path' => $path];
-                    }
-                }
-            }
-        }
-    }
-
-    $validWords = array_flip(fetchValidWords(array_values(array_unique($candidateWords)), $pdo));
-    if (empty($validWords)) {
-        return 0;
-    }
-
-    $bestScoreForWord = [];
-
-    foreach ($foundPaths as $item) {
-        if (!isset($validWords[$item['word']])) {
-            continue;
-        }
-
-        $reversed = strrev($item['word']);
-        $key = strcmp($item['word'], $reversed) < 0 ? $item['word'] : $reversed;
-
-        $pathScore = 0;
-        $hasDW = false;
-        
-        foreach ($item['path'] as $idx) {
-            $cellInfo = $cells[$idx] ?? ['letter' => '', 'is_wildcard' => false];
-            $letter = (string)($cellInfo['letter'] ?? '');
-            $isWildcard = (bool)($cellInfo['is_wildcard'] ?? false);
-
-            $value = $isWildcard ? 0 : ($scrabbleValues[$letter] ?? 0);
-            if (!$isWildcard && in_array($idx, $doubleLetterIndices, true)) {
-                $value *= 2;
-            }
-            $pathScore += $value;
-            
-            // Check if this path includes a DW square
-            if (in_array($idx, $dwIndices, true)) {
-                $hasDW = true;
-            }
-        }
-        
-        // Double the entire word score if it passes through a DW square
-        if ($hasDW) {
-            $pathScore *= 2;
-        }
-
-        if (!isset($bestScoreForWord[$key]) || $pathScore > $bestScoreForWord[$key]) {
-            $bestScoreForWord[$key] = $pathScore;
-        }
-    }
-
-    return array_sum($bestScoreForWord);
+    return $result['score'];
 }
 
 function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo, array $dlIndices = [], array $dwIndices = []): int
@@ -593,6 +502,11 @@ if (isset($input['action'])) {
         $initials = normaliseInitials($input['initials'] ?? null);
         $grid = normaliseGridString($input['grid'] ?? '');
         $mode = normaliseMode($input['mode'] ?? null);
+        $dailyMode = getModeForDate(new DateTimeImmutable('now', new DateTimeZone('UTC')));
+        if ($mode !== $dailyMode) {
+            jsonResponse(['error' => 'Score mode does not match today\'s daily challenge.'], 400);
+        }
+
         $sessionId = trim((string)($input['session_id'] ?? ''));
         $submittedScore = isset($input['score']) ? (int)$input['score'] : 0;
         $submittedWordEvents = is_array($input['word_events'] ?? null) ? $input['word_events'] : [];
@@ -617,26 +531,25 @@ if (isset($input['action'])) {
             jsonResponse(['error' => $errMsg], 400);
         }
 
-        // Get DL and DW indices from frontend if provided
-        $dlIndices = [];
-        if (isset($input['dl_indices']) && is_array($input['dl_indices'])) {
-            $dlIndices = array_map('intval', $input['dl_indices']);
-            $dlIndices = array_filter($dlIndices, function($idx) {
-                return $idx >= 0 && $idx < 25;
-            });
-            $dlIndices = array_values($dlIndices);
+        // SECURITY: the double-letter / double-word layout is derived from the UTC
+        // daily seed on the server. It is never read from the request, so a client
+        // cannot award itself multipliers. index.php publishes the same layout to
+        // the browser, which guarantees the rendered board is the scored board.
+        $dailyScrabbleLayout = generateScrabbleSpecialSquares(scrabbleDailySeed());
+        $dlIndices = $dailyScrabbleLayout['dl'];
+        $dwIndices = $dailyScrabbleLayout['dw'];
+
+        if ($mode === 'scrabble') {
+            // Scrabble values words with letter points and square multipliers, so
+            // the generic fixed-value (1/5/20) event normaliser above cannot
+            // represent them. Replace the client events with a server generated
+            // breakdown so the stored tiles always sum to the stored score.
+            $scrabbleResult = calculateScrabbleScoreWithEvents($grid, $pdo, $dlIndices, $dwIndices);
+            $score = $scrabbleResult['score'];
+            $wordEvents = $scrabbleResult['events'];
+        } else {
+            $score = calculateGridScoreForMode($grid, $mode, $pdo, $dlIndices, $dwIndices);
         }
-        
-        $dwIndices = [];
-        if (isset($input['dw_indices']) && is_array($input['dw_indices'])) {
-            $dwIndices = array_map('intval', $input['dw_indices']);
-            $dwIndices = array_filter($dwIndices, function($idx) {
-                return $idx >= 0 && $idx < 25;
-            });
-            $dwIndices = array_values($dwIndices);
-        }
-        
-        $score = calculateGridScoreForMode($grid, $mode, $pdo, $dlIndices, $dwIndices);
 
         if ($mode === 'tetris' || $mode === 'topup') {
             if ($sessionId === '') {
@@ -677,6 +590,23 @@ if (isset($input['action'])) {
             if ($wordEventScore !== $score) {
                 jsonResponse(['error' => 'Word breakdown does not match the verified score.'], 400);
             }
+        } else {
+            // Scrabble events are generated from the verified grid by the same
+            // server calculation that produced the score. Treat any disagreement
+            // here as an internal integrity failure rather than persisting data
+            // whose visible breakdown cannot equal its total.
+            $scrabbleEventScore = array_sum(array_map(static function (array $event): int {
+                return $event['points'];
+            }, $wordEvents));
+
+            if ($scrabbleEventScore !== $score) {
+                error_log('validate.php: Scrabble breakdown integrity failure.');
+                jsonResponse(['error' => 'Verified Scrabble breakdown does not match the score.'], 500);
+            }
+
+            if ($submittedScore !== $score) {
+                error_log('validate.php: corrected Scrabble client score ' . $submittedScore . ' to ' . $score . '.');
+            }
         }
 
         $wordEventsJson = json_encode($wordEvents);
@@ -710,7 +640,9 @@ if (isset($input['action'])) {
 
             jsonResponse([
                 'success' => true,
-                'is_top_score' => $isTopScore
+                'is_top_score' => $isTopScore,
+                'verified_score' => $score,
+                'word_events' => $wordEvents,
             ]);
         } catch (PDOException $e) {
             error_log('validate.php save_score failed: ' . $e->getMessage());

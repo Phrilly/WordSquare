@@ -8,6 +8,11 @@ let currentPotIndex = 0;
 let selectedTrayIndex = -1;
 let scrabbleLastMove = null;
 
+// Per-word breakdown of the live board: one entry per scoring 5-letter word,
+// valued with Scrabble letter values plus DL/DW multipliers. This mirrors the
+// server generated breakdown and is what the leaderboard tiles display.
+let scrabbleScoreEvents = [];
+
 const SCRABBLE_VALUES = {
     A:1, B:3, C:3, D:2, E:1, F:4, G:2, H:4, I:1, J:8, K:5, L:1, M:3, 
     N:1, O:1, P:3, Q:10, R:1, S:1, T:1, U:1, V:4, W:4, X:8, Y:4, Z:10
@@ -90,113 +95,188 @@ function buildScrabbleDeck() {
     return sequence;
 }
 
-function generateRandomSpecialSquares() {
+/**
+ * Fisher-Yates shuffle driven by the seeded RNG.
+ *
+ * This mirrors scrabbleShuffleWithRng() in scrabble.php exactly, so the browser
+ * and the server consume the same random values in the same order and therefore
+ * agree on the daily layout even if GAME_CONFIG is unavailable.
+ */
+function fisherYatesShuffle(items, rnd) {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+        const swapIndex = Math.floor(rnd() * (i + 1));
+        const temporary = result[i];
+        result[i] = result[swapIndex];
+        result[swapIndex] = temporary;
+    }
+    return result;
+}
+
+/**
+ * True when a candidate square is not adjacent (including diagonally) to any
+ * square already placed. Mirrors scrabbleIsValidSquarePosition() in scrabble.php.
+ */
+function isValidScrabbleSquarePosition(idx, existing) {
+    const row = Math.floor(idx / 5);
+    const col = idx % 5;
+
+    for (const existingIdx of existing) {
+        const existingRow = Math.floor(existingIdx / 5);
+        const existingCol = existingIdx % 5;
+
+        // Squares are too close when both the horizontal AND the vertical
+        // separation is under 2, which prevents adjacent and diagonal squares.
+        if (Math.abs(col - existingCol) < 2 && Math.abs(row - existingRow) < 2) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Validate a layout published by the server.
+ * Returns null when the payload is missing or malformed.
+ */
+function normaliseScrabbleSpecialSquares(candidate) {
+    if (!candidate || typeof candidate !== 'object') {
+        return null;
+    }
+
+    const toIndexList = (value) => {
+        if (!Array.isArray(value)) {
+            return null;
+        }
+        const list = [];
+        for (const entry of value) {
+            const idx = Number(entry);
+            if (!Number.isInteger(idx) || idx < 0 || idx > 24) {
+                return null;
+            }
+            list.push(idx);
+        }
+        return list;
+    };
+
+    const dl = toIndexList(candidate.dl);
+    const dw = toIndexList(candidate.dw);
+    if (dl === null || dw === null) {
+        return null;
+    }
+
+    return {
+        dl: dl.sort((a, b) => a - b),
+        dw: dw.sort((a, b) => a - b)
+    };
+}
+
+/**
+ * Build the layout locally from the seeded RNG.
+ * Mirrors generateScrabbleSpecialSquares() in scrabble.php.
+ */
+function generateScrabbleSquaresFromSeed() {
     const rnd = makeDailyRandom('scrabble-dl');
     const allIndices = Array.from({length: 25}, (_, i) => i);
-    
-    // Helper function to check if a position is valid with existing squares
-    function isValidPosition(idx, existing) {
-        const row = Math.floor(idx / 5);
-        const col = idx % 5;
-        
-        for (const existingIdx of existing) {
-            const existingRow = Math.floor(existingIdx / 5);
-            const existingCol = existingIdx % 5;
-            
-            // Check if squares are too close: both horizontal AND vertical separation < 2
-            // This prevents squares from being adjacent or diagonally adjacent
-            if (Math.abs(col - existingCol) < 2 && Math.abs(row - existingRow) < 2) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
+    const defaultLayout = { dl: [5, 9, 15, 19], dw: [] };
+
     // 50% chance for 4 DL squares, 50% chance for 2 DL + 1 DW squares
     const useDW = rnd() < 0.5;
     const targetDLCount = useDW ? 2 : 4;
-    const targetDWCount = useDW ? 1 : 0;
-    
+    const maxAttempts = 1000;
+
     const dlIndices = [];
     const dwIndices = [];
     let attempts = 0;
-    const maxAttempts = 1000;
-    
+
     // First, find DL squares
     while (dlIndices.length < targetDLCount && attempts < maxAttempts) {
-        // Shuffle available indices
-        const shuffled = [...allIndices].sort(() => rnd() - 0.5);
-        
+        const shuffled = fisherYatesShuffle(allIndices, rnd);
+
         for (const idx of shuffled) {
-            if (isValidPosition(idx, dlIndices)) {
+            if (isValidScrabbleSquarePosition(idx, dlIndices)) {
                 dlIndices.push(idx);
                 if (dlIndices.length === targetDLCount) break;
             }
         }
-        
+
         // If we didn't find enough, reset and try again
         if (dlIndices.length < targetDLCount) {
             dlIndices.length = 0;
             attempts++;
         }
     }
-    
+
     // If we need a DW square, find one that's valid with existing DL squares
     if (useDW && dlIndices.length === targetDLCount) {
         const combinedSquares = [...dlIndices];
         let dwFound = false;
         attempts = 0;
-        
+
         while (!dwFound && attempts < maxAttempts) {
-            // Shuffle available indices
-            const shuffled = [...allIndices].sort(() => rnd() - 0.5);
-            
+            const shuffled = fisherYatesShuffle(allIndices, rnd);
+
             for (const idx of shuffled) {
-                if (isValidPosition(idx, combinedSquares)) {
+                if (isValidScrabbleSquarePosition(idx, combinedSquares)) {
                     dwIndices.push(idx);
                     dwFound = true;
                     break;
                 }
             }
-            
+
             if (!dwFound) {
                 attempts++;
             }
         }
-        
+
         // If we couldn't find a valid DW position, fall back to 4 DL squares
         if (!dwFound) {
-            console.warn('Could not find valid DW position, using 4 DL squares instead');
-            // Try to find 2 more DL squares
-            const additionalDLNeeded = 2;
             while (dlIndices.length < 4 && attempts < maxAttempts) {
-                const shuffled = [...allIndices].sort(() => rnd() - 0.5);
+                const shuffled = fisherYatesShuffle(allIndices, rnd);
+
                 for (const idx of shuffled) {
-                    if (isValidPosition(idx, dlIndices)) {
+                    if (isValidScrabbleSquarePosition(idx, dlIndices)) {
                         dlIndices.push(idx);
                         if (dlIndices.length === 4) break;
                     }
                 }
+
                 if (dlIndices.length < 4) {
                     attempts++;
                 }
             }
         }
     }
-    
+
     // Fallback to default positions if we can't find valid ones
     if (dlIndices.length < targetDLCount || (useDW && dwIndices.length === 0)) {
-        console.warn('Could not find valid special square positions, using defaults');
-        return {
-            dl: [5, 9, 15, 19],
-            dw: []
-        };
+        return defaultLayout;
     }
-    
+
     return {
         dl: dlIndices.sort((a, b) => a - b),
         dw: dwIndices.sort((a, b) => a - b)
     };
+}
+
+/**
+ * Resolve the special squares for this game.
+ *
+ * The server publishes the daily layout in GAME_CONFIG and it is authoritative
+ * for scoring, so it wins whenever it is present. The seeded local generator is
+ * only a fallback and produces exactly the same layout for the same seed.
+ */
+function generateRandomSpecialSquares() {
+    const configured = (typeof window !== 'undefined' && window.GAME_CONFIG)
+        ? window.GAME_CONFIG.scrabbleSpecialSquares
+        : null;
+
+    const serverLayout = normaliseScrabbleSpecialSquares(configured);
+    if (serverLayout) {
+        return serverLayout;
+    }
+
+    return generateScrabbleSquaresFromSeed();
 }
 
 function renderScrabbleTray() {
@@ -485,14 +565,26 @@ document.addEventListener('ws:calculateScore', (e) => {
             pathScore *= 2;
         }
         
-        if (!bestScoreForWord[key] || pathScore > bestScoreForWord[key]) {
-            bestScoreForWord[key] = pathScore;
+        // The key only de-duplicates a word against its reverse; the word that is
+        // reported is the orientation that actually scored, so the breakdown never
+        // shows a mirror spelling that is not a real word.
+        if (!bestScoreForWord[key] || pathScore > bestScoreForWord[key].score) {
+            bestScoreForWord[key] = { score: pathScore, word: item.word };
         }
         validWordsList.push(item.word);
     });
     
     currentScore = 0;
-    Object.values(bestScoreForWord).forEach(s => { currentScore += s; });
+    Object.values(bestScoreForWord).forEach(entry => { currentScore += entry.score; });
+
+    // Rebuild the breakdown from the same canonical map that produced the score.
+    // bestScoreForWord is keyed on min(word, reverse) and holds the highest
+    // scoring path of the pair, so each scoring word appears exactly once and
+    // the points below always add up to currentScore.
+    scrabbleScoreEvents = Object.values(bestScoreForWord).map(entry => ({
+        word: entry.word,
+        points: entry.score
+    }));
     
     if (scoreEl) scoreEl.innerText = currentScore;
 

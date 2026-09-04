@@ -14,6 +14,13 @@ function autoVer(string $url): string {
     return $url . '?v=' . time(); // Fallback if file isn't found
 }
 
+// Shared Scrabble rules (seed + daily special-square layout). Side-effect free.
+require_once __DIR__ . '/scrabble.php';
+
+// The server owns the daily double-letter / double-word layout. It is published
+// to the client so the board that is rendered is the board that gets scored.
+$dailyScrabbleLayout = generateScrabbleSpecialSquares(scrabbleDailySeed());
+
 // VARIANT SCHEDULER: 7-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
@@ -130,7 +137,8 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
       isCommonDay: <?= json_encode($isCommonDay) ?>,
       isTetrisDay: <?= json_encode($isTetrisDay) ?>,
       isTopUpDay: <?= json_encode($isTopUpDay) ?>,
-      modeDisplayName: <?= json_encode($modeDisplayName) ?>
+      modeDisplayName: <?= json_encode($modeDisplayName) ?>,
+      scrabbleSpecialSquares: <?= json_encode($dailyScrabbleLayout) ?>
     };
   </script>
 

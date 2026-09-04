@@ -15,6 +15,7 @@ function getSubmittedWordEvents() {
   const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
   if (mode === 'topup' && typeof topUpScoreEvents !== 'undefined') return topUpScoreEvents;
   if (mode === 'tetris' && typeof tetrisScoreEvents !== 'undefined') return tetrisScoreEvents;
+  if (mode === 'scrabble' && typeof scrabbleScoreEvents !== 'undefined') return scrabbleScoreEvents;
   if (typeof getCurrentGridScoreEvents === 'function') return getCurrentGridScoreEvents();
   return [];
 }
@@ -63,7 +64,17 @@ function showBoardViewer(titleText, score, initials, gridChars, themeClass, word
     
       if (typeof findValidWordsLocalArray === 'function') {
           const bValid = findValidWordsLocalArray(normalizedChars);
-          const groupedData = buildGroupedWordData(bValid);
+          const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
+
+          // Scrabble only ever scores 5-letter words, so the reconstructed
+          // highlighting and word lists must ignore shorter matches. Without
+          // this the board viewer paints and lists 3- and 4-letter words that
+          // never earned a single point.
+          const scoringWords = (mode === 'scrabble')
+              ? bValid.filter(word => word.length === 5)
+              : bValid;
+
+          const groupedData = buildGroupedWordData(scoringWords);
         
           applyColorsToSpecificGrid(groupedData.rawScoringWords, normalizedChars, bg);
           if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
@@ -105,11 +116,8 @@ async function submitHighscore() {
         word_events: getSubmittedWordEvents()
     };
     
-    // Add DL and DW indices for Scrabble mode
-    if (window.GAME_CONFIG && window.GAME_CONFIG.isScrabbleDay && typeof SPECIAL_SQUARES !== 'undefined') {
-        requestBody.dl_indices = SPECIAL_SQUARES.dl;
-        requestBody.dw_indices = SPECIAL_SQUARES.dw;
-    }
+    // NOTE: the DL/DW layout is deliberately not sent. validate.php derives it
+    // from the UTC daily seed so a client cannot award itself multipliers.
     
     const res = await fetch('validate.php', {
       method: 'POST',
@@ -117,9 +125,28 @@ async function submitHighscore() {
       body: JSON.stringify(requestBody)
     });
     const data = await res.json();
-    isNewTopScore = data.is_top_score;
+    if (!res.ok || data.success !== true) {
+      throw new Error(data.error || `Score submission failed with status ${res.status}.`);
+    }
+
+    isNewTopScore = data.is_top_score === true;
+
+    // The server owns Scrabble scoring. Keep the completed-game UI in sync with
+    // the exact score and events that were persisted, even if a stale browser
+    // asset calculated a different value locally.
+    if (requestBody.mode === 'scrabble') {
+      if (Number.isInteger(data.verified_score)) {
+        currentScore = data.verified_score;
+        if (scoreEl) scoreEl.innerText = currentScore;
+      }
+      if (Array.isArray(data.word_events)) {
+        scrabbleScoreEvents = data.word_events;
+      }
+    }
   } catch (e) {
     console.error("Error saving score", e);
+    alert(e instanceof Error ? e.message : 'Unable to save your score. Please try again.');
+    return;
   }
 
   const highscoreEntryModal = document.getElementById('highscore-entry-modal');
