@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Day 0: Bomb</li>
         <li>Day 1: Scrabble</li>
         <li>Day 2: Lookahead</li>
-        <li>Day 3: MFD (My First Dictionary)</li>
+        <li>Day 3: Top Up</li>
         <li>Day 4: Tetris</li>
         <li>Day 5: Classic</li>
         <li>Day 6: Boggle</li>
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3>Scoring Notes</h3>
       <ul>
-        <li>Classic/Bomb/Lookahead/MFD: 3-letter = 1, 4-letter = 5, 5-letter = 20.</li>
+        <li>Classic/Bomb/Lookahead: 3-letter = 1, 4-letter = 5, 5-letter = 20.</li>
         <li>Scrabble: only 5-letter words score; 3-letter and 4-letter words do not score.</li>
         <li>Scrabble: wildcard tiles score 0; DL squares double letter value and DW squares double whole-word value.</li>
         <li>Tetris: 4-letter clears = 5 and 5-letter clears = 20, with gravity after clears.</li>
