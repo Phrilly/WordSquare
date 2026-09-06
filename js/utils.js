@@ -105,6 +105,22 @@ function generateBagSequence(allowWildcards = true) {
   return sequence;
 }
 
+function getDictionaryWordOrientation(word) {
+  if (typeof word !== 'string') return '';
+
+  const normalizedWord = word.trim().toUpperCase();
+  if (normalizedWord === '') return '';
+
+  if (typeof gameDictionary === 'undefined' || typeof gameDictionary.has !== 'function') {
+    return normalizedWord;
+  }
+
+  if (gameDictionary.has(normalizedWord)) return normalizedWord;
+
+  const reversedWord = normalizedWord.split('').reverse().join('');
+  return gameDictionary.has(reversedWord) ? reversedWord : normalizedWord;
+}
+
 function buildGroupedWordData(validWords) {
   let grouped = {};
   let result = {

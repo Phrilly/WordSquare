@@ -47,7 +47,7 @@ function computeTopUpScoringWords() {
           const path = Array.from({ length }, (_, step) => ((r + (step * rowStep)) * gridSize) + c + (step * columnStep));
           const word = path.map(index => cells[index]).join('');
           if (word.length === length && isTopUpDictionaryWord(word)) {
-            words.push({ key: path.join('-'), length, text: word });
+            words.push({ key: path.join('-'), length, text: getDictionaryWordOrientation(word) });
           }
         }
       });
@@ -71,7 +71,7 @@ function computeTopUpMatches() {
         const indices = Array.from({ length: gridSize }, (_, step) => ((r + (step * rowStep)) * gridSize) + c + (step * columnStep));
         const word = indices.map(index => cells[index]).join('');
         if (word.length === gridSize && isTopUpDictionaryWord(word)) {
-          matches.push({ key: indices.join('-'), indices, word });
+          matches.push({ key: indices.join('-'), indices, word: getDictionaryWordOrientation(word) });
         }
       });
     }

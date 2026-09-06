@@ -301,7 +301,7 @@ function getCurrentGridScoreEvents() {
   findValidWordsLocalArray(cells).forEach(word => {
     const reverse = word.split('').reverse().join('');
     const key = word < reverse ? word : reverse;
-    if (!grouped.has(key)) grouped.set(key, key);
+    if (!grouped.has(key)) grouped.set(key, getDictionaryWordOrientation(word));
   });
 
   return Array.from(grouped.values())
@@ -315,11 +315,12 @@ function renderScoreBreakdown(events, listId = 'score-breakdown-list') {
 
   listEl.hidden = events.length === 0;
   listEl.replaceChildren(...events.map(event => {
+    const displayWord = getDictionaryWordOrientation(event.word);
     const item = document.createElement('li');
     item.className = 'found-word-row';
-    for (const letter of event.word) {
+    for (const letter of displayWord) {
       const tile = document.createElement('span');
-      tile.className = `mini-tile word-${event.word.length}`;
+      tile.className = `mini-tile word-${displayWord.length}`;
       tile.textContent = letter;
       item.append(tile);
     }

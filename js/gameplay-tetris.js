@@ -773,7 +773,7 @@ function getTetrisWordScore(wordLength) {
 function createMatchedWordResult() {
   const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1]];
   const matchedMap = new Map();
-  const canonicalWords = new Set();
+  const canonicalWords = new Map();
 
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
@@ -795,7 +795,10 @@ function createMatchedWordResult() {
 
           if (word.length >= 4 && gameDictionary.has(word)) {
             const reversed = word.split('').reverse().join('');
-            canonicalWords.add(word < reversed ? word : reversed);
+            const key = word < reversed ? word : reversed;
+            if (!canonicalWords.has(key)) {
+              canonicalWords.set(key, getDictionaryWordOrientation(word));
+            }
             path.forEach((pIdx) => {
               const existing = matchedMap.get(pIdx) || 0;
               matchedMap.set(pIdx, Math.max(existing, word.length));
@@ -811,7 +814,7 @@ function createMatchedWordResult() {
     scoreGain += getTetrisWordScore(word.length);
   });
 
-  return { matchedMap, scoreGain, words: Array.from(canonicalWords) };
+  return { matchedMap, scoreGain, words: Array.from(canonicalWords.values()) };
 }
 
 function collectMatchedWordIndices() {
