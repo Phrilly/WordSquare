@@ -67,6 +67,35 @@ $assertWinner('off-schedule Boggle excluded', resolveDailyWinner($pdo, '2026-09-
 $assertWinner('no cross-mode fallback', resolveDailyWinner($pdo, '2026-09-03', 'classic'), null, 'classic', null);
 $assertWinner('empty day', resolveDailyWinner($pdo, '2026-09-04', 'scrabble'), null, 'scrabble', null);
 
+$classicBeforeBoggle = new DateTimeImmutable('2026-09-08 12:00:00', new DateTimeZone('UTC'));
+$boggleBeforeBomb = new DateTimeImmutable('2026-09-09 12:00:00', new DateTimeZone('UTC'));
+if (getModeForDate($classicBeforeBoggle) !== 'classic') {
+    $failures++;
+    echo 'FAIL Boggle-day predecessor should resolve to Classic.' . PHP_EOL;
+} else {
+    echo 'ok  Boggle-day predecessor resolves to Classic.' . PHP_EOL;
+}
+if (getModeForDate($boggleBeforeBomb) !== 'boggle') {
+    $failures++;
+    echo 'FAIL Bomb-day predecessor should resolve to Boggle.' . PHP_EOL;
+} else {
+    echo 'ok  Bomb-day predecessor resolves to Boggle.' . PHP_EOL;
+}
+
+$boggleSource = (string)file_get_contents(__DIR__ . '/js/boggle.js');
+if (!str_contains($boggleSource, "action: 'get_yesterdays_winner'")) {
+    $failures++;
+    echo 'FAIL Boggle does not request the shared previous-day winner endpoint.' . PHP_EOL;
+} else {
+    echo 'ok  Boggle requests the shared previous-day winner endpoint.' . PHP_EOL;
+}
+if (str_contains($boggleSource, 'get_boggle_yesterdays_winner')) {
+    $failures++;
+    echo 'FAIL Boggle still references the obsolete mode-specific winner endpoint.' . PHP_EOL;
+} else {
+    echo 'ok  Obsolete Boggle-specific winner endpoint is no longer referenced.' . PHP_EOL;
+}
+
 if ($failures > 0) {
     echo 'FAILED: ' . $failures . ' winner test(s).' . PHP_EOL;
     exit(1);

@@ -479,16 +479,25 @@ async function getLeaderboardScores() {
   return Array.isArray(data.highscores) ? data.highscores : [];
 }
 
-async function getYesterdaysBoggleWinner() {
+async function getYesterdaysDailyWinner() {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'get_boggle_yesterdays_winner' })
+    body: JSON.stringify({ action: 'get_yesterdays_winner' })
   });
-  if (!response.ok) throw new Error('Unable to load yesterday\'s Boggle winner.');
+  if (!response.ok) throw new Error('Unable to load yesterday\'s winner.');
 
   const data = await response.json();
-  return data.winner && typeof data.winner === 'object' ? data.winner : null;
+  if (!data || typeof data.winner_initials !== 'string' || data.winner_initials === '') {
+    return null;
+  }
+
+  return {
+    initials: data.winner_initials,
+    mode: typeof data.mode === 'string' ? data.mode : 'classic',
+    score: Number.isFinite(Number(data.score)) ? Number(data.score) : 0,
+    date: typeof data.date === 'string' ? data.date : ''
+  };
 }
 
 async function saveLeaderboardScore(score, initials) {
@@ -816,20 +825,16 @@ function showArrivalCelebration(winner) {
 }
 
 async function showStartScreen() {
-  try {
-    const [winner, scores] = await Promise.all([
-      getYesterdaysBoggleWinner().catch(() => null),
-      getLeaderboardScores()
-    ]);
-    if (winner) {
-      showArrivalCelebration(winner);
-      return;
-    }
-
-    await showOpeningLeaderboard(scores);
-  } catch (error) {
-    await showOpeningLeaderboard();
+  const [winner, scores] = await Promise.all([
+    getYesterdaysDailyWinner().catch(() => null),
+    getLeaderboardScores().catch(() => [])
+  ]);
+  if (winner) {
+    showArrivalCelebration(winner);
+    return;
   }
+
+  await showOpeningLeaderboard(scores);
 }
 
 function viewHighScores() {
