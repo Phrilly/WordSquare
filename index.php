@@ -299,18 +299,18 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
 
     <div class="overlay-modal" id="topup-opening-modal" style="display: none;">
       <div class="topup-opening-content">
-        <h2>SURVIVAL MODE: CLEAR TO STAY ALIVE</h2>
+        <h2>TOP UP: CLEAR TO SURVIVE</h2>
         <p>
-          Unlike Classic or Lookahead, your primary goal in Top Up is endurance. You must continuously clear space to keep playing.
+          Keep clearing space to stay in the game.
         </p>
         <p>
-          <strong style="color: #ffd700;">5-LETTER WORDS (The Lifeline):</strong> When a 5-letter word forms, it highlights. Click it to score 20 points and delete those tiles, freeing up precious grid space.
+          <strong style="color: #ffd700;">5-LETTER WORDS:</strong> Click highlighted words for 20 points and remove their tiles.
         </p>
         <p>
-          <strong style="color: #aaa;">3 &amp; 4-LETTER WORDS (The Clutter):</strong> These automatically score 1 and 5 points, but they never clear. They remain on the board as permanent obstacles.
+          <strong style="color: #aaa;">3 &amp; 4-LETTER WORDS:</strong> Score 1 and 5 points automatically, but their tiles remain.
         </p>
         <p style="color: #aaa;">
-          <strong>GAME OVER:</strong> The game ends only when the board is completely full (25 tiles) and there are no highlighted 5-letter words left to clear.
+          <strong>GAME OVER:</strong> The board is full and no highlighted 5-letter words remain.
         </p>
       </div>
       <div class="overlay-actions">
