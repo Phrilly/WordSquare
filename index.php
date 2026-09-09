@@ -298,19 +298,21 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
     </div>
 
     <div class="overlay-modal" id="topup-opening-modal" style="display: none;">
-      <h2>SURVIVAL MODE: CLEAR TO STAY ALIVE</h2>
-      <p>
-        Unlike Classic or Lookahead, your primary goal in Top Up is endurance. You must continuously clear space to keep playing.
-      </p>
-      <p>
-        <strong style="color: #ffd700;">5-LETTER WORDS (The Lifeline):</strong> When a 5-letter word forms, it highlights. Click it to score 20 points and delete those tiles, freeing up precious grid space.
-      </p>
-      <p>
-        <strong style="color: #aaa;">3 &amp; 4-LETTER WORDS (The Clutter):</strong> These automatically score 1 and 5 points, but they never clear. They remain on the board as permanent obstacles.
-      </p>
-      <p style="color: #aaa;">
-        <strong>GAME OVER:</strong> The game ends only when the board is completely full (25 tiles) and there are no highlighted 5-letter words left to clear.
-      </p>
+      <div class="topup-opening-content">
+        <h2>SURVIVAL MODE: CLEAR TO STAY ALIVE</h2>
+        <p>
+          Unlike Classic or Lookahead, your primary goal in Top Up is endurance. You must continuously clear space to keep playing.
+        </p>
+        <p>
+          <strong style="color: #ffd700;">5-LETTER WORDS (The Lifeline):</strong> When a 5-letter word forms, it highlights. Click it to score 20 points and delete those tiles, freeing up precious grid space.
+        </p>
+        <p>
+          <strong style="color: #aaa;">3 &amp; 4-LETTER WORDS (The Clutter):</strong> These automatically score 1 and 5 points, but they never clear. They remain on the board as permanent obstacles.
+        </p>
+        <p style="color: #aaa;">
+          <strong>GAME OVER:</strong> The game ends only when the board is completely full (25 tiles) and there are no highlighted 5-letter words left to clear.
+        </p>
+      </div>
       <div class="overlay-actions">
         <button class="arcade-btn" id="topup-start-btn" type="button">START GAME</button>
       </div>
