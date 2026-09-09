@@ -846,7 +846,10 @@ function viewHighScores() {
 
 async function loadDictionary() {
   try {
-    const response = await fetch('data/boggle-uk-game.txt', { cache: 'force-cache' });
+    // The dictionary is a versioned, immutable asset: the filename carries the
+    // version, so a dictionary change ships as a new filename and force-cache
+    // never serves a stale word list to a returning player.
+    const response = await fetch('data/dict_en_v17.txt', { cache: 'force-cache' });
     if (!response.ok) throw new Error('Dictionary unavailable');
     const text = await response.text();
 

@@ -1,0 +1,20 @@
+dict_en_v17 runtime dictionary (Boggle)
+
+This file is the runtime dictionary used by the Boggle variant. It replaced
+boggle-uk-game.txt, which is retained only for reference.
+
+Source: https://tomsgreatsite.co.uk/wordsquare/dict_en_v17.txt
+Format: one lowercase word per line. 151,801 entries.
+
+The game filters this file at load time (see loadDictionary in js/boggle.js):
+- entries are trimmed and upper-cased
+- UK spellings are normalised (COLOR -> COLOUR, ORGANIZE -> ORGANISE, ...)
+- only 4-25 letter A-Z entries are playable
+- proper nouns and offensive entries in the denylists are rejected
+- duplicates are removed
+
+The filename carries the version. loadDictionary fetches with cache:
+'force-cache', so replacing this file in place would leave returning players
+with a stale copy. To upgrade, ship a new filename (for example
+dict_en_v18.txt) and update the fetch in js/boggle.js together with the
+dictionary reference in the boggle.php help modal.

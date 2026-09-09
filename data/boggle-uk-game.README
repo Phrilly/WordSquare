@@ -8,4 +8,7 @@ It is intentionally generated from the SCOWL corpus, then filtered to remove:
 - non-letter or out-of-range entries
 - US spellings that are normalised to UK game spellings such as COLOUR and ORGANISE
 
-This file is the canonical gameplay dictionary. The raw SCOWL source remains available for reference and rebuilds, but it is not used directly by the game.
+Retired as of the dict_en_v17 dictionary swap: js/boggle.js now loads
+data/dict_en_v17.txt, so this file is no longer fetched by the game. It is kept
+for reference and for rebuilds of the previous word list. The raw SCOWL source
+remains available for the same purpose.

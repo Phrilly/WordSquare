@@ -73,6 +73,7 @@
 - If any column reaches the top (no legal drop), the run ends.
 
 ### Boggle
+- Boggle uses the client-side `data/dict_en_v17.txt` dictionary (151,801 words), filtered to 4-25 letters with proper nouns and offensive entries removed.
 - Boggle uses a fixed 5x5 weighted-letter board for each of three two-minute rounds.
 - All players receive the same three boards for the UTC day; Play Again repeats them for fair comparison.
 - Form words by joining horizontally, vertically, or diagonally adjacent tiles without reusing a tile.
@@ -93,6 +94,7 @@
 
 ## Validation Notes
 - All words are validated against the server dictionary.
+- Boggle is the exception: it validates against its own client-side dictionary (`data/dict_en_v17.txt`), not the server dictionary.
 - Scrabble uses a dedicated 5-letter scoring pass with letter-value math.
 - Tetris stores and ranks by its live gameplay score.
 
