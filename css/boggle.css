@@ -7,6 +7,7 @@ html { overflow-y:auto; }
 .boggle-page.is-embedded .boggle-preview,
 .boggle-page.is-embedded .boggle-grid { flex:0 0 auto; }
 .boggle-page.is-embedded .boggle-grid { margin:12px 0; }
+.boggle-page.is-embedded .boggle-grid:has(> .boggle-summary.is-leaderboard:not([hidden])) { flex:1 1 auto; min-height:0; aspect-ratio:auto; }
 .boggle-header { position:relative; display:flex; justify-content:space-between; gap:6px; align-items:end; min-height:42px; margin-bottom:8px; padding-right:32px; text-align:center; }
 .boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; margin-bottom: 2px; }
 #boggle-score, #boggle-round { display:flex; justify-content:center; align-items:center; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
@@ -38,6 +39,8 @@ html { overflow-y:auto; }
 .boggle-controls button:disabled { opacity:.45; cursor:not-allowed; }
 .boggle-found { margin-top:22px; }
 .boggle-page.is-embedded .boggle-found { display:flex; flex:1 1 auto; flex-direction:column; min-height:0; margin-top:12px; overflow:hidden; }
+.boggle-page.is-embedded .boggle-preview[hidden],
+.boggle-page.is-embedded .boggle-found[hidden] { display:none; }
 .boggle-found h2 { margin:0 0 8px; color:var(--highlight); font-size:18px; }
 #boggle-found-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:6px; margin:0; padding:0; list-style:none; }
 .boggle-page.is-embedded #boggle-found-list { flex:1 1 auto; min-height:0; max-height:none; align-content:start; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; padding-right:4px; }
