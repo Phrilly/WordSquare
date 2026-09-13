@@ -10,7 +10,8 @@ function isTopUpMode() {
 
 let topUpActiveMatches = [];
 let topUpHighlightedIndices = new Set();
-let topUpScoredWordKeys = new Set();
+let topUpAwardedShortWordKeys = new Set();
+let topUpClearedWordKeys = new Set();
 let topUpShortWordClasses = new Map();
 let topUpScoreEvents = [];
 let topUpStickyPreviewCell = null;
@@ -30,6 +31,12 @@ function isTopUpDictionaryWord(word) {
   if (gameDictionary.has(word)) return true;
   const reversed = word.split('').reverse().join('');
   return gameDictionary.has(reversed);
+}
+
+function getTopUpCanonicalWordKey(word) {
+  const normalizedWord = String(word || '').trim().toUpperCase();
+  const reversedWord = normalizedWord.split('').reverse().join('');
+  return normalizedWord < reversedWord ? normalizedWord : reversedWord;
 }
 
 function computeTopUpScoringWords() {
@@ -82,18 +89,27 @@ function computeTopUpMatches() {
 
 function awardTopUpScoringWords() {
   const words = computeTopUpScoringWords();
-  const activeKeys = new Set(words.map(word => word.key));
 
   words.forEach(word => {
-    if (!topUpScoredWordKeys.has(word.key)) {
+    if (!topUpAwardedShortWordKeys.has(word.key)) {
       const points = word.length === 3 ? 1 : 5;
       currentScore += points;
       topUpScoreEvents.push({ word: word.text, points });
+      topUpAwardedShortWordKeys.add(word.key);
     }
   });
 
-  topUpScoredWordKeys = activeKeys;
   applyTopUpShortWordColors(words);
+}
+
+function awardTopUpClearedWord(word) {
+  const wordKey = getTopUpCanonicalWordKey(word);
+  if (topUpClearedWordKeys.has(wordKey)) return false;
+
+  currentScore += 20;
+  topUpScoreEvents.push({ word, points: 20 });
+  topUpClearedWordKeys.add(wordKey);
+  return true;
 }
 
 function applyTopUpShortWordColors(words) {
@@ -225,7 +241,8 @@ document.addEventListener('ws:beforeInit', () => {
   gameDeck = drawTopUpLetters(TOPUP_INITIAL_DECK);
   topUpActiveMatches = [];
   topUpHighlightedIndices = new Set();
-  topUpScoredWordKeys = new Set();
+  topUpAwardedShortWordKeys = new Set();
+  topUpClearedWordKeys = new Set();
   topUpShortWordClasses = new Map();
   topUpScoreEvents = [];
   topUpStickyPreviewCell = null;
@@ -345,8 +362,7 @@ document.addEventListener('ws:occupiedCellClick', (e) => {
     lastPlacedInfo = null;
   }
 
-  currentScore += 20;
-  topUpScoreEvents.push({ word: matchingWord.word, points: 20 });
+  awardTopUpClearedWord(matchingWord.word);
   if (scoreEl) scoreEl.innerText = currentScore;
 
   // Re-evaluating here (rather than waiting for the next placement) is what drops an

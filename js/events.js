@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return 'Boggle uses three timed 5x5 word-path boards with cumulative scoring.';
     }
     if (mode === 'topup') {
-      return 'Top Up mode is active: click completed 5-letter words to score 20 pts and clear them.';
+      return 'Top Up mode is active: click completed 5-letter words to clear them. Each 3- or 4-letter path and each 5-letter word scores once per game; reverse spellings count as the same 5-letter word.';
     }
     return 'Classic mode is active: standard WordSquare rules and scoring.';
   };
