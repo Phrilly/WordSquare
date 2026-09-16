@@ -415,7 +415,28 @@ function renderWordTiles(container, words) {
   }));
 }
 
-function createLeaderboardRow(entry, index, isInteractive = true) {
+// Interpolates a rank-based background color (green at rank 1 fading through
+// amber to light red at the bottom) and picks a text color with strong contrast.
+function getScoreTileRankStyle(rank, total) {
+  const t = total > 1 ? rank / (total - 1) : 0;
+  const stops = [
+    [30, 125, 58],   // green (top rank)
+    [224, 160, 32],  // amber (mid rank)
+    [224, 110, 110]  // light red (bottom rank)
+  ];
+  const segment = t <= 0.5 ? 0 : 1;
+  const localT = t <= 0.5 ? t / 0.5 : (t - 0.5) / 0.5;
+  const from = stops[segment];
+  const to = stops[segment + 1];
+  const rgb = from.map((c, i) => Math.round(c + (to[i] - c) * localT));
+  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+  return {
+    background: `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`,
+    color: luminance > 0.55 ? '#1a1a1a' : '#ffffff'
+  };
+}
+
+function createLeaderboardRow(entry, index, total, isInteractive = true) {
   const item = document.createElement('li');
   item.classList.add('boggle-score-entry');
   if (index === 0) item.classList.add('is-top-score');
@@ -440,6 +461,9 @@ function createLeaderboardRow(entry, index, isInteractive = true) {
   const score = document.createElement('div');
   score.className = 'lb-score-tile';
   score.textContent = String(entry.score);
+  const rankStyle = getScoreTileRankStyle(index, total);
+  score.style.background = rankStyle.background;
+  score.style.color = rankStyle.color;
   row.append(rank, initialsGroup, score);
   item.append(row);
   if (!isInteractive) return item;
@@ -464,7 +488,7 @@ function renderLeaderboard(scores, target, isInteractive = true) {
     target.replaceChildren(item);
     return;
   }
-  target.replaceChildren(...scores.map((entry, index) => createLeaderboardRow(entry, index, isInteractive)));
+  target.replaceChildren(...scores.map((entry, index) => createLeaderboardRow(entry, index, scores.length, isInteractive)));
 }
 
 async function getLeaderboardScores() {
