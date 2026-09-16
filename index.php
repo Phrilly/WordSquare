@@ -206,7 +206,18 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
     </div>
   </div>
 
-  <div class="top-bar">
+  <div class="top-bar<?= $isTetrisDay ? ' tetris-mode' : '' ?>">
+    <?php if ($isTetrisDay): ?>
+    <div class="tetris-status-group">
+      <div class="score-stack">
+        <div id="score">0</div>
+      </div>
+      <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true" aria-label="Time remaining">
+        <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <div id="left-header" title="Click to open wildcard picker">
       <span id="header-label">Next:</span>
 
@@ -231,6 +242,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
       </div>
 
     </div>
+    <?php if (!$isTetrisDay): ?>
     <div class="score-stack">
       <div class="score-meta-row">
         <div id="mode-badge" class="mode-badge"><?= htmlspecialchars(strtoupper($modeDisplayName), ENT_QUOTES, 'UTF-8') ?></div>
@@ -238,10 +250,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
       </div>
       <div id="score">0</div>
     </div>
-    <div id="tetris-clock" class="tetris-clock" aria-live="polite" aria-atomic="true">
-      <span class="tetris-clock-label">CLOCK</span>
-      <span id="tetris-clock-value" class="tetris-clock-value">10.0s</span>
-    </div>
+    <?php endif; ?>
   </div>
 
   <div id="tetris-drop-row" class="tetris-drop-row" aria-label="Drop row">
