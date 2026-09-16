@@ -256,19 +256,45 @@ function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo, a
 }
 
 /**
- * Calculate the game mode for a given date based on the 7-day cycle.
- * This matches the cycle logic in index.php exactly.
+ * Calculate the game mode for a given date.
+ * This matches the cycle logic in index.php exactly, including the
+ * 2026-09-17 cutover to a pure day-of-week schedule.
  * 
  * @param DateTimeImmutable $date The date to calculate the mode for
  * @return string The mode: 'bomb', 'scrabble', 'lookahead', 'topup', 'tetris', 'boggle', or 'classic'
  */
 function getModeForDate(DateTimeImmutable $date): string
 {
-    $epoch = new DateTimeImmutable('2026-05-21 00:00:00', new DateTimeZone('UTC'));
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
+    $scheduleV2Cutover = new DateTimeImmutable('2026-09-17 00:00:00', new DateTimeZone('UTC'));
+
+    if ($target >= $scheduleV2Cutover) {
+        $isoWeekday = (int) $target->format('N'); // 1 = Monday ... 7 = Sunday
+        if ($isoWeekday === 3) {
+            return 'bomb';
+        }
+        if ($isoWeekday === 4) {
+            return 'scrabble';
+        }
+        if ($isoWeekday === 2) {
+            return 'lookahead';
+        }
+        if ($isoWeekday === 5) {
+            return 'topup';
+        }
+        if ($isoWeekday === 6) {
+            return 'tetris';
+        }
+        if ($isoWeekday === 7) {
+            return 'boggle';
+        }
+        return 'classic';       // Monday (1)
+    }
+
+    // Legacy cycle logic, kept so historical dates before the rollout resolve unchanged.
+    $epoch = new DateTimeImmutable('2026-05-21 00:00:00', new DateTimeZone('UTC'));
     $daysSinceEpoch = (int) floor(($target->getTimestamp() - $epoch->getTimestamp()) / 86400);
 
-    // 7-day cycle matching index.php logic exactly
     if ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0) {
         return 'bomb';          // Day 0
     }

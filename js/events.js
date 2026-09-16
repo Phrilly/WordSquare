@@ -52,8 +52,24 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const getScheduleDebugInfo = () => {
-    const epochUtcMs = Date.UTC(2026, 4, 21, 0, 0, 0);
     const now = new Date();
+    const utcDate = now.toISOString().slice(0, 10);
+    const scheduleV2CutoverMs = Date.UTC(2026, 8, 17, 0, 0, 0); // 2026-09-17
+
+    if (now.getTime() >= scheduleV2CutoverMs) {
+      const isoWeekday = ((now.getUTCDay() + 6) % 7) + 1; // 1 = Monday ... 7 = Sunday
+      let computedMode = 'classic';
+      if (isoWeekday === 3) computedMode = 'bomb';
+      else if (isoWeekday === 4) computedMode = 'scrabble';
+      else if (isoWeekday === 2) computedMode = 'lookahead';
+      else if (isoWeekday === 5) computedMode = 'topup';
+      else if (isoWeekday === 6) computedMode = 'tetris';
+      else if (isoWeekday === 7) computedMode = 'boggle';
+
+      return { utcDate, daysSinceEpoch: null, cycleDay: isoWeekday, computedMode };
+    }
+
+    const epochUtcMs = Date.UTC(2026, 4, 21, 0, 0, 0);
     const todayUtcMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0);
     const daysSinceEpoch = Math.floor((todayUtcMs - epochUtcMs) / 86400000);
     const cycleDay = ((daysSinceEpoch % 7) + 7) % 7;
@@ -65,8 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (daysSinceEpoch > 0 && cycleDay === 3) computedMode = 'topup';
     else if (daysSinceEpoch > 0 && cycleDay === 4) computedMode = 'tetris';
     else if (daysSinceEpoch > 0 && cycleDay === 6) computedMode = 'boggle';
-
-    const utcDate = now.toISOString().slice(0, 10);
 
     return {
       utcDate,
@@ -108,15 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Letters stay on the board unless removed by a mode mechanic (for example, Tetris clears or bombs).</li>
       </ul>
 
-      <h3>Daily Schedule (7-Day)</h3>
+      <h3>Daily Schedule (Mon-Sun, from 2026-09-17)</h3>
       <ul>
-        <li>Day 0: Bomb</li>
-        <li>Day 1: Scrabble</li>
-        <li>Day 2: Lookahead</li>
-        <li>Day 3: Top Up</li>
-        <li>Day 4: Tetris</li>
-        <li>Day 5: Classic</li>
-        <li>Day 6: Boggle</li>
+        <li>Monday: Classic</li>
+        <li>Tuesday: Lookahead</li>
+        <li>Wednesday: Bomb</li>
+        <li>Thursday: Scrabble</li>
+        <li>Friday: Top Up</li>
+        <li>Saturday: Tetris</li>
+        <li>Sunday: Boggle</li>
       </ul>
 
       <h3>Scoring Notes</h3>
@@ -186,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <h3>Scheduler Debug</h3>
       <ul>
         <li>UTC Date: ${scheduleDebug.utcDate}</li>
-        <li>Days Since Epoch (2026-05-21): ${scheduleDebug.daysSinceEpoch}</li>
+        <li>Days Since Epoch (2026-05-21): ${scheduleDebug.daysSinceEpoch ?? 'n/a (post-cutover schedule)'}</li>
         <li>Cycle Day: ${scheduleDebug.cycleDay}</li>
         <li>Computed Mode: ${computedModeLabel}</li>
         <li>Loaded Mode: ${modeLabel}</li>
