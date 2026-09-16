@@ -216,6 +216,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 5. Pre-fetch and render leaderboard values inside the UI before unveiling screens
+  if (hsData && Array.isArray(hsData.highscores)) {
+    dailyHighscores = hsData.highscores.map(entry => Number(entry.score)).filter(Number.isFinite);
+  }
+  if (typeof updateScoreTileColor === 'function') updateScoreTileColor();
+
   if (typeof loadLeaderboard === 'function') {
       await loadLeaderboard();
   }

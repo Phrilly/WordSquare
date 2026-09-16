@@ -178,25 +178,6 @@ function skipToLeaderboard() {
   loadLeaderboard();
 }
 
-// Interpolates a rank-based background color (green at rank 1 fading through
-// amber to light red at the bottom) and picks a text color with strong contrast.
-function getScoreTileRankStyle(rank, total) {
-  const t = total > 1 ? rank / (total - 1) : 0;
-  const stops = [
-    [30, 125, 58],   // green (top rank)
-    [224, 160, 32],  // amber (mid rank)
-    [224, 110, 110]  // light red (bottom rank)
-  ];
-  const segment = t <= 0.5 ? 0 : 1;
-  const localT = t <= 0.5 ? t / 0.5 : (t - 0.5) / 0.5;
-  const from = stops[segment];
-  const to = stops[segment + 1];
-  const rgb = from.map((c, i) => Math.round(c + (to[i] - c) * localT));
-  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
-  const color = luminance > 0.55 ? '#1a1a1a' : '#ffffff';
-  return `background: rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]}); color: ${color};`;
-}
-
 async function loadLeaderboard() {
   const listEl = document.getElementById('leaderboard-list');
   if (!listEl) return;
@@ -232,7 +213,6 @@ async function loadLeaderboard() {
         if (viewWinningBtn) viewWinningBtn.style.display = 'none';
       }
 
-      const totalScores = data.highscores.length;
       data.highscores.forEach((entry, index) => {
         let initials = (entry.initials || '---').padEnd(3, '-').substring(0, 3);
         let initialsHtml = '';
@@ -249,7 +229,7 @@ async function loadLeaderboard() {
               <div class="lb-rank">${index + 1}.</div>
               <div class="lb-initials-group">${initialsHtml}</div>
             </div>
-            <div class="lb-score-tile" style="${getScoreTileRankStyle(index, totalScores)}">${entry.score}</div>
+            <div class="lb-score-tile">${entry.score}</div>
           </div>
         `;
         li.addEventListener('click', () => {

@@ -16,6 +16,7 @@ let bestDailyData = null;
 
 let aiBestScore = 0;
 let aiBestGrid = [];
+let dailyHighscores = [];
 localStorage.removeItem('ws_daily_offset');
 let dailyOffset = 0;
 let dailySeed = 0;

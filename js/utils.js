@@ -209,3 +209,44 @@ function getScoreForPureGrid(charArray) {
 
   return score;
 }
+
+// Interpolates a rank-based color (green at rank 1 fading through amber to
+// light red at the bottom) and picks a text color with strong contrast.
+function getScoreTileRankStyle(rank, total) {
+  const t = total > 1 ? rank / (total - 1) : 0;
+  const stops = [
+    [30, 125, 58],   // green (top rank)
+    [224, 160, 32],  // amber (mid rank)
+    [224, 110, 110]  // light red (bottom rank)
+  ];
+  const segment = t <= 0.5 ? 0 : 1;
+  const localT = t <= 0.5 ? t / 0.5 : (t - 0.5) / 0.5;
+  const from = stops[segment];
+  const to = stops[segment + 1];
+  const rgb = from.map((c, i) => Math.round(c + (to[i] - c) * localT));
+  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+  return {
+    background: `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`,
+    color: luminance > 0.55 ? '#1a1a1a' : '#ffffff'
+  };
+}
+
+// Colors the live score tile by where the in-progress score would rank among today's saved scores.
+function updateScoreTileColor() {
+  if (typeof scoreEl === 'undefined' || !scoreEl) return;
+  if (!Array.isArray(dailyHighscores) || dailyHighscores.length === 0) {
+    scoreEl.style.background = '';
+    scoreEl.style.color = '';
+    return;
+  }
+  const score = typeof currentScore === 'number' ? currentScore : 0;
+  const rank = dailyHighscores.filter(s => s > score).length;
+  const total = dailyHighscores.length + 1;
+  const style = getScoreTileRankStyle(rank, total);
+  scoreEl.style.background = style.background;
+  scoreEl.style.color = style.color;
+}
+
+if (typeof scoreEl !== 'undefined' && scoreEl) {
+  new MutationObserver(updateScoreTileColor).observe(scoreEl, { characterData: true, childList: true, subtree: true });
+}
