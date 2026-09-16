@@ -25,14 +25,29 @@ $dailyScrabbleLayout = generateScrabbleSpecialSquares(scrabbleDailySeed());
 $epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
 $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
-// Default cycle logic
-$isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0);       // Day 0
-$isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0); // Day 1
-$isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // Day 2
-$isCommonDay    = false;                                                    // Day 3 retired
-$isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
-$isBoggleDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 6) % 7 === 0); // Day 6 only
-$isTopUpDay     = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0); // Day 3
+// New weekday-based schedule takes effect from 2026-09-17 onward; earlier dates keep the original cycle.
+$scheduleV2CutoverTimestamp = strtotime('2026-09-17 00:00:00 UTC');
+
+if (time() >= $scheduleV2CutoverTimestamp) {
+  $todayIsoWeekday = (int) gmdate('N', time()); // 1 = Monday ... 7 = Sunday
+  $isBombDay      = ($todayIsoWeekday === 3); // Wednesday
+  $isScrabbleDay  = ($todayIsoWeekday === 4); // Thursday
+  $isLookaheadDay = ($todayIsoWeekday === 2); // Tuesday
+  $isCommonDay    = false;                    // retired
+  $isTetrisDay    = ($todayIsoWeekday === 6); // Saturday
+  $isBoggleDay    = ($todayIsoWeekday === 7); // Sunday
+  $isTopUpDay     = ($todayIsoWeekday === 5); // Friday
+  // Monday (1) has no flag set and falls through to Classic.
+} else {
+  // Legacy cycle logic, kept so historical days before the rollout are unaffected.
+  $isBombDay      = ($daysSinceEpoch > 0 && $daysSinceEpoch % 7 === 0);       // Day 0
+  $isScrabbleDay  = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 1) % 7 === 0); // Day 1
+  $isLookaheadDay = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 2) % 7 === 0); // Day 2
+  $isCommonDay    = false;                                                    // Day 3 retired
+  $isTetrisDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 4) % 7 === 0); // Day 4
+  $isBoggleDay    = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 6) % 7 === 0); // Day 6 only
+  $isTopUpDay     = ($daysSinceEpoch > 0 && ($daysSinceEpoch - 3) % 7 === 0); // Day 3
+}
 
 // DEV OVERRIDES: Strict Input Validation
 $rawQuery = (string)($_SERVER['QUERY_STRING'] ?? '');
