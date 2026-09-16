@@ -232,16 +232,13 @@ function getScoreTileRankStyle(rank, total) {
 }
 
 // Colors the live score tile by where the in-progress score would rank among today's saved scores.
+// With no saved scores yet today, the player is trivially in first place, so the tile shows green.
 function updateScoreTileColor() {
   if (typeof scoreEl === 'undefined' || !scoreEl) return;
-  if (!Array.isArray(dailyHighscores) || dailyHighscores.length === 0) {
-    scoreEl.style.background = '';
-    scoreEl.style.color = '';
-    return;
-  }
   const score = typeof currentScore === 'number' ? currentScore : 0;
-  const rank = dailyHighscores.filter(s => s > score).length;
-  const total = dailyHighscores.length + 1;
+  const scores = Array.isArray(dailyHighscores) ? dailyHighscores : [];
+  const rank = scores.filter(s => s > score).length;
+  const total = scores.length + 1;
   const style = getScoreTileRankStyle(rank, total);
   scoreEl.style.background = style.background;
   scoreEl.style.color = style.color;
