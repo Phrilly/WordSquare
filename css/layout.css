@@ -184,10 +184,10 @@
 }
 
 .top-bar.tetris-mode #score {
-  min-width: clamp(34px, calc(var(--game-size) * 0.075), 40px);
-  height: clamp(34px, calc(var(--game-size) * 0.075), 40px);
-  padding: 0 6px;
-  font-size: clamp(17px, calc(var(--game-size) * 0.044), 22px);
+  min-width: clamp(39px, calc(var(--game-size) * 0.086), 46px);
+  height: clamp(39px, calc(var(--game-size) * 0.086), 46px);
+  padding: 0 7px;
+  font-size: clamp(20px, calc(var(--game-size) * 0.051), 25px);
   box-shadow:
     inset 1px 1px 3px rgba(255, 255, 255, 0.2),
     inset -2px -2px 3px rgba(0, 0, 0, 0.24),
@@ -466,10 +466,10 @@
   }
 
   .top-bar.tetris-mode #score {
-    min-width: clamp(32px, calc(var(--game-size) * 0.08), 36px);
-    height: clamp(32px, calc(var(--game-size) * 0.08), 36px);
-    padding: 0 5px;
-    font-size: clamp(16px, calc(var(--game-size) * 0.043), 19px);
+    min-width: clamp(37px, calc(var(--game-size) * 0.092), 41px);
+    height: clamp(37px, calc(var(--game-size) * 0.092), 41px);
+    padding: 0 6px;
+    font-size: clamp(18px, calc(var(--game-size) * 0.05), 22px);
   }
 
   .top-bar.tetris-mode .tetris-clock {
