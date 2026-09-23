@@ -756,7 +756,6 @@ function showLeaderboardWords(entry) {
 function openScoreEntry(score) {
   el.summary.hidden = false;
   el.summary.classList.remove('is-leaderboard', 'is-celebration');
-  el.summary.classList.add('is-word-list');
   const gameMaximum = totalMaximum();
   const finalRoundPlayerWords = [...(state.roundWords[BOGGLE_ROUNDS - 1] ?? [])];
   const finalRoundPossibleWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
