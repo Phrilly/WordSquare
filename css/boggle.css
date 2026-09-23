@@ -10,11 +10,13 @@ html { overflow-y:auto; }
 .boggle-page.is-embedded .boggle-grid:has(> .boggle-summary.is-leaderboard:not([hidden])) { flex:1 1 auto; min-height:0; aspect-ratio:auto; }
 .boggle-header { position:relative; display:flex; justify-content:space-between; gap:6px; align-items:end; min-height:42px; margin-bottom:8px; padding-right:32px; text-align:center; }
 .boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; margin-bottom: 2px; }
-#boggle-score, #boggle-max, #boggle-round { display:flex; justify-content:center; align-items:center; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
+#boggle-score, #boggle-round { display:flex; justify-content:center; align-items:center; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
 #boggle-round { gap:4px; }
-.boggle-max-bar { height:6px; margin:0 0 8px; border-radius:3px; overflow:hidden; background:linear-gradient(90deg, rgba(229,72,77,.25), rgba(245,166,35,.25), rgba(70,167,88,.25)); }
+.boggle-max-bar { position:relative; height:6px; margin:0 0 8px; border-radius:3px; overflow:visible; background:linear-gradient(90deg, rgba(229,72,77,.25), rgba(245,166,35,.25), rgba(70,167,88,.25)); }
 .boggle-max-bar.is-idle { opacity:.35; }
 .boggle-max-bar-fill { width:0; height:100%; border-radius:3px; background-color:#e5484d; transition:width .4s ease, background-color .4s ease; }
+.boggle-max-badge { position:absolute; right:0; top:8px; font:700 10px/1 'Courier New',Courier,monospace; color:var(--highlight); white-space:nowrap; letter-spacing:.05em; }
+.boggle-possible-words { max-height:35vh; }
 #boggle-timer { display:flex; flex-direction:column; align-items:center; gap:0; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; touch-action:manipulation; }
 #boggle-timer .boggle-timer-value { display:flex; justify-content:center; align-items:center; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
 #boggle-timer .mini-tile { min-width:1.1em; margin:0; padding:0 2px; border-radius:2px; }
@@ -101,8 +103,7 @@ html { overflow-y:auto; }
   .boggle-page.is-embedded .boggle-app { width:min(100%, calc(100vh - 300px)); }
   .boggle-page.is-embedded .boggle-label { font-size:8px; }
   .boggle-page.is-embedded #boggle-score,
-  .boggle-page.is-embedded #boggle-max,
   .boggle-page.is-embedded #boggle-round,
   .boggle-page.is-embedded #boggle-timer .boggle-timer-value { font-size:clamp(14px,4.4vw,22px); }
 }
-@media (max-width:500px) { .boggle-header { gap:4px; padding-right:30px; } .boggle-label { font-size:8px; } #boggle-score .mini-tile, #boggle-max .mini-tile { min-width:1em; padding:0 1px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }
+@media (max-width:500px) { .boggle-header { gap:4px; padding-right:30px; } .boggle-label { font-size:8px; } .boggle-max-badge { font-size:8px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }

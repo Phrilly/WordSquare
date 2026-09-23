@@ -41,7 +41,6 @@ const el = {
   preview: document.getElementById('boggle-preview-tiles'),
   status: document.getElementById('boggle-status'),
   score: document.getElementById('boggle-score'),
-  max: document.getElementById('boggle-max'),
   maxBar: document.querySelector('.boggle-max-bar'),
   maxBarFill: document.getElementById('boggle-max-bar-fill'),
   timer: document.getElementById('boggle-timer'),
@@ -346,21 +345,16 @@ function render() {
   }));
 
   const maximum = totalMaximum();
-  if (el.max) {
-    const maxStr = maximum === null ? '-' : String(maximum);
-    el.max.replaceChildren(...maxStr.split('').map(char => {
-      const span = document.createElement('span');
-      span.className = 'mini-tile header-tile';
-      span.textContent = char;
-      return span;
-    }));
-  }
   if (el.maxBar && el.maxBarFill) {
     const ratio = maximum !== null && maximum > 0 ? Math.min(total() / maximum, 1) : 0;
     el.maxBarFill.style.width = `${(ratio * 100).toFixed(1)}%`;
     el.maxBarFill.style.backgroundColor = `hsl(${Math.round(ratio * 120)} 68% 46%)`;
     el.maxBar.setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
     el.maxBar.classList.toggle('is-idle', maximum === null || maximum <= 0);
+    const badge = document.getElementById('boggle-max-badge');
+    if (badge) {
+      badge.textContent = maximum !== null ? `${total()} / ${maximum}` : '';
+    }
   }
 
   // Update specific Round and Timer nodes directly to avoid thrashing
@@ -730,7 +724,8 @@ function openScoreEntry(score) {
   el.summary.classList.remove('is-leaderboard', 'is-celebration');
   el.summary.classList.add('is-word-list');
   const gameMaximum = totalMaximum();
-  const finalRoundWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
+  const finalRoundPlayerWords = [...(state.roundWords[BOGGLE_ROUNDS - 1] ?? [])];
+  const finalRoundPossibleWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
   const roundResults = state.roundScores.map((roundScore, index) => {
     const roundMaximum = state.maxRoundScores[index];
     return `Round ${index + 1}: ${roundScore}${Number.isInteger(roundMaximum) ? `/${roundMaximum}` : ''}`;
@@ -742,8 +737,6 @@ function openScoreEntry(score) {
     <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
     <p>${roundResults}</p>
     ${maximumSummary}
-    <p>${finalRoundWords.length > 0 ? `ROUND ${BOGGLE_ROUNDS} POSSIBLE WORDS (${finalRoundWords.length})` : `ROUND ${BOGGLE_ROUNDS} POSSIBLE WORDS UNAVAILABLE`}</p>
-    <ul id="final-round-possible-words" class="boggle-score-words"></ul>
     <div style="font-size:20px; margin-bottom:25px;">
       Final Score: <strong id="final-score-display" style="color:var(--highlight)">${score}</strong>
     </div>
@@ -758,8 +751,45 @@ function openScoreEntry(score) {
     </div>
   `;
 
-  const possibleWords = document.getElementById('final-round-possible-words');
-  if (possibleWords) renderWordTiles(possibleWords, finalRoundWords);
+  const saveSection = document.getElementById('daily-save-section');
+
+  const yourWordsTitle = document.createElement('p');
+  yourWordsTitle.textContent = finalRoundPlayerWords.length > 0
+    ? `ROUND ${BOGGLE_ROUNDS} — YOUR WORDS (${finalRoundPlayerWords.length})`
+    : `ROUND ${BOGGLE_ROUNDS} — NO WORDS FOUND`;
+  const yourWordsList = document.createElement('ul');
+  yourWordsList.className = 'boggle-score-words';
+  renderWordTiles(yourWordsList, finalRoundPlayerWords);
+  saveSection.before(yourWordsTitle, yourWordsList);
+
+  if (finalRoundPossibleWords.length > 0) {
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'arcade-btn mini-btn';
+    toggleButton.type = 'button';
+    toggleButton.textContent = `SHOW POSSIBLE WORDS (${finalRoundPossibleWords.length})`;
+    toggleButton.setAttribute('aria-expanded', 'false');
+
+    const possibleTitle = document.createElement('p');
+    possibleTitle.textContent = `POSSIBLE WORDS (${finalRoundPossibleWords.length})`;
+    possibleTitle.hidden = true;
+
+    const possibleList = document.createElement('ul');
+    possibleList.className = 'boggle-score-words boggle-possible-words';
+    possibleList.hidden = true;
+    renderWordTiles(possibleList, finalRoundPossibleWords);
+
+    toggleButton.addEventListener('click', () => {
+      const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
+      toggleButton.setAttribute('aria-expanded', String(!expanded));
+      toggleButton.textContent = expanded
+        ? `SHOW POSSIBLE WORDS (${finalRoundPossibleWords.length})`
+        : 'HIDE POSSIBLE WORDS';
+      possibleTitle.hidden = expanded;
+      possibleList.hidden = expanded;
+    });
+
+    saveSection.before(toggleButton, possibleTitle, possibleList);
+  }
 
   const input = document.getElementById('hidden-initials');
   const wrapper = el.summary.querySelector('.initials-wrapper');
@@ -842,29 +872,68 @@ function showSummary(done) {
   const nextRound = state.round + 1;
   const boardMaximum = state.maxRoundScores[state.round - 1];
   const boardWords = state.maxRoundWords[state.round - 1] ?? [];
+  const playerWords = state.roundWords[state.round - 1] ?? [];
 
   const title = document.createElement('h2');
   title.textContent = `ROUND ${state.round} COMPLETE`;
+
   const roundScore = document.createElement('p');
   roundScore.textContent = Number.isInteger(boardMaximum)
     ? `Round ${state.round} score: ${current}/${boardMaximum}`
     : `Round ${state.round} score: ${current}`;
+
   const cumulative = document.createElement('p');
   const cumulativeStrong = document.createElement('strong');
   cumulativeStrong.textContent = `Cumulative score: ${totalScore}`;
   cumulative.appendChild(cumulativeStrong);
-  const wordsTitle = document.createElement('p');
-  wordsTitle.textContent = boardWords.length > 0 ? `POSSIBLE WORDS (${boardWords.length})` : 'POSSIBLE WORDS UNAVAILABLE';
-  const wordsList = document.createElement('ul');
-  wordsList.className = 'boggle-score-words';
-  renderWordTiles(wordsList, boardWords);
+
+  const playerWordsTitle = document.createElement('p');
+  playerWordsTitle.textContent = playerWords.length > 0
+    ? `YOUR WORDS (${playerWords.length})`
+    : 'NO WORDS FOUND';
+  const playerWordsList = document.createElement('ul');
+  playerWordsList.className = 'boggle-score-words';
+  renderWordTiles(playerWordsList, playerWords);
+
   const startButton = document.createElement('button');
   startButton.className = 'arcade-btn';
   startButton.type = 'button';
   startButton.textContent = `START ROUND ${nextRound}`;
   startButton.addEventListener('click', () => startRound(nextRound));
 
-  el.summary.replaceChildren(title, roundScore, cumulative, wordsTitle, wordsList, startButton);
+  const children = [title, roundScore, cumulative, playerWordsTitle, playerWordsList];
+
+  if (boardWords.length > 0) {
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'arcade-btn mini-btn';
+    toggleButton.type = 'button';
+    toggleButton.textContent = `SHOW POSSIBLE WORDS (${boardWords.length})`;
+    toggleButton.setAttribute('aria-expanded', 'false');
+
+    const possibleTitle = document.createElement('p');
+    possibleTitle.textContent = `POSSIBLE WORDS (${boardWords.length})`;
+    possibleTitle.hidden = true;
+
+    const possibleList = document.createElement('ul');
+    possibleList.className = 'boggle-score-words boggle-possible-words';
+    possibleList.hidden = true;
+    renderWordTiles(possibleList, boardWords);
+
+    toggleButton.addEventListener('click', () => {
+      const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
+      toggleButton.setAttribute('aria-expanded', String(!expanded));
+      toggleButton.textContent = expanded
+        ? `SHOW POSSIBLE WORDS (${boardWords.length})`
+        : 'HIDE POSSIBLE WORDS';
+      possibleTitle.hidden = expanded;
+      possibleList.hidden = expanded;
+    });
+
+    children.push(toggleButton, possibleTitle, possibleList);
+  }
+
+  children.push(startButton);
+  el.summary.replaceChildren(...children);
 }
 
 function startRound(round) {
