@@ -33,7 +33,7 @@ const BOGGLE_UK_SPELLING_MAP = {
   'METERS': 'METRES'
 };
 const state = {
-  tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], seconds: BOGGLE_SECONDS,
+  tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], maxRoundScores: [], maxRoundWords: [], seconds: BOGGLE_SECONDS,
   dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, longPressTimer: null, suppressNextTouchClick: false, scoreScreen: 'opening'
 };
 const el = {
@@ -41,6 +41,9 @@ const el = {
   preview: document.getElementById('boggle-preview-tiles'),
   status: document.getElementById('boggle-status'),
   score: document.getElementById('boggle-score'),
+  max: document.getElementById('boggle-max'),
+  maxBar: document.querySelector('.boggle-max-bar'),
+  maxBarFill: document.getElementById('boggle-max-bar-fill'),
   timer: document.getElementById('boggle-timer'),
   backspace: document.getElementById('boggle-backspace'),
   clear: document.getElementById('boggle-clear'),
@@ -67,6 +70,93 @@ function word() {
 
 function points(length) {
   return length === 4 ? 1 : length === 5 ? 2 : length === 6 ? 3 : length === 7 ? 5 : length >= 8 ? 11 : 0;
+}
+
+/**
+ * Determine whether a word can be traced through adjacent board cells without
+ * reusing a cell. A Q cell represents QU, matching tileText().
+ * @param {string[]} tiles
+ * @param {string} candidate
+ * @returns {boolean}
+ */
+function canTrace(tiles, candidate) {
+  if (typeof candidate !== 'string' || !/^[A-Z]{4,25}$/.test(candidate)) return false;
+
+  const used = new Uint8Array(BOGGLE_SIZE * BOGGLE_SIZE);
+
+  const walk = (index, position) => {
+    if (used[index] === 1) return false;
+
+    const segment = tiles[index] === 'Q' ? 'QU' : tiles[index];
+    if (!candidate.startsWith(segment, position)) return false;
+
+    const nextPosition = position + segment.length;
+    if (nextPosition === candidate.length) return true;
+
+    used[index] = 1;
+    const row = Math.floor(index / BOGGLE_SIZE);
+    const column = index % BOGGLE_SIZE;
+    for (let rowDelta = -1; rowDelta <= 1; rowDelta += 1) {
+      for (let columnDelta = -1; columnDelta <= 1; columnDelta += 1) {
+        if (rowDelta === 0 && columnDelta === 0) continue;
+        const nextRow = row + rowDelta;
+        const nextColumn = column + columnDelta;
+        if (nextRow < 0 || nextRow >= BOGGLE_SIZE || nextColumn < 0 || nextColumn >= BOGGLE_SIZE) continue;
+
+        const nextIndex = (nextRow * BOGGLE_SIZE) + nextColumn;
+        if (walk(nextIndex, nextPosition)) {
+          used[index] = 0;
+          return true;
+        }
+      }
+    }
+
+    used[index] = 0;
+    return false;
+  };
+
+  for (let start = 0; start < tiles.length; start += 1) {
+    if (walk(start, 0)) return true;
+  }
+  return false;
+}
+
+/**
+ * Calculate all distinct words and the theoretical maximum for one board.
+ * Words are ordered longest-first, then alphabetically for equal lengths.
+ * @param {string[]} tiles
+ * @returns {{maximum: number, words: string[]}}
+ */
+function computeMaxRoundScore(tiles) {
+  const expectedCells = BOGGLE_SIZE * BOGGLE_SIZE;
+  if (!Array.isArray(tiles) || tiles.length !== expectedCells) {
+    throw new Error(`Expected a ${BOGGLE_SIZE}x${BOGGLE_SIZE} board.`);
+  }
+  if (tiles.some(tile => typeof tile !== 'string' || !/^[A-Z]$/.test(tile))) {
+    throw new Error('Board contains a non-letter cell.');
+  }
+  if (!(state.dictionary instanceof Set) || state.dictionary.size === 0) {
+    throw new Error('Cannot compute board maximum without a loaded dictionary.');
+  }
+
+  const words = [];
+  let maximum = 0;
+  for (const candidate of state.dictionary) {
+    if (!canTrace(tiles, candidate)) continue;
+    words.push(candidate);
+    maximum += points(candidate.length);
+  }
+  words.sort((left, right) => right.length - left.length || left.localeCompare(right));
+  return { maximum, words };
+}
+
+/**
+ * Sum maximums for all boards dealt so far, or null if any calculation failed.
+ * @returns {number|null}
+ */
+function totalMaximum() {
+  if (state.maxRoundScores.some(value => value === null)) return null;
+  return state.maxRoundScores.reduce((sum, value) => sum + (Number.isInteger(value) ? value : 0), 0);
 }
 
 function hashSeed(value) {
@@ -254,6 +344,24 @@ function render() {
     span.textContent = char;
     return span;
   }));
+
+  const maximum = totalMaximum();
+  if (el.max) {
+    const maxStr = maximum === null ? '-' : String(maximum);
+    el.max.replaceChildren(...maxStr.split('').map(char => {
+      const span = document.createElement('span');
+      span.className = 'mini-tile header-tile';
+      span.textContent = char;
+      return span;
+    }));
+  }
+  if (el.maxBar && el.maxBarFill) {
+    const ratio = maximum !== null && maximum > 0 ? Math.min(total() / maximum, 1) : 0;
+    el.maxBarFill.style.width = `${(ratio * 100).toFixed(1)}%`;
+    el.maxBarFill.style.backgroundColor = `hsl(${Math.round(ratio * 120)} 68% 46%)`;
+    el.maxBar.setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
+    el.maxBar.classList.toggle('is-idle', maximum === null || maximum <= 0);
+  }
 
   // Update specific Round and Timer nodes directly to avoid thrashing
   const roundVal = document.getElementById('round-val');
@@ -619,11 +727,23 @@ function showLeaderboardWords(entry) {
 
 function openScoreEntry(score) {
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard', 'is-word-list');
-  el.summary.classList.remove('is-celebration');
+  el.summary.classList.remove('is-leaderboard', 'is-celebration');
+  el.summary.classList.add('is-word-list');
+  const gameMaximum = totalMaximum();
+  const finalRoundWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
+  const roundResults = state.roundScores.map((roundScore, index) => {
+    const roundMaximum = state.maxRoundScores[index];
+    return `Round ${index + 1}: ${roundScore}${Number.isInteger(roundMaximum) ? `/${roundMaximum}` : ''}`;
+  }).join(' | ');
+  const maximumSummary = gameMaximum === null
+    ? ''
+    : `<p>Theoretical maximum: <strong>${gameMaximum}</strong></p>`;
   el.summary.innerHTML = `
     <h2 style="margin-top:0; color:var(--highlight);">GAME OVER</h2>
-    <p>${state.roundScores.map((roundScore, index) => `Round ${index + 1}: ${roundScore}`).join(' | ')}</p>
+    <p>${roundResults}</p>
+    ${maximumSummary}
+    <p>${finalRoundWords.length > 0 ? `ROUND ${BOGGLE_ROUNDS} POSSIBLE WORDS (${finalRoundWords.length})` : `ROUND ${BOGGLE_ROUNDS} POSSIBLE WORDS UNAVAILABLE`}</p>
+    <ul id="final-round-possible-words" class="boggle-score-words"></ul>
     <div style="font-size:20px; margin-bottom:25px;">
       Final Score: <strong id="final-score-display" style="color:var(--highlight)">${score}</strong>
     </div>
@@ -637,6 +757,9 @@ function openScoreEntry(score) {
       <button class="arcade-btn" id="submit-score-btn" type="button">SAVE SCORE</button>
     </div>
   `;
+
+  const possibleWords = document.getElementById('final-round-possible-words');
+  if (possibleWords) renderWordTiles(possibleWords, finalRoundWords);
 
   const input = document.getElementById('hidden-initials');
   const wrapper = el.summary.querySelector('.initials-wrapper');
@@ -714,11 +837,34 @@ function showSummary(done) {
   }
 
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard', 'is-word-list');
-  el.summary.classList.remove('is-celebration');
+  el.summary.classList.remove('is-leaderboard', 'is-celebration');
+  el.summary.classList.add('is-word-list');
   const nextRound = state.round + 1;
-  el.summary.innerHTML = `<h2>ROUND ${state.round} COMPLETE</h2><p>Round ${state.round} score: ${current}</p><p><strong>Cumulative score: ${totalScore}</strong></p><button class="arcade-btn" type="button">START ROUND ${nextRound}</button>`;
-  el.summary.querySelector('button').addEventListener('click', () => startRound(nextRound));
+  const boardMaximum = state.maxRoundScores[state.round - 1];
+  const boardWords = state.maxRoundWords[state.round - 1] ?? [];
+
+  const title = document.createElement('h2');
+  title.textContent = `ROUND ${state.round} COMPLETE`;
+  const roundScore = document.createElement('p');
+  roundScore.textContent = Number.isInteger(boardMaximum)
+    ? `Round ${state.round} score: ${current}/${boardMaximum}`
+    : `Round ${state.round} score: ${current}`;
+  const cumulative = document.createElement('p');
+  const cumulativeStrong = document.createElement('strong');
+  cumulativeStrong.textContent = `Cumulative score: ${totalScore}`;
+  cumulative.appendChild(cumulativeStrong);
+  const wordsTitle = document.createElement('p');
+  wordsTitle.textContent = boardWords.length > 0 ? `POSSIBLE WORDS (${boardWords.length})` : 'POSSIBLE WORDS UNAVAILABLE';
+  const wordsList = document.createElement('ul');
+  wordsList.className = 'boggle-score-words';
+  renderWordTiles(wordsList, boardWords);
+  const startButton = document.createElement('button');
+  startButton.className = 'arcade-btn';
+  startButton.type = 'button';
+  startButton.textContent = `START ROUND ${nextRound}`;
+  startButton.addEventListener('click', () => startRound(nextRound));
+
+  el.summary.replaceChildren(title, roundScore, cumulative, wordsTitle, wordsList, startButton);
 }
 
 function startRound(round) {
@@ -727,6 +873,15 @@ function startRound(round) {
   state.round = round;
   state.seconds = BOGGLE_SECONDS;
   state.tiles = createRoundBoard(round);
+  try {
+    const result = computeMaxRoundScore(state.tiles);
+    state.maxRoundScores[round - 1] = result.maximum;
+    state.maxRoundWords[round - 1] = result.words;
+  } catch (error) {
+    console.error(`Boggle max-score solver failed for round ${round}:`, error);
+    state.maxRoundScores[round - 1] = null;
+    state.maxRoundWords[round - 1] = [];
+  }
   state.path = [];
   state.words = new Map();
   state.locked = false;
@@ -757,6 +912,8 @@ function startRound(round) {
 function startMatch() {
   state.roundScores = [];
   state.roundWords = [];
+  state.maxRoundScores = [];
+  state.maxRoundWords = [];
   startRound(1);
 }
 
@@ -871,6 +1028,7 @@ async function loadDictionary() {
     if (state.dictionary.size === 0) throw new Error('Dictionary empty');
     await showStartScreen();
   } catch (error) {
+    console.error('Boggle dictionary load failed:', error);
     message('Dictionary failed to load. Refresh or contact the site owner.', true);
   }
 }

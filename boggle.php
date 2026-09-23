@@ -31,6 +31,10 @@ function autoVer(string $url): string
         <div class="boggle-label">CUMULATIVE</div>
         <output id="boggle-score">0</output>
       </div>
+      <div>
+        <div class="boggle-label">MAX</div>
+        <output id="boggle-max">0</output>
+      </div>
       <button id="boggle-timer" type="button" aria-label="Open detailed high scores" title="Open detailed high scores">
         <span class="boggle-label">TIME</span>
         <span class="boggle-timer-value">
@@ -42,6 +46,9 @@ function autoVer(string $url): string
       </button>
       <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open Boggle help" title="Help">?</button>
     </header>
+    <div class="boggle-max-bar is-idle" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Score progress towards the maximum for boards played so far">
+      <div id="boggle-max-bar-fill" class="boggle-max-bar-fill"></div>
+    </div>
     <section class="boggle-preview" aria-label="Current word">
       <div class="boggle-preview-row">
         <div id="boggle-preview-tiles" class="boggle-preview-tiles"></div>
