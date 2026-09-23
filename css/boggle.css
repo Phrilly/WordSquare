@@ -12,12 +12,13 @@ html { overflow-y:auto; }
 .boggle-label { color:var(--highlight); font:700 10px/1.2 'Courier New',Courier,monospace; letter-spacing:.12em; margin-bottom: 2px; }
 #boggle-score, #boggle-round { display:flex; justify-content:center; align-items:center; font:700 clamp(16px,5vw,26px)/1.1 'Courier New',Courier,monospace; white-space:nowrap; }
 #boggle-round { gap:4px; }
-.boggle-max-bar { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
+.boggle-max-bar { display:flex; align-items:center; gap:10px; margin:0 0 8px; }
 .boggle-max-bar.is-idle { opacity:.35; }
-.boggle-max-bar-fill { height:4px; border-radius:2px; background-color:#e5484d; transition:width .4s ease, background-color .4s ease; }
-.boggle-max-badge { flex:0 0 auto; font:700 clamp(16px,4.5vw,20px)/1 'Courier New',Courier,monospace; color:var(--highlight); white-space:nowrap; letter-spacing:.05em; }
+.boggle-max-bar-track { flex:1 1 auto; height:6px; overflow:hidden; border-radius:3px; background:linear-gradient(90deg, rgba(229,72,77,.25), rgba(245,166,35,.25), rgba(70,167,88,.25)); }
+.boggle-max-bar-fill { width:0; height:100%; border-radius:3px; background-color:#e5484d; transition:width .4s ease, background-color .4s ease; }
+.boggle-max-badge { flex:0 0 auto; min-width:155px; font:700 clamp(18px,5vw,22px)/1 'Courier New',Courier,monospace; color:#fff; white-space:nowrap; letter-spacing:0; text-align:right; }
 .boggle-score-words { display:grid; grid-template-columns:1fr; width:100%; max-width:440px; margin:2px auto; padding:0 4px; list-style:none; gap:2px; }
-.boggle-score-words[hidden] { display:none; }
+.boggle-score-words[hidden] { display:none !important; }
 .boggle-possible-words { max-height:35vh; overflow-y:scroll; overscroll-behavior-y:contain; scrollbar-gutter:stable; }
 .boggle-summary.is-word-list .boggle-score-words { flex:1 1 0; min-height:0; overflow-y:scroll; overscroll-behavior-y:contain; scrollbar-gutter:stable; touch-action:pan-y; }
 #boggle-timer { display:flex; flex-direction:column; align-items:center; gap:0; padding:0; border:0; background:transparent; color:inherit; cursor:pointer; touch-action:manipulation; }
@@ -75,6 +76,10 @@ html { overflow-y:auto; }
 .boggle-summary .initials-wrapper { margin:14px 0 4px; }
 .boggle-summary.is-celebration h2 { color:#FFD700; animation:titleShimmer 1.3s ease-in-out infinite; }
 .boggle-summary.is-leaderboard { justify-content:flex-start; padding:10px; overflow-y:auto; }
+.boggle-summary.is-score-entry { justify-content:flex-start; overflow-y:auto; }
+.boggle-summary.is-score-entry > * { flex-shrink:0; }
+.boggle-summary.is-score-entry .boggle-score-words { flex:none; height:auto; }
+.boggle-summary.is-score-entry .boggle-possible-words { min-height:160px; max-height:none; overflow:visible; }
 .boggle-summary.is-leaderboard h2 { margin-bottom:4px; font-size:clamp(18px,5vw,26px); }
 .boggle-summary.is-leaderboard .leaderboard-list { width:100%; margin:2px 0; gap:2px; }
 .boggle-summary.is-leaderboard button { margin:6px auto 0; }
@@ -109,4 +114,4 @@ html { overflow-y:auto; }
   .boggle-page.is-embedded #boggle-round,
   .boggle-page.is-embedded #boggle-timer .boggle-timer-value { font-size:clamp(14px,4.4vw,22px); }
 }
-@media (max-width:500px) { .boggle-header { gap:4px; padding-right:30px; } .boggle-label { font-size:8px; } .boggle-max-badge { font-size:8px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }
+@media (max-width:500px) { .boggle-header { gap:4px; padding-right:30px; } .boggle-label { font-size:8px; } .boggle-max-badge { min-width:145px; } .boggle-controls { flex-basis:68px; } .boggle-controls button { width:32px; } }

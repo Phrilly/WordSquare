@@ -43,7 +43,9 @@ function autoVer(string $url): string
       <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open Boggle help" title="Help">?</button>
     </header>
     <div class="boggle-max-bar is-idle" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Score progress towards the maximum for boards played so far">
-      <div id="boggle-max-bar-fill" class="boggle-max-bar-fill"></div>
+      <div class="boggle-max-bar-track">
+        <div id="boggle-max-bar-fill" class="boggle-max-bar-fill"></div>
+      </div>
       <span id="boggle-max-badge" class="boggle-max-badge" aria-hidden="true"></span>
     </div>
     <section class="boggle-preview" aria-label="Current word">

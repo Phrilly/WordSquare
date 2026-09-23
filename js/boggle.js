@@ -661,7 +661,7 @@ async function showLeaderboard(isTopScore = false) {
   el.help.hidden = true;
   el.summary.hidden = false;
   el.summary.classList.add('is-leaderboard');
-  el.summary.classList.remove('is-word-list');
+  el.summary.classList.remove('is-word-list', 'is-score-entry');
   el.summary.classList.toggle('is-celebration', isTopScore);
   el.summary.replaceChildren();
 
@@ -691,7 +691,7 @@ function showLeaderboardWords(entry) {
   const words = Array.isArray(entry.words) ? entry.words.filter(word => typeof word === 'string') : [];
 
   el.summary.hidden = false;
-  el.summary.classList.remove('is-celebration');
+  el.summary.classList.remove('is-celebration', 'is-score-entry');
   el.summary.classList.add('is-leaderboard', 'is-word-list');
   el.summary.replaceChildren();
 
@@ -760,7 +760,8 @@ function showLeaderboardWords(entry) {
 
 function openScoreEntry(score) {
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard', 'is-celebration');
+  el.summary.classList.remove('is-leaderboard', 'is-word-list', 'is-celebration');
+  el.summary.classList.add('is-score-entry');
   const gameMaximum = totalMaximum();
   const finalRoundPlayerWords = [...(state.roundWords[BOGGLE_ROUNDS - 1] ?? [])];
   const finalRoundPossibleWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
@@ -905,7 +906,7 @@ function showSummary(done) {
   }
 
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard', 'is-celebration');
+  el.summary.classList.remove('is-leaderboard', 'is-celebration', 'is-score-entry');
   el.summary.classList.add('is-word-list');
   const nextRound = state.round + 1;
   const boardMaximum = state.maxRoundScores[state.round - 1];
@@ -999,7 +1000,7 @@ function startRound(round) {
   el.foundPanel.hidden = false;
   el.help.hidden = true;
   el.summary.hidden = true;
-  el.summary.classList.remove('is-leaderboard', 'is-word-list');
+  el.summary.classList.remove('is-leaderboard', 'is-word-list', 'is-score-entry');
   el.summary.classList.remove('is-celebration');
   el.summary.replaceChildren();
   renderWords();
@@ -1031,7 +1032,7 @@ async function showOpeningLeaderboard(initialScores = null) {
   el.help.hidden = true;
   el.summary.hidden = false;
   el.summary.classList.add('is-leaderboard');
-  el.summary.classList.remove('is-word-list', 'is-celebration');
+  el.summary.classList.remove('is-word-list', 'is-celebration', 'is-score-entry');
   el.summary.replaceChildren();
 
   const title = document.createElement('h2');
@@ -1068,7 +1069,7 @@ function showArrivalCelebration(winner) {
   el.foundPanel.hidden = true;
   el.help.hidden = true;
   el.summary.hidden = false;
-  el.summary.classList.remove('is-leaderboard', 'is-word-list');
+  el.summary.classList.remove('is-leaderboard', 'is-word-list', 'is-score-entry');
   el.summary.classList.add('is-celebration');
   el.summary.replaceChildren();
 
