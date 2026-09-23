@@ -353,7 +353,12 @@ function render() {
     el.maxBar.classList.toggle('is-idle', maximum === null || maximum <= 0);
     const badge = document.getElementById('boggle-max-badge');
     if (badge) {
-      badge.textContent = maximum !== null ? `${total()} / ${maximum}` : '';
+      if (maximum !== null && maximum > 0) {
+        const pct = Math.round((total() / maximum) * 100);
+        badge.textContent = `${total()} / ${maximum} (${pct}%)`;
+      } else {
+        badge.textContent = '';
+      }
     }
   }
 
