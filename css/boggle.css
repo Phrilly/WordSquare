@@ -15,7 +15,7 @@ html { overflow-y:auto; }
 .boggle-max-bar { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
 .boggle-max-bar.is-idle { opacity:.35; }
 .boggle-max-bar-fill { height:4px; border-radius:2px; background-color:#e5484d; transition:width .4s ease, background-color .4s ease; }
-.boggle-max-badge { flex:0 0 auto; font:700 13px/1 'Courier New',Courier,monospace; color:var(--highlight); white-space:nowrap; letter-spacing:.05em; }
+.boggle-max-badge { flex:0 0 auto; font:700 clamp(16px,4.5vw,20px)/1 'Courier New',Courier,monospace; color:var(--highlight); white-space:nowrap; letter-spacing:.05em; }
 .boggle-score-words { display:grid; grid-template-columns:1fr; width:100%; max-width:440px; margin:2px auto; padding:0 4px; list-style:none; gap:2px; }
 .boggle-score-words[hidden] { display:none; }
 .boggle-possible-words { max-height:35vh; overflow-y:scroll; overscroll-behavior-y:contain; scrollbar-gutter:stable; }
