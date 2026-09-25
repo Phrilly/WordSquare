@@ -121,7 +121,8 @@ html { overflow-y:auto; }
   .boggle-max-badge { min-width:145px; }
   .boggle-controls { flex-basis:68px; }
   .boggle-controls button { width:32px; }
-  .boggle-summary.is-word-list.is-possible-words-expanded {
+  .boggle-summary.is-word-list.is-possible-words-expanded,
+  .boggle-summary.is-score-entry.is-possible-words-expanded {
     position:fixed;
     inset:10px;
     z-index:100;
@@ -130,9 +131,15 @@ html { overflow-y:auto; }
     border:1px solid rgba(255,255,255,.25);
     background-color:rgba(22,47,78,.98);
   }
-  .boggle-summary.is-word-list.is-possible-words-expanded .boggle-score-words:not(.boggle-possible-words) { display:none; }
-  .boggle-summary.is-word-list.is-possible-words-expanded .boggle-possible-words { flex:1 1 auto; min-height:120px; -webkit-overflow-scrolling:touch; }
-  .boggle-summary.is-word-list.is-possible-words-expanded h2 { margin-bottom:4px; font-size:clamp(20px,7vw,28px); }
-  .boggle-summary.is-word-list.is-possible-words-expanded p { margin:3px 0; }
-  .boggle-summary.is-word-list.is-possible-words-expanded button { margin-top:8px; }
+  .boggle-summary.is-word-list.is-possible-words-expanded .boggle-score-words:not(.boggle-possible-words),
+  .boggle-summary.is-score-entry.is-possible-words-expanded .boggle-score-words:not(.boggle-possible-words) { display:none; }
+  .boggle-summary.is-word-list.is-possible-words-expanded .boggle-possible-words,
+  .boggle-summary.is-score-entry.is-possible-words-expanded .boggle-possible-words { flex:1 1 auto; min-height:120px; -webkit-overflow-scrolling:touch; }
+  .boggle-summary.is-word-list.is-possible-words-expanded h2,
+  .boggle-summary.is-score-entry.is-possible-words-expanded h2 { margin-bottom:4px; font-size:clamp(20px,7vw,28px); }
+  .boggle-summary.is-word-list.is-possible-words-expanded p,
+  .boggle-summary.is-score-entry.is-possible-words-expanded p { margin:3px 0; }
+  .boggle-summary.is-word-list.is-possible-words-expanded button,
+  .boggle-summary.is-score-entry.is-possible-words-expanded button { margin-top:8px; }
+  .boggle-summary.is-score-entry.is-possible-words-expanded #daily-save-section { display:none; }
 }

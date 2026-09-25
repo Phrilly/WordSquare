@@ -744,6 +744,7 @@ function showLeaderboardWords(entry) {
     toggleButton.addEventListener('click', () => {
       const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
       toggleButton.setAttribute('aria-expanded', String(!expanded));
+      el.summary.classList.toggle('is-possible-words-expanded', !expanded);
       toggleButton.textContent = expanded
         ? `SHOW POSSIBLE WORDS (${finalRoundPossibleWords.length})`
         : 'HIDE POSSIBLE WORDS';
@@ -820,6 +821,7 @@ function openScoreEntry(score) {
     toggleButton.addEventListener('click', () => {
       const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
       toggleButton.setAttribute('aria-expanded', String(!expanded));
+      el.summary.classList.toggle('is-possible-words-expanded', !expanded);
       toggleButton.textContent = expanded
         ? `SHOW POSSIBLE WORDS (${finalRoundPossibleWords.length})`
         : 'HIDE POSSIBLE WORDS';
