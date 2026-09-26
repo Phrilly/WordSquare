@@ -723,30 +723,31 @@ function showLeaderboardWords(entry) {
   });
   const children = [title, score, wordList];
 
-  const finalRoundPossibleWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
+  // Combine every round's board so the comparison matches entry.words, which is saved pre-flattened across all rounds.
+  const allPossibleWords = state.maxRoundWords.flat();
   const allRoundsComplete = state.roundWords.length === BOGGLE_ROUNDS;
-  if (allRoundsComplete && finalRoundPossibleWords.length > 0) {
+  if (allRoundsComplete && allPossibleWords.length > 0) {
     const toggleButton = document.createElement('button');
     toggleButton.className = 'arcade-btn mini-btn';
     toggleButton.type = 'button';
-    toggleButton.textContent = `SHOW POSSIBLE WORDS (${finalRoundPossibleWords.length})`;
+    toggleButton.textContent = `SHOW POSSIBLE WORDS (${allPossibleWords.length})`;
     toggleButton.setAttribute('aria-expanded', 'false');
 
     const possibleTitle = document.createElement('p');
-    possibleTitle.textContent = `POSSIBLE WORDS (${finalRoundPossibleWords.length})`;
+    possibleTitle.textContent = `POSSIBLE WORDS (${allPossibleWords.length})`;
     possibleTitle.hidden = true;
 
     const possibleList = document.createElement('ul');
     possibleList.className = 'boggle-score-words boggle-possible-words';
     possibleList.hidden = true;
-    renderWordTiles(possibleList, finalRoundPossibleWords);
+    renderWordTiles(possibleList, allPossibleWords);
 
     toggleButton.addEventListener('click', () => {
       const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
       toggleButton.setAttribute('aria-expanded', String(!expanded));
       el.summary.classList.toggle('is-possible-words-expanded', !expanded);
       toggleButton.textContent = expanded
-        ? `SHOW POSSIBLE WORDS (${finalRoundPossibleWords.length})`
+        ? `SHOW POSSIBLE WORDS (${allPossibleWords.length})`
         : 'HIDE POSSIBLE WORDS';
       possibleTitle.hidden = expanded;
       possibleList.hidden = expanded;
