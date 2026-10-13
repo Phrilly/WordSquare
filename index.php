@@ -382,7 +382,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
     <div class="try-row" id="try-forward-row">
       <div class="try-row-head">
         <span class="try-row-label">Forward</span>
-        <span id="try-forward-status" class="try-row-status">Type 3-5 letters</span>
+        <span id="try-forward-status" class="try-row-status" aria-live="polite">Type 3-5 letters</span>
       </div>
       <div class="try-tiles" id="try-forward-tiles" aria-label="Forward word preview"></div>
     </div>
@@ -390,18 +390,18 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
     <div class="try-row" id="try-reverse-row">
       <div class="try-row-head">
         <span class="try-row-label">Mirror (Reverse)</span>
-        <span id="try-reverse-status" class="try-row-status">Type 3-5 letters</span>
+        <span id="try-reverse-status" class="try-row-status" aria-live="polite">Type 3-5 letters</span>
       </div>
       <div class="try-tiles" id="try-reverse-tiles" aria-label="Reverse word preview"></div>
     </div>
 
-    <div class="try-it-hint" id="try-it-hint">Type letters on your keyboard. Backspace deletes.</div>
+    <div class="try-it-hint" id="try-it-hint">Tap here and type letters. Backspace deletes, Enter closes the keyboard.</div>
 
-    <input id="try-it-input" class="try-it-input" type="text" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="5" aria-label="Type up to 5 letters to test dictionary words">
+    <input id="try-it-input" class="try-it-input" type="text" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="5" aria-label="Type up to 5 letters to test dictionary words">
   </div>
   <?php endif; ?>
 
-  <div class="version-tag">Version 1.3.4</div>
+  <div class="version-tag">Version 1.3.5</div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>

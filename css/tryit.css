@@ -1,4 +1,9 @@
 .try-it-panel {
+  position: relative;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
   width: 100%;
   max-width: var(--game-size);
   margin-top: 14px;
@@ -151,11 +156,21 @@
 
 .try-it-input {
   position: absolute;
-  left: -10000px;
+  left: 0;
+  top: 0;
   width: 1px;
   height: 1px;
+  padding: 0;
+  border: 0;
+  margin: 0;
   opacity: 0;
+  font-size: 16px;
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
   pointer-events: none;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .try-it-input:focus {
