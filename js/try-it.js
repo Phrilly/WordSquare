@@ -172,21 +172,95 @@ document.addEventListener('DOMContentLoaded', () => {
     focusInput();
   });
 
+  const KEYBOARD_SETTLE_DELAYS_MS = [0, 150, 350, 700, 1200];
+  const PANEL_EDGE_GAP_PX = 8;
+  const FIT_MARGIN_PX = 16;
+  const viewport = window.visualViewport || null;
+  let fullPanelHeight = 0;
+  let pendingFrame = 0;
+  let settleTimers = [];
+
+  // Keeps the panel visible above the on-screen keyboard. If the full panel
+  // cannot fit in the space left, it switches to a compact layout.
+  function fitAboveKeyboard() {
+    pendingFrame = 0;
+    if (document.activeElement !== input) return;
+
+    try {
+      if (!viewport) {
+        panel.classList.add('is-compact');
+        panel.scrollIntoView({ block: 'end', inline: 'nearest' });
+        return;
+      }
+
+      const keyboardOverlap = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      panel.style.setProperty('--try-it-kb', keyboardOverlap + 'px');
+
+      const fits = fullPanelHeight + FIT_MARGIN_PX <= viewport.height;
+      panel.classList.toggle('is-compact', !fits);
+
+      const rect = panel.getBoundingClientRect();
+      const visibleBottom = viewport.offsetTop + viewport.height - PANEL_EDGE_GAP_PX;
+      const visibleTop = viewport.offsetTop + PANEL_EDGE_GAP_PX;
+      if (rect.bottom > visibleBottom) {
+        window.scrollBy(0, rect.bottom - visibleBottom);
+      } else if (rect.top < visibleTop) {
+        window.scrollBy(0, rect.top - visibleTop);
+      }
+    } catch (error) {
+      console.warn('TRY IT keyboard positioning failed:', error);
+      panel.classList.add('is-compact');
+    }
+  }
+
+  function scheduleFit() {
+    if (pendingFrame) return;
+    pendingFrame = window.requestAnimationFrame(fitAboveKeyboard);
+  }
+
+  function clearSettleTimers() {
+    settleTimers.forEach((timerId) => window.clearTimeout(timerId));
+    settleTimers = [];
+  }
+
+  function startKeyboardTracking() {
+    if (!panel.classList.contains('is-compact')) {
+      fullPanelHeight = panel.offsetHeight;
+    }
+    clearSettleTimers();
+    // Keyboards animate in at different speeds, so re-check as it settles.
+    settleTimers = KEYBOARD_SETTLE_DELAYS_MS.map((delay) => window.setTimeout(scheduleFit, delay));
+    if (viewport) {
+      viewport.addEventListener('resize', scheduleFit);
+      viewport.addEventListener('scroll', scheduleFit);
+    }
+    window.addEventListener('orientationchange', scheduleFit);
+  }
+
+  function stopKeyboardTracking() {
+    clearSettleTimers();
+    if (pendingFrame) {
+      window.cancelAnimationFrame(pendingFrame);
+      pendingFrame = 0;
+    }
+    if (viewport) {
+      viewport.removeEventListener('resize', scheduleFit);
+      viewport.removeEventListener('scroll', scheduleFit);
+    }
+    window.removeEventListener('orientationchange', scheduleFit);
+    panel.classList.remove('is-compact');
+    panel.style.removeProperty('--try-it-kb');
+  }
+
   input.addEventListener('focus', () => {
     panel.classList.add('is-focused');
     placeCaretAtEnd();
-    // Wait for the on-screen keyboard to settle, then keep the tiles visible.
-    window.setTimeout(() => {
-      if (document.activeElement !== input) return;
-      placeCaretAtEnd();
-      if (typeof panel.scrollIntoView === 'function') {
-        panel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      }
-    }, 350);
+    startKeyboardTracking();
   });
 
   input.addEventListener('blur', () => {
     panel.classList.remove('is-focused');
+    stopKeyboardTracking();
   });
 
   document.addEventListener('ws:dictionaryLoaded', render);

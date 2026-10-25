@@ -24,6 +24,54 @@
     0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
+/* Extra room below the panel lets the page scroll it above the on-screen keyboard. */
+.try-it-panel.is-focused {
+  margin-bottom: var(--try-it-kb, 0px);
+}
+
+.try-it-panel.is-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+  padding: 8px;
+}
+
+.try-it-panel.is-compact .try-it-top {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+}
+
+.try-it-panel.is-compact .try-it-hint {
+  display: none;
+}
+
+.try-it-panel.is-compact .try-row {
+  margin-top: 0;
+  padding: 5px;
+}
+
+.try-it-panel.is-compact .try-row-head {
+  margin-bottom: 4px;
+}
+
+.try-it-panel.is-compact .try-row-label {
+  font-size: 10px;
+}
+
+.try-it-panel.is-compact .try-row-status {
+  font-size: 9px;
+}
+
+.try-it-panel.is-compact .try-tiles {
+  gap: 3px;
+}
+
+.try-it-panel.is-compact .try-tile {
+  height: clamp(22px, calc(var(--game-size) * 0.07), 34px);
+  font-size: clamp(14px, calc(var(--game-size) * 0.05), 22px);
+  border-radius: 5px;
+}
+
 .try-it-header {
   color: var(--highlight);
   font-family: Arial, sans-serif;
