@@ -24,6 +24,17 @@
     0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
+/* Extra room below the panel lets the page scroll it above the on-screen keyboard. */
+.try-it-panel.is-focused {
+  margin-bottom: var(--try-it-kb, 0px);
+}
+
+/* On a short page the margin above is absorbed by the page's minimum height, leaving nothing to scroll (seen on iPad). */
+html.try-it-kb-open body {
+  min-height: calc(100vh + var(--try-it-kb, 0px));
+}
+
+/* Fallback when scrolling cannot reveal the panel: fixed just above the keyboard. */
 .try-it-panel.is-pinned {
   position: fixed;
   left: 50%;

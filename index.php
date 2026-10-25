@@ -114,6 +114,9 @@ if ($isBombDay) {
 }
 
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
+
+// Single source of truth for the version shown in the footer and the help screen.
+$appVersion = '1.3.8';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -153,6 +156,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
       isTetrisDay: <?= json_encode($isTetrisDay) ?>,
       isTopUpDay: <?= json_encode($isTopUpDay) ?>,
       modeDisplayName: <?= json_encode($modeDisplayName) ?>,
+      appVersion: <?= json_encode($appVersion) ?>,
       scrabbleSpecialSquares: <?= json_encode($dailyScrabbleLayout) ?>
     };
   </script>
@@ -401,7 +405,7 @@ $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? 
   </div>
   <?php endif; ?>
 
-  <div class="version-tag">Version 1.3.6</div>
+  <div class="version-tag">Version <?= htmlspecialchars($appVersion, ENT_QUOTES, 'UTF-8') ?></div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>

@@ -93,8 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderHelpContent = () => {
     if (!helpContent) return;
 
-    const helpVersion = '1.3.4';
+    const configuredVersion = window.GAME_CONFIG && typeof window.GAME_CONFIG.appVersion === 'string'
+      ? window.GAME_CONFIG.appVersion
+      : '';
+    const helpVersion = configuredVersion !== '' ? configuredVersion : 'unknown';
     const helpChanges = [
+      '1.3.8 adds a fallback so the TRY IT panel is pinned above the keyboard whenever scrolling cannot reveal it.',
+      '1.3.7 makes the TRY IT panel reliable when reopened and on iPad, and the help screen now shows the live app version.',
+      '1.3.6 improves the TRY IT panel so it stays visible above the on-screen keyboard.',
       '1.3.4 marks MFD (My First Dictionary) as retired - it is no longer part of the daily rotation and is not played.',
       '1.3.3 updates Tetris timing documentation and the application version.',
     ];
