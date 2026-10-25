@@ -72,6 +72,112 @@ function getBoggleWordPoints(string $word): int
     return $length >= 8 ? 11 : 0;
 }
 
+/**
+ * Validates per-round scores; returns null (not an error) when they are absent or inconsistent
+ * so the total score can still be saved.
+ *
+ * @param mixed $roundScores
+ * @return list<int>|null
+ */
+function normaliseBoggleRoundScores(mixed $roundScores, int $totalScore): ?array
+{
+    if (!is_array($roundScores) || count($roundScores) !== 3) {
+        return null;
+    }
+
+    $normalised = [];
+    foreach (array_values($roundScores) as $value) {
+        if (!is_int($value) || $value < 0 || $value > 100000) {
+            return null;
+        }
+        $normalised[] = $value;
+    }
+
+    return array_sum($normalised) === $totalScore ? $normalised : null;
+}
+
+/**
+ * @return list<int>|null
+ */
+function decodeBoggleRoundScores(mixed $stored): ?array
+{
+    if (!is_string($stored) || $stored === '') {
+        return null;
+    }
+
+    $decoded = json_decode($stored, true);
+    if (!is_array($decoded) || count($decoded) !== 3) {
+        return null;
+    }
+
+    foreach ($decoded as $value) {
+        if (!is_int($value) || $value < 0) {
+            return null;
+        }
+    }
+
+    return array_values($decoded);
+}
+
+function isMissingColumnError(PDOException $e): bool
+{
+    return ($e->errorInfo[0] ?? '') === '42S22';
+}
+
+/**
+ * Falls back to the legacy query so Boggle keeps working before the round_scores migration is applied.
+ *
+ * @return list<array<string, mixed>>
+ */
+function fetchBoggleHighscoreRows(PDO $pdo): array
+{
+    $baseSql = "
+        FROM boggle_highscores
+        WHERE DATE(created_at) = CURDATE()
+        ORDER BY score DESC, created_at ASC, id ASC
+        LIMIT 8
+    ";
+    try {
+        return $pdo->query("SELECT id, initials, score, words_json, round_scores " . $baseSql)->fetchAll();
+    } catch (PDOException $e) {
+        if (!isMissingColumnError($e)) {
+            throw $e;
+        }
+        error_log('validate.php boggle round_scores column missing; using legacy query.');
+        return $pdo->query("SELECT id, initials, score, words_json " . $baseSql)->fetchAll();
+    }
+}
+
+/**
+ * @param list<int>|null $roundScores
+ */
+function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $wordsJson, ?array $roundScores): void
+{
+    try {
+        $roundScoresJson = $roundScores === null ? null : json_encode($roundScores, JSON_THROW_ON_ERROR);
+        $stmt = $pdo->prepare("
+            INSERT INTO boggle_highscores (initials, score, words_json, round_scores)
+            VALUES (:initials, :score, :words_json, :round_scores)
+        ");
+        $stmt->execute([
+            ':initials' => $initials,
+            ':score' => $score,
+            ':words_json' => $wordsJson,
+            ':round_scores' => $roundScoresJson,
+        ]);
+    } catch (PDOException $e) {
+        if (!isMissingColumnError($e)) {
+            throw $e;
+        }
+        error_log('validate.php boggle round_scores column missing; saving without it.');
+        $stmt = $pdo->prepare("
+            INSERT INTO boggle_highscores (initials, score, words_json)
+            VALUES (:initials, :score, :words_json)
+        ");
+        $stmt->execute([':initials' => $initials, ':score' => $score, ':words_json' => $wordsJson]);
+    }
+}
+
 function normaliseGridString(?string $grid): string
 {
     $grid = trim((string)$grid);
@@ -495,17 +601,11 @@ if (isset($input['action'])) {
 
     if ($action === 'get_boggle_highscores') {
         try {
-            $stmt = $pdo->query("
-                SELECT id, initials, score, words_json
-                FROM boggle_highscores
-                WHERE DATE(created_at) = CURDATE()
-                ORDER BY score DESC, created_at ASC, id ASC
-                LIMIT 8
-            ");
-            $scores = $stmt->fetchAll();
+            $scores = fetchBoggleHighscoreRows($pdo);
             foreach ($scores as &$score) {
                 $words = json_decode((string)($score['words_json'] ?? '[]'), true);
                 $score['words'] = is_array($words) ? array_values(array_filter($words, 'is_string')) : [];
+                $score['round_scores'] = decodeBoggleRoundScores($score['round_scores'] ?? null);
                 unset($score['words_json']);
             }
             unset($score);
@@ -537,13 +637,10 @@ if (isset($input['action'])) {
             error_log('validate.php boggle word encoding failed: ' . $e->getMessage());
             jsonResponse(['error' => 'Unable to save Boggle words.'], 500);
         }
+        $roundScores = normaliseBoggleRoundScores($input['round_scores'] ?? null, $score);
 
         try {
-            $stmt = $pdo->prepare("
-                INSERT INTO boggle_highscores (initials, score, words_json)
-                VALUES (:initials, :score, :words_json)
-            ");
-            $stmt->execute([':initials' => $initials, ':score' => $score, ':words_json' => $wordsJson]);
+            insertBoggleHighscore($pdo, $initials, $score, $wordsJson, $roundScores);
             $newId = (int)$pdo->lastInsertId();
 
             $topScoreStmt = $pdo->query("

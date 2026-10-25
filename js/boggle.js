@@ -541,7 +541,23 @@ function renderWordTiles(container, words) {
   }));
 }
 
-function createLeaderboardRow(entry, index, isInteractive = true) {
+function createRoundScoreTiles(entry) {
+  const roundScores = Array.isArray(entry.round_scores) && entry.round_scores.length === BOGGLE_ROUNDS
+    && entry.round_scores.every(value => Number.isInteger(value) && value >= 0)
+    ? entry.round_scores
+    : null;
+  const group = document.createElement('div');
+  group.className = 'lb-round-group';
+  for (let round = 0; round < BOGGLE_ROUNDS; round += 1) {
+    const tile = document.createElement('div');
+    tile.className = 'lb-round-tile';
+    tile.textContent = roundScores === null ? '–' : String(roundScores[round]);
+    group.append(tile);
+  }
+  return group;
+}
+
+function createLeaderboardRow(entry, index, isInteractive = true, showRounds = false) {
   const item = document.createElement('li');
   item.classList.add('boggle-score-entry');
   if (index === 0) item.classList.add('is-top-score');
@@ -566,7 +582,12 @@ function createLeaderboardRow(entry, index, isInteractive = true) {
   const score = document.createElement('div');
   score.className = 'lb-score-tile';
   score.textContent = String(entry.score);
-  row.append(rank, initialsGroup, score);
+  row.append(rank, initialsGroup);
+  if (showRounds) {
+    row.classList.add('has-rounds');
+    row.append(createRoundScoreTiles(entry));
+  }
+  row.append(score);
   item.append(row);
   if (!isInteractive) return item;
 
@@ -583,14 +604,14 @@ function createLeaderboardRow(entry, index, isInteractive = true) {
   return item;
 }
 
-function renderLeaderboard(scores, target, isInteractive = true) {
+function renderLeaderboard(scores, target, isInteractive = true, showRounds = false) {
   if (scores.length === 0) {
     const item = document.createElement('li');
     item.textContent = 'No scores today.';
     target.replaceChildren(item);
     return;
   }
-  target.replaceChildren(...scores.map((entry, index) => createLeaderboardRow(entry, index, isInteractive)));
+  target.replaceChildren(...scores.map((entry, index) => createLeaderboardRow(entry, index, isInteractive, showRounds)));
 }
 
 async function getLeaderboardScores() {
@@ -630,7 +651,7 @@ async function saveLeaderboardScore(score, initials) {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'save_boggle_highscore', initials, score, words: state.roundWords.flat() })
+    body: JSON.stringify({ action: 'save_boggle_highscore', initials, score, words: state.roundWords.flat(), round_scores: state.roundScores })
   });
   if (!response.ok) throw new Error('Unable to save Boggle score.');
 
@@ -699,7 +720,7 @@ async function showLeaderboard(isTopScore = false) {
   if (isTopScore) triggerHighScoreBurst();
 
   try {
-    renderLeaderboard(await getLeaderboardScores(), scores);
+    renderLeaderboard(await getLeaderboardScores(), scores, true, true);
   } catch (error) {
     scores.textContent = 'Unable to load scores.';
   }

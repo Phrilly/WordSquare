@@ -11,3 +11,6 @@ CREATE TABLE IF NOT EXISTS boggle_highscores (
 
 ALTER TABLE boggle_highscores
     ADD COLUMN IF NOT EXISTS words_json MEDIUMTEXT NOT NULL DEFAULT '[]' AFTER score;
+
+ALTER TABLE boggle_highscores
+    ADD COLUMN IF NOT EXISTS round_scores VARCHAR(64) NULL DEFAULT NULL AFTER words_json;

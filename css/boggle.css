@@ -74,6 +74,13 @@ html { overflow-y:auto; }
 .boggle-summary .leaderboard-list li:hover { filter:none; }
 .boggle-summary .lb-row-container { padding:2px 4px; }
 .boggle-summary .leaderboard-list li.is-top-score .lb-row-container { padding:3px 5px; }
+.boggle-summary .lb-row-container.has-rounds { gap:3px; }
+.boggle-summary .lb-row-container.has-rounds .lb-rank { width:22px; margin-right:0; font-size:13px; }
+.boggle-summary .lb-row-container.has-rounds .lb-initials-group { gap:2px; }
+.boggle-summary .lb-row-container.has-rounds .lb-initial-tile { width:22px; height:22px; font-size:14px; }
+.lb-round-group { display:flex; gap:3px; margin-left:auto; flex-shrink:0; }
+.lb-round-tile { min-width:26px; height:22px; padding:0 3px; box-sizing:border-box; display:flex; justify-content:center; align-items:center; font:bold 13px Arial,sans-serif; background:#3d6a9e; color:#fff; border-radius:4px; box-shadow:inset 1px 1px 2px rgba(255,255,255,.3), inset -1px -1px 2px rgba(0,0,0,.3); }
+.boggle-summary .lb-row-container.has-rounds .lb-score-tile { margin-left:3px; min-width:42px; height:26px; padding:0 4px; font-size:15px; flex-shrink:0; }
 .boggle-summary .initials-wrapper { margin:14px 0 4px; }
 .boggle-summary.is-celebration h2 { color:#FFD700; animation:titleShimmer 1.3s ease-in-out infinite; }
 .boggle-summary.is-leaderboard { justify-content:flex-start; padding:10px; overflow-y:auto; }
