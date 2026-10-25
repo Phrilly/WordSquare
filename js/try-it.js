@@ -173,51 +173,50 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const KEYBOARD_SETTLE_DELAYS_MS = [0, 150, 350, 700, 1200];
-  const PANEL_EDGE_GAP_PX = 8;
   const FIT_MARGIN_PX = 16;
+  const PIN_BOTTOM_GAP_PX = 6;
   const viewport = window.visualViewport || null;
-  const rootEl = document.documentElement;
   let fullPanelHeight = 0;
   let pendingFrame = 0;
   let settleTimers = [];
+  let placeholder = null;
 
-  // Keeps the panel visible above the on-screen keyboard. If the full panel
-  // cannot fit in the space left, it switches to a compact layout, and if
-  // scrolling still cannot reveal it, it is pinned directly above the keyboard.
+  // The panel is pinned directly above the keyboard while typing. This does
+  // not depend on page scrolling, which browsers handle inconsistently.
+  function pinPanel() {
+    if (panel.classList.contains('is-pinned')) return;
+    fullPanelHeight = panel.offsetHeight;
+    placeholder = document.createElement('div');
+    placeholder.style.height = fullPanelHeight + 'px';
+    placeholder.style.width = '100%';
+    placeholder.setAttribute('aria-hidden', 'true');
+    panel.parentNode.insertBefore(placeholder, panel);
+    panel.classList.add('is-pinned');
+  }
+
+  function unpinPanel() {
+    panel.classList.remove('is-pinned', 'is-compact');
+    panel.style.removeProperty('bottom');
+    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+    placeholder = null;
+  }
+
   function fitAboveKeyboard() {
     pendingFrame = 0;
     if (document.activeElement !== input) return;
 
     try {
-      if (!viewport) {
-        panel.classList.add('is-compact', 'is-pinned');
-        return;
+      let keyboardOverlap = 0;
+      let availableHeight = window.innerHeight;
+      if (viewport) {
+        keyboardOverlap = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+        availableHeight = viewport.height;
       }
-
-      const keyboardOverlap = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      rootEl.style.setProperty('--try-it-kb', keyboardOverlap + 'px');
-      rootEl.classList.add('try-it-kb-open');
-
-      const fits = fullPanelHeight + FIT_MARGIN_PX <= viewport.height;
-      if (!fits) panel.classList.add('is-compact');
-      if (panel.classList.contains('is-pinned')) return;
-
-      const visibleBottom = viewport.offsetTop + viewport.height - PANEL_EDGE_GAP_PX;
-      const visibleTop = viewport.offsetTop + PANEL_EDGE_GAP_PX;
-      let rect = panel.getBoundingClientRect();
-      if (rect.bottom > visibleBottom) {
-        window.scrollBy(0, rect.bottom - visibleBottom);
-      } else if (rect.top < visibleTop) {
-        window.scrollBy(0, rect.top - visibleTop);
-      }
-
-      rect = panel.getBoundingClientRect();
-      if (rect.bottom > visibleBottom + 1 || rect.top < visibleTop - 1) {
-        panel.classList.add('is-compact', 'is-pinned');
-      }
+      panel.style.bottom = (keyboardOverlap + PIN_BOTTOM_GAP_PX) + 'px';
+      panel.classList.toggle('is-compact', fullPanelHeight + FIT_MARGIN_PX > availableHeight * 0.6);
     } catch (error) {
       console.warn('TRY IT keyboard positioning failed:', error);
-      panel.classList.add('is-compact', 'is-pinned');
+      panel.classList.add('is-compact');
     }
   }
 
@@ -232,9 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function startKeyboardTracking() {
-    if (!panel.classList.contains('is-compact')) {
-      fullPanelHeight = panel.offsetHeight;
-    }
+    pinPanel();
     clearSettleTimers();
     // Keyboards animate in at different speeds, so re-check as it settles.
     settleTimers = KEYBOARD_SETTLE_DELAYS_MS.map((delay) => window.setTimeout(scheduleFit, delay));
@@ -242,6 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
       viewport.addEventListener('resize', scheduleFit);
       viewport.addEventListener('scroll', scheduleFit);
     }
+    window.addEventListener('resize', scheduleFit);
     window.addEventListener('orientationchange', scheduleFit);
   }
 
@@ -255,10 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
       viewport.removeEventListener('resize', scheduleFit);
       viewport.removeEventListener('scroll', scheduleFit);
     }
+    window.removeEventListener('resize', scheduleFit);
     window.removeEventListener('orientationchange', scheduleFit);
-    panel.classList.remove('is-compact', 'is-pinned');
-    rootEl.classList.remove('try-it-kb-open');
-    rootEl.style.removeProperty('--try-it-kb');
+    unpinPanel();
   }
 
   input.addEventListener('focus', () => {

@@ -24,15 +24,10 @@
     0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* The page's own minimum height would otherwise swallow the extra room, leaving nothing to scroll. */
-html.try-it-kb-open body {
-  min-height: calc(100vh + var(--try-it-kb, 0px));
-}
-
 .try-it-panel.is-pinned {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--try-it-kb, 0px) + 6px);
+  bottom: 6px;
   transform: translateX(-50%);
   width: calc(100% - 16px);
   max-width: var(--game-size);
