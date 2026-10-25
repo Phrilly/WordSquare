@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // whatever the browser does with scrolling. A placeholder stops the page jumping.
   function pinPanel() {
     if (panel.classList.contains('is-pinned')) return;
+    if (debugEnabled) debugLog('PIN');
     placeholder = document.createElement('div');
     placeholder.style.height = panel.offsetHeight + 'px';
     placeholder.setAttribute('aria-hidden', 'true');
@@ -226,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function fitAboveKeyboard() {
     pendingFrame = 0;
     if (document.activeElement !== input) return;
+    if (debugEnabled) debugLog('fit');
 
     try {
       if (!viewport) {
@@ -238,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keyboardSeenOpen = true;
       } else if (keyboardSeenOpen) {
         // The user closed the keyboard; reset so the next tap starts cleanly.
+        if (debugEnabled) debugLog('auto-blur(kb closed)');
         input.blur();
         return;
       }
@@ -323,13 +326,57 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('orientationchange', () => window.setTimeout(refreshBaseline, BASELINE_REFRESH_DELAY_MS));
   if (viewport) viewport.addEventListener('resize', refreshBaseline);
 
+  // Diagnostic strip, shown only when the page URL contains ?debug=1.
+  const debugEnabled = new URLSearchParams(window.location.search).get('debug') === '1';
+  let debugEl = null;
+  let debugTimer = 0;
+  let debugEvents = [];
+
+  function debugLog(label) {
+    debugEvents.push(label);
+    if (debugEvents.length > 6) debugEvents.shift();
+  }
+
+  function debugRender() {
+    if (!debugEl) return;
+    const rect = panel.getBoundingClientRect();
+    const vvHeight = viewport ? Math.round(viewport.height) : 'none';
+    const vvTop = viewport ? Math.round(viewport.offsetTop) : 'none';
+    debugEl.textContent = [
+      'v' + ((window.GAME_CONFIG && window.GAME_CONFIG.appVersion) || '?'),
+      'innerH=' + window.innerHeight + ' vvH=' + vvHeight + ' vvTop=' + vvTop + ' base=' + Math.round(baselineHeight),
+      'panel top=' + Math.round(rect.top) + ' bottom=' + Math.round(rect.bottom) + ' fullH=' + fullPanelHeight,
+      'scrollY=' + Math.round(window.scrollY) + ' docH=' + rootEl.scrollHeight + ' kbSeen=' + keyboardSeenOpen,
+      'classes=' + panel.className,
+      'focused=' + (document.activeElement === input) + ' bottomStyle=' + (panel.style.bottom || '-'),
+      'log: ' + debugEvents.join(' | ')
+    ].join('\n');
+  }
+
+  if (debugEnabled) {
+    debugEl = document.createElement('pre');
+    debugEl.setAttribute('aria-hidden', 'true');
+    debugEl.style.cssText = 'position:fixed;top:0;left:0;right:0;margin:0;padding:4px 6px;z-index:2147483647;' +
+      'background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.3 monospace;white-space:pre-wrap;pointer-events:none;';
+    document.body.appendChild(debugEl);
+    debugTimer = window.setInterval(debugRender, 250);
+    if (viewport) {
+      viewport.addEventListener('resize', () => debugLog('vv-resize ' + Math.round(viewport.height)));
+    }
+    window.addEventListener('resize', () => debugLog('win-resize ' + window.innerHeight));
+    panel.addEventListener('click', () => debugLog('panel-click'));
+    debugRender();
+  }
+
   input.addEventListener('focus', () => {
+    if (debugEnabled) debugLog('focus');
     panel.classList.add('is-focused');
     placeCaretAtEnd();
     startKeyboardTracking();
   });
 
   input.addEventListener('blur', () => {
+    if (debugEnabled) debugLog('blur');
     panel.classList.remove('is-focused');
     stopKeyboardTracking();
   });

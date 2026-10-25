@@ -110,3 +110,7 @@
 [18-Jul-2026 13:07:29 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
 [18-Jul-2026 13:07:29 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
 [18-Jul-2026 13:07:29 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"tetris"}
+[26-Oct-2026 00:45:16 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[26-Oct-2026 00:45:18 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[26-Oct-2026 00:45:20 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[26-Oct-2026 00:45:35 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
