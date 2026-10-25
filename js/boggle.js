@@ -2,7 +2,7 @@ const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
 const BOGGLE_SECONDS = 120;
 const BOGGLE_LONG_PRESS_MS = 500;
-const BOGGLE_SUMMARY_INPUT_DELAY_MS = 2000;
+const BOGGLE_SUMMARY_INPUT_DELAY_MS = 5000;
 const BOGGLE_DRAG_SAFE_ZONE_RATIO = 0.6;
 const BOGGLE_DIAGONAL_INTENT_RATIO = 0.55;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
@@ -928,10 +928,15 @@ function finishRound() {
 
 function guardSummaryControls() {
   const controls = [...el.summary.querySelectorAll('button')];
+  const primary = controls.find(control => !control.classList.contains('mini-btn')) ?? null;
+  const primaryLabel = primary ? primary.textContent : '';
+  let intervalId = null;
   const enableControls = () => {
+    if (intervalId !== null) window.clearInterval(intervalId);
     controls.forEach(control => {
       if (control.isConnected) control.disabled = false;
     });
+    if (primary && primary.isConnected) primary.textContent = primaryLabel;
   };
   try {
     controls.forEach(control => {
@@ -942,7 +947,18 @@ function guardSummaryControls() {
     enableControls();
     return;
   }
-  window.setTimeout(enableControls, BOGGLE_SUMMARY_INPUT_DELAY_MS);
+
+  const endsAt = Date.now() + BOGGLE_SUMMARY_INPUT_DELAY_MS;
+  const updateCountdown = () => {
+    const remaining = Math.ceil((endsAt - Date.now()) / 1000);
+    if (remaining <= 0) {
+      enableControls();
+      return;
+    }
+    if (primary && primary.isConnected) primary.textContent = `${primaryLabel} (${remaining})`;
+  };
+  updateCountdown();
+  intervalId = window.setInterval(updateCountdown, 250);
 }
 
 function showSummary(done) {
