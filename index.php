@@ -116,7 +116,7 @@ if ($isBombDay) {
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 
 // Single source of truth for the version shown in the footer and the help screen.
-$appVersion = '1.3.9';
+$appVersion = '1.3.10';
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -184,7 +184,51 @@ document.addEventListener('DOMContentLoaded', () => {
   const PIN_BOTTOM_GAP_PX = 6;
   const KEYBOARD_MIN_HEIGHT_PX = 120;
   const BASELINE_REFRESH_DELAY_MS = 600;
-  const viewport = window.visualViewport || null;
+
+  // The game is embedded in an iframe on the WordPress site. Inside an iframe the browser does not
+  // report the on-screen keyboard, so read the visual viewport of the outer page when it is reachable.
+  function resolveHostWindow() {
+    try {
+      if (window.parent && window.parent !== window && window.parent.visualViewport) {
+        void window.parent.document;
+        return window.parent;
+      }
+    } catch (error) {
+      console.warn('TRY IT: outer page not reachable, using the frame itself:', error);
+    }
+    return window;
+  }
+
+  const hostWindow = resolveHostWindow();
+  const viewport = hostWindow.visualViewport || null;
+
+  // Distance from the top of the outer page's viewport to the top of this frame (0 when not framed).
+  function frameOffsetTop() {
+    if (hostWindow === window) return 0;
+    try {
+      return window.frameElement ? window.frameElement.getBoundingClientRect().top : 0;
+    } catch (error) {
+      console.warn('TRY IT: frame position unavailable:', error);
+      return 0;
+    }
+  }
+
+  // Distance from the bottom of this frame to the bottom of the visible area (the keyboard height).
+  function keyboardOverlapPx() {
+    if (!viewport) return 0;
+    let frameBottom = window.innerHeight;
+    if (hostWindow !== window) {
+      try {
+        frameBottom = window.frameElement
+          ? window.frameElement.getBoundingClientRect().bottom
+          : hostWindow.innerHeight;
+      } catch (error) {
+        console.warn('TRY IT: frame bounds unavailable:', error);
+        frameBottom = hostWindow.innerHeight;
+      }
+    }
+    return Math.max(0, Math.round(frameBottom - (viewport.offsetTop + viewport.height)));
+  }
   const rootEl = document.documentElement;
   let fullPanelHeight = 0;
   let pendingFrame = 0;
@@ -245,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const keyboardOverlap = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      const keyboardOverlap = keyboardOverlapPx();
       rootEl.style.setProperty('--try-it-kb', keyboardOverlap + 'px');
       rootEl.classList.add('try-it-kb-open');
 
@@ -254,11 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const fits = fullPanelHeight + FIT_MARGIN_PX <= viewport.height;
+      const frameTop = frameOffsetTop();
+      const fits = fullPanelHeight + FIT_MARGIN_PX <= viewport.height - Math.max(0, frameTop);
       panel.classList.toggle('is-compact', !fits);
 
-      const visibleBottom = viewport.offsetTop + viewport.height - PANEL_EDGE_GAP_PX;
-      const visibleTop = viewport.offsetTop + PANEL_EDGE_GAP_PX;
+      const visibleBottom = viewport.offsetTop + viewport.height - frameTop - PANEL_EDGE_GAP_PX;
+      const visibleTop = viewport.offsetTop - frameTop + PANEL_EDGE_GAP_PX;
       let rect = panel.getBoundingClientRect();
       if (rect.bottom > visibleBottom) {
         window.scrollBy(0, rect.bottom - visibleBottom);
@@ -327,7 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (viewport) viewport.addEventListener('resize', refreshBaseline);
 
   // Diagnostic strip, shown only when the page URL contains ?debug=1.
-  const debugEnabled = new URLSearchParams(window.location.search).get('debug') === '1';
+  const debugEnabled = (function readDebugFlag() {
+    const sources = [window.location.search, document.referrer.indexOf('?') >= 0 ? document.referrer.slice(document.referrer.indexOf('?')) : ''];
+    try {
+      if (window.parent !== window) sources.push(window.parent.location.search);
+    } catch (error) {
+      console.warn('TRY IT: outer address not readable for debug flag:', error);
+    }
+    return sources.some((query) => new URLSearchParams(query).get('debug') === '1');
+  }());
   let debugEl = null;
   let debugTimer = 0;
   let debugEvents = [];
@@ -343,8 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const vvHeight = viewport ? Math.round(viewport.height) : 'none';
     const vvTop = viewport ? Math.round(viewport.offsetTop) : 'none';
     debugEl.textContent = [
-      'v' + ((window.GAME_CONFIG && window.GAME_CONFIG.appVersion) || '?'),
-      'innerH=' + window.innerHeight + ' vvH=' + vvHeight + ' vvTop=' + vvTop + ' base=' + Math.round(baselineHeight),
+      'v' + ((window.GAME_CONFIG && window.GAME_CONFIG.appVersion) || '?') + ' framed=' + (hostWindow !== window) + ' frameTop=' + Math.round(frameOffsetTop()),
+      'innerH=' + window.innerHeight + ' vvH=' + vvHeight + ' vvTop=' + vvTop + ' base=' + Math.round(baselineHeight) + ' kb=' + keyboardOverlapPx(),
       'panel top=' + Math.round(rect.top) + ' bottom=' + Math.round(rect.bottom) + ' fullH=' + fullPanelHeight,
       'scrollY=' + Math.round(window.scrollY) + ' docH=' + rootEl.scrollHeight + ' kbSeen=' + keyboardSeenOpen,
       'classes=' + panel.className,
