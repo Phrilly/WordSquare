@@ -176,40 +176,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const PANEL_EDGE_GAP_PX = 8;
   const FIT_MARGIN_PX = 16;
   const viewport = window.visualViewport || null;
+  const rootEl = document.documentElement;
   let fullPanelHeight = 0;
   let pendingFrame = 0;
   let settleTimers = [];
 
   // Keeps the panel visible above the on-screen keyboard. If the full panel
-  // cannot fit in the space left, it switches to a compact layout.
+  // cannot fit in the space left, it switches to a compact layout, and if
+  // scrolling still cannot reveal it, it is pinned directly above the keyboard.
   function fitAboveKeyboard() {
     pendingFrame = 0;
     if (document.activeElement !== input) return;
 
     try {
       if (!viewport) {
-        panel.classList.add('is-compact');
-        panel.scrollIntoView({ block: 'end', inline: 'nearest' });
+        panel.classList.add('is-compact', 'is-pinned');
         return;
       }
 
       const keyboardOverlap = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      panel.style.setProperty('--try-it-kb', keyboardOverlap + 'px');
+      rootEl.style.setProperty('--try-it-kb', keyboardOverlap + 'px');
+      rootEl.classList.add('try-it-kb-open');
 
       const fits = fullPanelHeight + FIT_MARGIN_PX <= viewport.height;
-      panel.classList.toggle('is-compact', !fits);
+      if (!fits) panel.classList.add('is-compact');
+      if (panel.classList.contains('is-pinned')) return;
 
-      const rect = panel.getBoundingClientRect();
       const visibleBottom = viewport.offsetTop + viewport.height - PANEL_EDGE_GAP_PX;
       const visibleTop = viewport.offsetTop + PANEL_EDGE_GAP_PX;
+      let rect = panel.getBoundingClientRect();
       if (rect.bottom > visibleBottom) {
         window.scrollBy(0, rect.bottom - visibleBottom);
       } else if (rect.top < visibleTop) {
         window.scrollBy(0, rect.top - visibleTop);
       }
+
+      rect = panel.getBoundingClientRect();
+      if (rect.bottom > visibleBottom + 1 || rect.top < visibleTop - 1) {
+        panel.classList.add('is-compact', 'is-pinned');
+      }
     } catch (error) {
       console.warn('TRY IT keyboard positioning failed:', error);
-      panel.classList.add('is-compact');
+      panel.classList.add('is-compact', 'is-pinned');
     }
   }
 
@@ -248,8 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
       viewport.removeEventListener('scroll', scheduleFit);
     }
     window.removeEventListener('orientationchange', scheduleFit);
-    panel.classList.remove('is-compact');
-    panel.style.removeProperty('--try-it-kb');
+    panel.classList.remove('is-compact', 'is-pinned');
+    rootEl.classList.remove('try-it-kb-open');
+    rootEl.style.removeProperty('--try-it-kb');
   }
 
   input.addEventListener('focus', () => {

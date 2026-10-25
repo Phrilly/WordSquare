@@ -24,9 +24,21 @@
     0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Extra room below the panel lets the page scroll it above the on-screen keyboard. */
-.try-it-panel.is-focused {
-  margin-bottom: var(--try-it-kb, 0px);
+/* The page's own minimum height would otherwise swallow the extra room, leaving nothing to scroll. */
+html.try-it-kb-open body {
+  min-height: calc(100vh + var(--try-it-kb, 0px));
+}
+
+.try-it-panel.is-pinned {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--try-it-kb, 0px) + 6px);
+  transform: translateX(-50%);
+  width: calc(100% - 16px);
+  max-width: var(--game-size);
+  margin: 0;
+  z-index: 9000;
+  background: rgba(12, 30, 52, 0.97);
 }
 
 .try-it-panel.is-compact {
