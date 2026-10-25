@@ -2,6 +2,7 @@ const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
 const BOGGLE_SECONDS = 120;
 const BOGGLE_LONG_PRESS_MS = 500;
+const BOGGLE_SUMMARY_INPUT_DELAY_MS = 2000;
 const BOGGLE_DRAG_SAFE_ZONE_RATIO = 0.6;
 const BOGGLE_DIAGONAL_INTENT_RATIO = 0.55;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
@@ -259,73 +260,91 @@ function message(text, invalid = false) {
   el.status.style.color = invalid ? '#fecaca' : '#ffffff';
 }
 
+let renderedTilesKey = '';
+
+function createTileButton(index) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'grid-cell boggle-tile';
+  button.dataset.index = String(index);
+  button.addEventListener('pointerdown', event => {
+    if (state.locked) return;
+    if (event.pointerType === 'touch') {
+      state.suppressNextTouchClick = false;
+      cancelLongPress();
+      state.longPressTimer = window.setTimeout(() => {
+        state.longPressTimer = null;
+        if (state.locked || state.path.length === 0) return;
+        state.suppressNextTouchClick = true;
+        clearCurrentSelection('Word selection cleared.');
+      }, BOGGLE_LONG_PRESS_MS);
+      return;
+    }
+    if (event.pointerType !== 'mouse') return;
+    event.preventDefault();
+    state.ignoreNextMouseClick = true;
+    if (clearRejectedSelection()) return;
+    if (state.desktopPathDrawing) {
+      if (state.path.at(-1) !== index) select(index);
+      completeSelection();
+      return;
+    }
+
+    state.desktopPathDrawing = true;
+    state.selectionComplete = false;
+    select(index);
+    message('Path started. Move across adjacent tiles, then click the final tile.');
+  });
+  button.addEventListener('pointerup', cancelLongPress);
+  button.addEventListener('pointercancel', cancelLongPress);
+  button.addEventListener('pointerleave', cancelLongPress);
+  button.addEventListener('contextmenu', event => event.preventDefault());
+  button.addEventListener('click', event => {
+    if (state.suppressNextTouchClick) {
+      state.suppressNextTouchClick = false;
+      return;
+    }
+    if (event.detail !== 0 && state.ignoreNextMouseClick) {
+      state.ignoreNextMouseClick = false;
+      return;
+    }
+    if (clearRejectedSelection()) return;
+    if (state.path.at(-1) === index && state.path.length > 0) {
+      completeSelection();
+      return;
+    }
+    select(index);
+  });
+  return button;
+}
+
 function render() {
-  const tileButtons = state.tiles.map((letter, index) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'grid-cell boggle-tile';
-    button.dataset.index = String(index);
-    button.textContent = letter === 'Q' ? 'Qu' : letter;
-    button.setAttribute('aria-label', letter === 'Q' ? 'Qu' : letter);
+  // Tile buttons persist across renders so a press is never orphaned by a rebuild.
+  const tilesKey = state.tiles.join('');
+  let tileButtons = [...el.grid.querySelectorAll('.boggle-tile')];
+  if (tileButtons.length !== state.tiles.length) {
+    tileButtons.forEach(tile => tile.remove());
+    tileButtons = state.tiles.map((_, index) => createTileButton(index));
+    el.grid.prepend(...tileButtons);
+    renderedTilesKey = '';
+  }
+  if (tilesKey !== renderedTilesKey) {
+    state.tiles.forEach((letter, index) => {
+      const label = letter === 'Q' ? 'Qu' : letter;
+      tileButtons[index].textContent = label;
+      tileButtons[index].setAttribute('aria-label', label);
+    });
+    renderedTilesKey = tilesKey;
+  }
+  tileButtons.forEach((button, index) => {
     button.classList.toggle('is-selected', state.path.includes(index));
     button.classList.toggle('is-first-selected', state.desktopPathDrawing && state.path[0] === index);
     button.classList.toggle('is-last-selected', state.selectionComplete && state.path.at(-1) === index);
     button.classList.toggle('is-invalid-selection', state.selectionFeedback === 'invalid' && state.path.includes(index));
     button.classList.toggle('is-duplicate-selection', state.selectionFeedback === 'duplicate' && state.path.includes(index));
     button.disabled = state.locked;
-    button.addEventListener('pointerdown', event => {
-      if (state.locked) return;
-      if (event.pointerType === 'touch') {
-        state.suppressNextTouchClick = false;
-        cancelLongPress();
-        state.longPressTimer = window.setTimeout(() => {
-          state.longPressTimer = null;
-          if (state.locked || state.path.length === 0) return;
-          state.suppressNextTouchClick = true;
-          clearCurrentSelection('Word selection cleared.');
-        }, BOGGLE_LONG_PRESS_MS);
-        return;
-      }
-      if (event.pointerType !== 'mouse') return;
-      event.preventDefault();
-      state.ignoreNextMouseClick = true;
-      if (clearRejectedSelection()) return;
-      if (state.desktopPathDrawing) {
-        if (state.path.at(-1) !== index) select(index);
-        completeSelection();
-        return;
-      }
-
-      state.desktopPathDrawing = true;
-      state.selectionComplete = false;
-      select(index);
-      message('Path started. Move across adjacent tiles, then click the final tile.');
-    });
-    button.addEventListener('pointerup', cancelLongPress);
-    button.addEventListener('pointercancel', cancelLongPress);
-    button.addEventListener('pointerleave', cancelLongPress);
-    button.addEventListener('contextmenu', event => event.preventDefault());
-    button.addEventListener('click', event => {
-      if (state.suppressNextTouchClick) {
-        state.suppressNextTouchClick = false;
-        return;
-      }
-      if (event.detail !== 0 && state.ignoreNextMouseClick) {
-        state.ignoreNextMouseClick = false;
-        return;
-      }
-      if (clearRejectedSelection()) return;
-      if (state.path.at(-1) === index && state.path.length > 0) {
-        completeSelection();
-        return;
-      }
-      select(index);
-    });
-    return button;
   });
 
-  el.grid.querySelectorAll('.boggle-tile').forEach(tile => tile.remove());
-  el.grid.prepend(...tileButtons);
   el.preview.replaceChildren(...state.path.map(index => {
     const tile = document.createElement('span');
     tile.className = 'boggle-preview-tile';
@@ -897,7 +916,33 @@ function finishRound() {
   state.roundScores.push(roundScore());
   state.roundWords.push([...state.words.keys()]);
   render();
-  showSummary(state.round === BOGGLE_ROUNDS);
+  try {
+    showSummary(state.round === BOGGLE_ROUNDS);
+  } catch (error) {
+    console.error('Boggle round summary failed:', error);
+    message('Round summary could not be shown. Refresh to play again.', true);
+    return;
+  }
+  guardSummaryControls();
+}
+
+function guardSummaryControls() {
+  const controls = [...el.summary.querySelectorAll('button')];
+  const enableControls = () => {
+    controls.forEach(control => {
+      if (control.isConnected) control.disabled = false;
+    });
+  };
+  try {
+    controls.forEach(control => {
+      control.disabled = true;
+    });
+  } catch (error) {
+    console.error('Boggle summary guard failed:', error);
+    enableControls();
+    return;
+  }
+  window.setTimeout(enableControls, BOGGLE_SUMMARY_INPUT_DELAY_MS);
 }
 
 function showSummary(done) {
