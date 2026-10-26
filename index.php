@@ -139,7 +139,7 @@ if ($isBombDay) {
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 
 // Single source of truth for the version shown in the footer and the help screen.
-$appVersion = '1.5.0';
+$appVersion = '1.5.1';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -227,17 +227,20 @@ $appVersion = '1.5.0';
   </div>
 
   <div id="winner-overlay" class="winner-overlay" style="display: none;">
-    <h1 class="winner-title">YESTERDAY'S CHAMPION</h1>
-    <div id="winner-initials" class="winner-initials"></div>
-    <p id="winner-score" class="winner-score"></p>
-    <div id="winner-actions" class="winner-actions">
-      <button id="winner-scores-btn" class="arcade-btn" type="button">YESTERDAY'S HIGH SCORES</button>
-      <button id="winner-play-btn" class="arcade-btn winner-play-arrow" type="button" aria-label="Continue to today's game">&#9654;</button>
-    </div>
-    <div id="winner-scores-panel" class="winner-scores-panel" hidden>
-      <h2 id="winner-scores-title" class="winner-scores-title"></h2>
-      <ol id="winner-scores-list" class="winner-scores-list"></ol>
-      <button id="winner-scores-close" class="arcade-btn" type="button">CLOSE</button>
+    <div class="winner-card">
+      <h1 class="winner-title">YESTERDAY'S CHAMPION</h1>
+      <div class="winner-rule" aria-hidden="true"></div>
+      <div id="winner-initials" class="winner-initials"></div>
+      <p id="winner-score" class="winner-score"></p>
+      <div id="winner-actions" class="winner-actions">
+        <button id="winner-scores-btn" class="winner-btn" type="button">Yesterday's high scores</button>
+        <button id="winner-play-btn" class="winner-btn winner-play-arrow" type="button" aria-label="Continue to today's game">&#10095;</button>
+      </div>
+      <div id="winner-scores-panel" class="winner-scores-panel" hidden>
+        <h2 id="winner-scores-title" class="winner-scores-title"></h2>
+        <ol id="winner-scores-list" class="winner-scores-list"></ol>
+        <button id="winner-scores-close" class="winner-btn" type="button">Close</button>
+      </div>
     </div>
   </div>
 

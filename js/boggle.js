@@ -1238,14 +1238,14 @@ function showArrivalCelebration(winner, withBurst = true) {
   const score = document.createElement('p');
   score.textContent = `Score: ${winner.score}`;
   const scoresButton = document.createElement('button');
-  scoresButton.className = 'arcade-btn';
+  scoresButton.className = 'champion-btn';
   scoresButton.type = 'button';
-  scoresButton.textContent = 'YESTERDAY\'S HIGH SCORES';
+  scoresButton.textContent = 'Yesterday\'s high scores';
   scoresButton.addEventListener('click', () => showYesterdaysScores(winner));
   const continueButton = document.createElement('button');
-  continueButton.className = 'arcade-btn';
+  continueButton.className = 'champion-btn champion-arrow';
   continueButton.type = 'button';
-  continueButton.textContent = '\u25B6';
+  continueButton.textContent = '\u276F';
   continueButton.setAttribute('aria-label', 'Continue to today\'s scores');
   continueButton.addEventListener('click', () => showOpeningLeaderboard());
   el.summary.append(title, champion, score, scoresButton, continueButton);

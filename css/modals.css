@@ -217,12 +217,15 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(15, 35, 60, 0.9);
+  height: 100dvh;
+  background: radial-gradient(ellipse at 50% 40%, rgba(30, 62, 100, 0.96) 0%, rgba(10, 24, 44, 0.97) 100%);
   z-index: 9998;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
   opacity: 0;
   transition: opacity 0.5s ease;
 }
@@ -231,27 +234,53 @@
   opacity: 1;
 }
 
+.winner-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(92vw, 380px);
+  max-height: 100%;
+  padding: 32px 24px 28px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 215, 0, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  overflow-y: auto;
+}
+
 .winner-title {
-  color: var(--highlight);
-  margin-bottom: 12px;
-  font-size: 36px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
   text-align: center;
-  line-height: 1.2;
-  padding: 0 20px;
+  line-height: 1.4;
+}
+
+.winner-rule {
+  width: 48px;
+  height: 1px;
+  margin: 16px 0 12px;
+  background: rgba(255, 215, 0, 0.6);
 }
 
 .winner-initials {
-  font-size: 72px;
+  font-size: 64px;
   font-weight: bold;
-  color: #FFD700;
-  text-shadow: 0 0 16px #ffaa00;
+  letter-spacing: 0.12em;
+  padding-left: 0.12em;
+  color: #e8c860;
   text-align: center;
+  line-height: 1.1;
 }
 
 .winner-score {
-  margin: 8px 0 20px;
-  color: #fff;
-  font-size: 20px;
+  margin: 6px 0 28px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  letter-spacing: 0.1em;
   text-align: center;
 }
 
@@ -259,7 +288,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+}
+
+.winner-btn {
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.winner-btn:hover,
+.winner-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 215, 0, 0.7);
+  color: #fff;
+  outline: none;
 }
 
 .winner-actions[hidden],
@@ -269,24 +320,27 @@
 }
 
 .winner-play-arrow {
-  min-width: 96px;
-  font-size: 32px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 18px;
   line-height: 1;
+  border-radius: 50%;
 }
 
 .winner-scores-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: min(92vw, 360px);
-  max-height: 92vh;
-  overflow-y: auto;
+  width: 100%;
 }
 
 .winner-scores-title {
-  color: var(--highlight);
-  margin: 0 0 14px;
-  font-size: 22px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
   text-align: center;
 }
 
@@ -303,14 +357,14 @@
   gap: 14px;
   padding: 8px 12px;
   margin-bottom: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
-  color: #fff;
-  font-size: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 17px;
 }
 
 .winner-scores-list li:first-child {
-  color: #FFD700;
+  color: #e8c860;
 }
 
 .winner-scores-rank {

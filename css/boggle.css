@@ -82,7 +82,14 @@ html { overflow-y:auto; }
 .lb-round-tile { min-width:26px; height:22px; padding:0 3px; box-sizing:border-box; display:flex; justify-content:center; align-items:center; font:bold 13px Arial,sans-serif; background:#3d6a9e; color:#fff; border-radius:4px; box-shadow:inset 1px 1px 2px rgba(255,255,255,.3), inset -1px -1px 2px rgba(0,0,0,.3); }
 .boggle-summary .lb-row-container.has-rounds .lb-score-tile { margin-left:3px; min-width:42px; height:26px; padding:0 4px; font-size:15px; flex-shrink:0; }
 .boggle-summary .initials-wrapper { margin:14px 0 4px; }
-.boggle-summary.is-celebration h2 { color:#FFD700; animation:titleShimmer 1.3s ease-in-out infinite; }
+.boggle-summary.is-celebration h2 { color:rgba(255,255,255,.75); font-size:clamp(13px,4vw,16px); font-weight:600; letter-spacing:.3em; margin:0 0 6px; }
+.boggle-summary.is-celebration h2::after { content:''; display:block; width:48px; height:1px; margin:14px auto 4px; background:rgba(255,215,0,.6); }
+.boggle-summary.is-celebration p { color:rgba(255,255,255,.7); letter-spacing:.1em; font-weight:normal; }
+.boggle-summary.is-celebration p.boggle-champion { color:#e8c860; font-weight:bold; }
+.boggle-summary.is-celebration .champion-btn { margin:10px auto 0; }
+.champion-btn { font:inherit; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.88); background:transparent; border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:10px 24px; cursor:pointer; transition:background-color .2s ease,border-color .2s ease; }
+.champion-btn:hover, .champion-btn:focus-visible { background:rgba(255,255,255,.1); border-color:rgba(255,215,0,.7); outline:none; }
+.champion-btn.champion-arrow { width:44px; height:44px; padding:0; font-size:18px; line-height:1; border-radius:50%; margin-top:16px; }
 .boggle-summary.is-leaderboard { justify-content:flex-start; padding:10px; overflow-y:auto; }
 .boggle-summary.is-score-entry { justify-content:flex-start; overflow-y:auto; }
 .boggle-summary.is-score-entry > * { flex-shrink:0; }
@@ -98,7 +105,7 @@ html { overflow-y:auto; }
 .sloggle-banner-name { color:#FFD700; font:900 clamp(22px,7vw,34px)/1 'Courier New',Courier,monospace; letter-spacing:.22em; text-shadow:0 0 10px rgba(255,215,0,.55); }
 .sloggle-banner-sub { color:#fff; font:700 clamp(10px,3vw,13px)/1.2 'Courier New',Courier,monospace; letter-spacing:.14em; }
 .boggle-page.is-embedded .sloggle-banner { flex:0 0 auto; }
-.boggle-champion { color:#FFD700; font-size:clamp(32px,11vw,54px); font-weight:bold; letter-spacing:.15em; text-shadow:0 0 12px rgba(255,215,0,.65); }
+.boggle-champion { color:#e8c860; font-size:clamp(32px,11vw,54px); font-weight:bold; letter-spacing:.12em; }
 .boggle-summary.is-word-list { overflow:hidden; }
 .boggle-summary.is-word-list h2, .boggle-summary.is-word-list p, .boggle-summary.is-word-list button { flex:0 0 auto; }
 .boggle-summary.is-word-list > div { flex:0 0 auto; }
