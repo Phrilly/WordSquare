@@ -400,10 +400,10 @@ function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo, a
 function getModeForDate(DateTimeImmutable $date): string
 {
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
-    $scheduleV3Cutover = new DateTimeImmutable('2026-11-02 00:00:00', new DateTimeZone('UTC'));
+    $scheduleV3Cutover = new DateTimeImmutable('2026-10-26 00:00:00', new DateTimeZone('UTC'));
     $scheduleV2Cutover = new DateTimeImmutable('2026-09-17 00:00:00', new DateTimeZone('UTC'));
 
-    // From 2026-11-02 Classic is retired and Sloggle (Slow Boggle) takes Sunday.
+    // From 2026-10-26 Classic is retired and Sloggle (Slow Boggle) takes Sunday.
     if ($target >= $scheduleV3Cutover) {
         $v3Schedule = [
             1 => 'lookahead',

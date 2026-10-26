@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const getScheduleDebugInfo = () => {
     const now = new Date();
     const utcDate = now.toISOString().slice(0, 10);
-    const scheduleV3CutoverMs = Date.UTC(2026, 10, 2, 0, 0, 0); // 2026-11-02
+    const scheduleV3CutoverMs = Date.UTC(2026, 9, 26, 0, 0, 0); // 2026-10-26
     const scheduleV2CutoverMs = Date.UTC(2026, 8, 17, 0, 0, 0); // 2026-09-17
 
     if (now.getTime() >= scheduleV3CutoverMs) {
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
     const helpVersion = configuredVersion !== '' ? configuredVersion : 'unknown';
     const helpChanges = [
-      '1.4.0 adds Sloggle (Slow Boggle, 5 minutes per round) on Sundays with its own high scores. Boggle moves to Wednesday, Classic is retired, Lookahead moves to Monday and Bomb to Tuesday. The new schedule starts on 2026-11-02.',
+      '1.4.0 adds Sloggle (Slow Boggle, 5 minutes per round) on Sundays with its own high scores. Boggle moves to Wednesday, Classic is retired, Lookahead moves to Monday and Bomb to Tuesday. The new schedule starts on 2026-10-26.',
       '1.3.10 reads the on-screen keyboard from the outer WordPress page (the game runs inside an iframe) and shows the debug strip when ?debug=1 is on either address.',
       '1.3.9 adds a diagnostic strip for the TRY IT panel (add ?debug=1 to the page address).',
       '1.3.8 adds a fallback so the TRY IT panel is pinned above the keyboard whenever scrolling cannot reveal it.',
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Letters stay on the board unless removed by a mode mechanic (for example, Tetris clears or bombs).</li>
       </ul>
 
-      <h3>Daily Schedule (Mon-Sun, from 2026-11-02)</h3>
+      <h3>Daily Schedule (Mon-Sun, from 2026-10-26)</h3>
       <ul>
         <li>Monday: Lookahead</li>
         <li>Tuesday: Bomb</li>

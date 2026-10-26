@@ -27,8 +27,8 @@ $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // New weekday-based schedule takes effect from 2026-09-17 onward; earlier dates keep the original cycle.
 $scheduleV2CutoverTimestamp = strtotime('2026-09-17 00:00:00 UTC');
-// From 2026-11-02 Classic is retired, the week shifts up a day, Boggle moves to Wednesday and Sloggle takes Sunday.
-$scheduleV3CutoverTimestamp = strtotime('2026-11-02 00:00:00 UTC');
+// From 2026-10-26 Classic is retired, the week shifts up a day, Boggle moves to Wednesday and Sloggle takes Sunday.
+$scheduleV3CutoverTimestamp = strtotime('2026-10-26 00:00:00 UTC');
 $isSloggleDay = false;
 
 if (time() >= $scheduleV3CutoverTimestamp) {

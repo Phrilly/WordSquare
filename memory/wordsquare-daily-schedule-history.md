@@ -20,14 +20,14 @@ times, reconstructed from `git log` on `index.php` (epoch 2026-05-21 UTC):
   `validate.php`'s `getModeForDate()` specifically so historical rows are not
   reinterpreted.
 
-Current rotation (from 2026-11-02): Monday Lookahead, Tuesday Bomb, Wednesday
+Current rotation (from 2026-10-26): Monday Lookahead, Tuesday Bomb, Wednesday
 Boggle, Thursday Scrabble, Friday Top Up, Saturday Tetris, Sunday Sloggle (Slow
 Boggle, `sloggle.php`, own table `sloggle_highscores`, mode `sloggle` in the
 `daily_scores` view). Classic is retired from the rotation. Rotation 2026-09-17
-to 2026-11-01: Monday Classic, Tuesday Lookahead, Wednesday Bomb, Thursday
+to 2026-10-25: Monday Classic, Tuesday Lookahead, Wednesday Bomb, Thursday
 Scrabble, Friday Top Up, Saturday Tetris, Sunday Boggle.
 
-Rotation from 2026-09-17 to 2026-11-01 was: Monday Classic, Tuesday Lookahead, Wednesday
+Rotation from 2026-09-17 to 2026-10-25 was: Monday Classic, Tuesday Lookahead, Wednesday
 Bomb, Thursday Scrabble, Friday Top Up, Saturday Tetris, Sunday Boggle.
 
 Prior rotation (up to 2026-09-16): Day 0 Bomb, 1 Scrabble, 2 Lookahead, 3 Top Up, 4 Tetris, 5 Classic, 6 Boggle.
