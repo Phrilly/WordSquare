@@ -1,12 +1,24 @@
 const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
-const BOGGLE_SECONDS = 120;
+// Sloggle (Slow Boggle) shares this engine. boggle.php / sloggle.php publish which variant to run.
+const BOGGLE_VARIANTS = {
+  boggle: { id: 'boggle', name: 'Boggle', seconds: 120, minutesText: 'Two minutes', scoresTitle: 'TODAY\'S HIGH SCORES', seedSuffix: '' },
+  sloggle: { id: 'sloggle', name: 'Sloggle', seconds: 300, minutesText: 'Five minutes', scoresTitle: 'TODAY\'S SLOGGLE HIGH SCORES', seedSuffix: ':sloggle' }
+};
+const BOGGLE_REQUESTED_VARIANT = window.BOGGLE_CONFIG && typeof window.BOGGLE_CONFIG.variant === 'string'
+  ? window.BOGGLE_CONFIG.variant
+  : 'boggle';
+const BOGGLE_VARIANT = Object.prototype.hasOwnProperty.call(BOGGLE_VARIANTS, BOGGLE_REQUESTED_VARIANT)
+  ? BOGGLE_VARIANTS[BOGGLE_REQUESTED_VARIANT]
+  : BOGGLE_VARIANTS.boggle;
+const BOGGLE_SECONDS = BOGGLE_VARIANT.seconds;
 const BOGGLE_LONG_PRESS_MS = 500;
 const BOGGLE_SUMMARY_INPUT_DELAY_MS = 2400;
 const BOGGLE_DRAG_SAFE_ZONE_RATIO = 0.6;
 const BOGGLE_DIAGONAL_INTENT_RATIO = 0.55;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
-const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10);
+// Boggle keeps its original seed so existing boards are unchanged; Sloggle gets different boards.
+const BOGGLE_DAILY_SEED = new Date().toISOString().slice(0, 10) + BOGGLE_VARIANT.seedSuffix;
 const BOGGLE_PROPER_NOUN_DENYLIST = new Set([
   'AMERICA','AUSTRALIA','BELGIUM','BERLIN','BIRMINGHAM','BRITAIN','CANADA','CHESHIRE','CHICAGO','CHINA','DUBLIN','ENGLAND','FRANCE','GERMANY','INDIA','IRELAND','JAPAN','LIVERPOOL','LONDON','MANCHESTER','MEXICO','NORWAY','OXFORD','PARIS','PORTUGAL','RUSSIA','SCOTLAND','SPAIN','SWEDEN','TOKYO','WALES','YORK'
 ]);
@@ -618,7 +630,7 @@ async function getLeaderboardScores() {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'get_boggle_highscores' })
+    body: JSON.stringify({ action: 'get_boggle_highscores', variant: BOGGLE_VARIANT.id })
   });
   if (!response.ok) throw new Error('Unable to load Boggle scores.');
 
@@ -651,7 +663,7 @@ async function saveLeaderboardScore(score, initials) {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'save_boggle_highscore', initials, score, words: state.roundWords.flat(), round_scores: state.roundScores })
+    body: JSON.stringify({ action: 'save_boggle_highscore', variant: BOGGLE_VARIANT.id, initials, score, words: state.roundWords.flat(), round_scores: state.roundScores })
   });
   if (!response.ok) throw new Error('Unable to save Boggle score.');
 
@@ -1092,15 +1104,20 @@ function startRound(round) {
   renderWords();
   message(`Round ${round} has started.`);
   render();
+  // The deadline is a real clock time so a throttled or slept phone cannot stretch a round.
+  const roundEndsAt = Date.now() + (BOGGLE_SECONDS * 1000);
   state.timer = setInterval(() => {
-    state.seconds -= 1;
-    if (state.seconds <= 0) {
+    const remaining = Math.max(0, Math.ceil((roundEndsAt - Date.now()) / 1000));
+    if (remaining <= 0) {
       state.seconds = 0;
       finishRound();
       return;
     }
-    render();
-  }, 1000);
+    if (remaining !== state.seconds) {
+      state.seconds = remaining;
+      render();
+    }
+  }, 250);
 }
 
 function startMatch() {
@@ -1122,13 +1139,13 @@ async function showOpeningLeaderboard(initialScores = null) {
   el.summary.replaceChildren();
 
   const title = document.createElement('h2');
-  title.textContent = 'TODAY\'S HIGH SCORES';
+  title.textContent = BOGGLE_VARIANT.scoresTitle;
   const scores = document.createElement('ul');
   scores.className = 'leaderboard-list';
   scores.textContent = 'Loading...';
   const rules = document.createElement('p');
   rules.className = 'boggle-opening-rules';
-  rules.textContent = 'Three rounds. Two minutes each. Find words of four letters or more.';
+  rules.textContent = `Three rounds. ${BOGGLE_VARIANT.minutesText} each. Find words of four letters or more.`;
   const startButton = document.createElement('button');
   startButton.className = 'arcade-btn';
   startButton.type = 'button';

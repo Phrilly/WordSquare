@@ -6,13 +6,25 @@ function autoVer(string $url): string
     $path = __DIR__ . '/' . $url;
     return $url . '?v=' . (file_exists($path) ? filemtime($path) : time());
 }
+
+// sloggle.php sets $boggleVariant before including this file; direct visits are plain Boggle.
+$isSloggle = isset($boggleVariant) && $boggleVariant === 'sloggle';
+$variantId = $isSloggle ? 'sloggle' : 'boggle';
+$variantName = $isSloggle ? 'Sloggle' : 'Boggle';
+$roundMinutes = $isSloggle ? 5 : 2;
+$roundWords = $isSloggle ? 'five-minute' : 'two-minute';
+$variantConfig = [
+    'variant' => $variantId,
+    'name' => $variantName,
+    'seconds' => $roundMinutes * 60,
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Word Square - Boggle</title>
+  <title>Word Square - <?= $isSloggle ? 'Sloggle (Slow Boggle)' : 'Boggle' ?></title>
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/base.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/board.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/leaderboard.css'), ENT_QUOTES, 'UTF-8') ?>">
@@ -20,11 +32,17 @@ function autoVer(string $url): string
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/effects.css'), ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars(autoVer('css/boggle.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
-<body class="boggle-page">
+<body class="boggle-page<?= $isSloggle ? ' sloggle-page' : '' ?>">
   <main class="boggle-app">
+<?php if ($isSloggle): ?>
+    <div class="sloggle-banner" role="note">
+      <span class="sloggle-banner-name">SLOGGLE</span>
+      <span class="sloggle-banner-sub">SLOW BOGGLE &middot; 5 MINUTES PER ROUND</span>
+    </div>
+<?php endif; ?>
     <header class="boggle-header">
       <div>
-        <div class="boggle-label">BOGGLE</div>
+        <div class="boggle-label"><?= htmlspecialchars(strtoupper($variantName), ENT_QUOTES, 'UTF-8') ?></div>
         <div id="boggle-round"><span>ROUND</span><span id="round-val">1</span><span>OF</span><span>3</span></div>
       </div>
       <div>
@@ -34,13 +52,13 @@ function autoVer(string $url): string
       <button id="boggle-timer" type="button" aria-label="Open detailed high scores" title="Open detailed high scores">
         <span class="boggle-label">TIME</span>
         <span class="boggle-timer-value">
-          <span id="timer-min" class="mini-tile header-tile">2</span>
+          <span id="timer-min" class="mini-tile header-tile"><?= $roundMinutes ?></span>
           <span class="timer-separator" aria-hidden="true">:</span>
           <span id="timer-sec1" class="mini-tile header-tile">0</span>
           <span id="timer-sec2" class="mini-tile header-tile">0</span>
         </span>
       </button>
-      <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open Boggle help" title="Help">?</button>
+      <button id="boggle-help-button" class="arcade-btn mini-btn boggle-help-button" type="button" aria-label="Open <?= htmlspecialchars($variantName, ENT_QUOTES, 'UTF-8') ?> help" title="Help">?</button>
     </header>
     <div class="boggle-max-bar is-idle" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Score progress towards the maximum for boards played so far">
       <div class="boggle-max-bar-track">
@@ -67,7 +85,7 @@ function autoVer(string $url): string
           <li><strong>Dictionary:</strong> dict_en_v17</li>
           <li>General English dictionary. Proper nouns, offensive entries, and non-game words are filtered out.</li>
           <li>UK spellings are normalised: COLOUR, ORGANISE, THEATRE.</li>
-          <li>Play three two-minute rounds on 5x5 boards.</li>
+          <li>Play three <?= $roundWords ?> rounds on 5x5 boards.</li>
           <li>Join touching tiles horizontally, vertically, or diagonally. Do not reuse a tile.</li>
           <li>Words need at least four letters: 4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11 points.</li>
           <li>Desktop: click the first tile, glide through the path, then click the final tile.</li>
@@ -75,6 +93,9 @@ function autoVer(string $url): string
           <li>The first tile is green while a desktop path is active; the final clicked tile is gold.</li>
           <li>Backspace removes one tile. Press Escape on desktop, press and hold any board tile on touch devices, or use X to clear the full selection.</li>
           <li>Invalid words show red outlines. Already-found words show yellow outlines. Click any tile to clear either rejected path.</li>
+<?php if ($isSloggle): ?>
+          <li>Sloggle is Slow Boggle: the same rules as Boggle with five minutes per round. It has its own boards and its own high scores.</li>
+<?php endif; ?>
           <li>Every player receives the same three daily boards.</li>
         </ul>
         <button id="boggle-close-help" class="arcade-btn" type="button">CLOSE</button>
@@ -85,6 +106,7 @@ function autoVer(string $url): string
       <ul id="boggle-found-list"></ul>
     </section>
   </main>
+  <script>window.BOGGLE_CONFIG = <?= json_encode($variantConfig, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;</script>
   <script src="<?= htmlspecialchars(autoVer('js/boggle.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 </body>
 </html>

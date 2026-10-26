@@ -125,14 +125,41 @@ function isMissingColumnError(PDOException $e): bool
 }
 
 /**
+ * Only known variant names are accepted; anything else is rejected rather than guessed.
+ * A missing value means 'boggle' so pages cached before Sloggle existed keep working.
+ */
+function normaliseBoggleVariant(mixed $variant): ?string
+{
+    if ($variant === null || $variant === '') {
+        return 'boggle';
+    }
+    if (!is_string($variant)) {
+        return null;
+    }
+
+    $variant = strtolower(trim($variant));
+    return in_array($variant, ['boggle', 'sloggle'], true) ? $variant : null;
+}
+
+/**
+ * Maps a validated variant to its table. Table names cannot be bound as parameters,
+ * so they come from this fixed list and never from request data.
+ */
+function boggleTableForVariant(string $variant): string
+{
+    return $variant === 'sloggle' ? 'sloggle_highscores' : 'boggle_highscores';
+}
+
+/**
  * Falls back to the legacy query so Boggle keeps working before the round_scores migration is applied.
  *
  * @return list<array<string, mixed>>
  */
-function fetchBoggleHighscoreRows(PDO $pdo): array
+function fetchBoggleHighscoreRows(PDO $pdo, string $variant = 'boggle'): array
 {
+    $table = boggleTableForVariant($variant);
     $baseSql = "
-        FROM boggle_highscores
+        FROM {$table}
         WHERE DATE(created_at) = CURDATE()
         ORDER BY score DESC, created_at ASC, id ASC
         LIMIT 8
@@ -151,12 +178,13 @@ function fetchBoggleHighscoreRows(PDO $pdo): array
 /**
  * @param list<int>|null $roundScores
  */
-function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $wordsJson, ?array $roundScores): void
+function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $wordsJson, ?array $roundScores, string $variant = 'boggle'): void
 {
+    $table = boggleTableForVariant($variant);
     try {
         $roundScoresJson = $roundScores === null ? null : json_encode($roundScores, JSON_THROW_ON_ERROR);
         $stmt = $pdo->prepare("
-            INSERT INTO boggle_highscores (initials, score, words_json, round_scores)
+            INSERT INTO {$table} (initials, score, words_json, round_scores)
             VALUES (:initials, :score, :words_json, :round_scores)
         ");
         $stmt->execute([
@@ -171,7 +199,7 @@ function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $w
         }
         error_log('validate.php boggle round_scores column missing; saving without it.');
         $stmt = $pdo->prepare("
-            INSERT INTO boggle_highscores (initials, score, words_json)
+            INSERT INTO {$table} (initials, score, words_json)
             VALUES (:initials, :score, :words_json)
         ");
         $stmt->execute([':initials' => $initials, ':score' => $score, ':words_json' => $wordsJson]);
@@ -367,12 +395,27 @@ function calculateGridScoreForMode(string $gridString, string $mode, PDO $pdo, a
  * 2026-09-17 cutover to a pure day-of-week schedule.
  * 
  * @param DateTimeImmutable $date The date to calculate the mode for
- * @return string The mode: 'bomb', 'scrabble', 'lookahead', 'topup', 'tetris', 'boggle', or 'classic'
+ * @return string The mode: 'bomb', 'scrabble', 'lookahead', 'topup', 'tetris', 'boggle', 'sloggle', or 'classic'
  */
 function getModeForDate(DateTimeImmutable $date): string
 {
     $target = $date->setTime(0, 0, 0)->setTimezone(new DateTimeZone('UTC'));
+    $scheduleV3Cutover = new DateTimeImmutable('2026-11-02 00:00:00', new DateTimeZone('UTC'));
     $scheduleV2Cutover = new DateTimeImmutable('2026-09-17 00:00:00', new DateTimeZone('UTC'));
+
+    // From 2026-11-02 Classic is retired and Sloggle (Slow Boggle) takes Sunday.
+    if ($target >= $scheduleV3Cutover) {
+        $v3Schedule = [
+            1 => 'lookahead',
+            2 => 'bomb',
+            3 => 'boggle',
+            4 => 'scrabble',
+            5 => 'topup',
+            6 => 'tetris',
+            7 => 'sloggle',
+        ];
+        return $v3Schedule[(int) $target->format('N')];
+    }
 
     if ($target >= $scheduleV2Cutover) {
         $isoWeekday = (int) $target->format('N'); // 1 = Monday ... 7 = Sunday
@@ -600,8 +643,12 @@ if (isset($input['action'])) {
     }
 
     if ($action === 'get_boggle_highscores') {
+        $variant = normaliseBoggleVariant($input['variant'] ?? null);
+        if ($variant === null) {
+            jsonResponse(['error' => 'Invalid Boggle variant.'], 400);
+        }
         try {
-            $scores = fetchBoggleHighscoreRows($pdo);
+            $scores = fetchBoggleHighscoreRows($pdo, $variant);
             foreach ($scores as &$score) {
                 $words = json_decode((string)($score['words_json'] ?? '[]'), true);
                 $score['words'] = is_array($words) ? array_values(array_filter($words, 'is_string')) : [];
@@ -617,6 +664,10 @@ if (isset($input['action'])) {
     }
 
     if ($action === 'save_boggle_highscore') {
+        $variant = normaliseBoggleVariant($input['variant'] ?? null);
+        if ($variant === null) {
+            jsonResponse(['error' => 'Invalid Boggle variant.'], 400);
+        }
         $initials = normaliseInitials($input['initials'] ?? null);
         $score = isset($input['score']) ? (int)$input['score'] : -1;
         if ($score < 0 || $score > 100000) {
@@ -640,12 +691,13 @@ if (isset($input['action'])) {
         $roundScores = normaliseBoggleRoundScores($input['round_scores'] ?? null, $score);
 
         try {
-            insertBoggleHighscore($pdo, $initials, $score, $wordsJson, $roundScores);
+            insertBoggleHighscore($pdo, $initials, $score, $wordsJson, $roundScores, $variant);
             $newId = (int)$pdo->lastInsertId();
 
+            $scoreTable = boggleTableForVariant($variant);
             $topScoreStmt = $pdo->query("
                 SELECT id
-                FROM boggle_highscores
+                FROM {$scoreTable}
                 WHERE DATE(created_at) = CURDATE()
                 ORDER BY score DESC, created_at ASC, id ASC
                 LIMIT 1
@@ -671,7 +723,7 @@ if (isset($input['action'])) {
         // Boggle runs on its own page and records to boggle_highscores. The main
         // game exposes no isBoggleDay flag in GAME_CONFIG, so on Boggle days it
         // falls back to Classic - which is this endpoint's legitimate daily mode.
-        $expectedMode = ($dailyMode === 'boggle') ? 'classic' : $dailyMode;
+        $expectedMode = in_array($dailyMode, ['boggle', 'sloggle'], true) ? 'classic' : $dailyMode;
 
         if ($mode !== $expectedMode) {
             jsonResponse(['error' => 'Score mode does not match today\'s daily challenge.'], 400);

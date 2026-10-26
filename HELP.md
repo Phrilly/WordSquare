@@ -10,7 +10,21 @@
 - Letters stay on the board after placement unless removed by a mode mechanic (for example, Tetris clears or bombs).
 - Daily games are ranked on mode-specific leaderboards.
 
-## Daily 7-Day Variant Schedule
+## Daily Variant Schedule (from 2026-11-02)
+- Monday: Lookahead
+- Tuesday: Bomb
+- Wednesday: Boggle
+- Thursday: Scrabble
+- Friday: Top Up
+- Saturday: Tetris
+- Sunday: Sloggle (Slow Boggle: Boggle with 5-minute rounds, own boards and own high scores in `sloggle_highscores`)
+
+Classic is retired from the daily rotation (still reachable with `?mode=classic`). Earlier schedules are preserved in `getModeForDate()` so history resolves unchanged.
+
+## Previous 7-Day Variant Schedule (2026-09-17 to 2026-11-01)
+- Monday: Classic, Tuesday: Lookahead, Wednesday: Bomb, Thursday: Scrabble, Friday: Top Up, Saturday: Tetris, Sunday: Boggle
+
+## Original 7-Day Cycle (before 2026-09-17)
 - Day 0: Bomb
 - Day 1: Scrabble
 - Day 2: Lookahead

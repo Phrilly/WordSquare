@@ -27,8 +27,21 @@ $daysSinceEpoch = (int) floor((time() - $epochTimestamp) / 86400);
 
 // New weekday-based schedule takes effect from 2026-09-17 onward; earlier dates keep the original cycle.
 $scheduleV2CutoverTimestamp = strtotime('2026-09-17 00:00:00 UTC');
+// From 2026-11-02 Classic is retired, the week shifts up a day, Boggle moves to Wednesday and Sloggle takes Sunday.
+$scheduleV3CutoverTimestamp = strtotime('2026-11-02 00:00:00 UTC');
+$isSloggleDay = false;
 
-if (time() >= $scheduleV2CutoverTimestamp) {
+if (time() >= $scheduleV3CutoverTimestamp) {
+  $todayIsoWeekday = (int) gmdate('N', time()); // 1 = Monday ... 7 = Sunday
+  $isLookaheadDay = ($todayIsoWeekday === 1); // Monday
+  $isBombDay      = ($todayIsoWeekday === 2); // Tuesday
+  $isBoggleDay    = ($todayIsoWeekday === 3); // Wednesday
+  $isScrabbleDay  = ($todayIsoWeekday === 4); // Thursday
+  $isTopUpDay     = ($todayIsoWeekday === 5); // Friday
+  $isTetrisDay    = ($todayIsoWeekday === 6); // Saturday
+  $isSloggleDay   = ($todayIsoWeekday === 7); // Sunday
+  $isCommonDay    = false;                    // retired
+} elseif (time() >= $scheduleV2CutoverTimestamp) {
   $todayIsoWeekday = (int) gmdate('N', time()); // 1 = Monday ... 7 = Sunday
   $isBombDay      = ($todayIsoWeekday === 3); // Wednesday
   $isScrabbleDay  = ($todayIsoWeekday === 4); // Thursday
@@ -90,11 +103,21 @@ if ($requestedMode !== '') {
       $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = true; $isTopUpDay = false;
     } elseif ($mode === 'topup') {
       $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = true;
+    } elseif ($mode === 'sloggle') {
+      $isBombDay = false; $isLookaheadDay = false; $isScrabbleDay = false; $isCommonDay = false; $isTetrisDay = false; $isBoggleDay = false; $isTopUpDay = false; $isSloggleDay = true;
+    }
+    if (in_array($mode, ['classic', 'bomb', 'lookahead', 'scrabble', 'mfd', 'common', 'tetris', 'boggle', 'topup'], true)) {
+      $isSloggleDay = false;
     }
 }
 
 if ($isBoggleDay) {
     header('Location: boggle.php', true, 302);
+    exit;
+}
+
+if ($isSloggleDay) {
+    header('Location: sloggle.php', true, 302);
     exit;
 }
 
@@ -116,7 +139,7 @@ if ($isBombDay) {
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 
 // Single source of truth for the version shown in the footer and the help screen.
-$appVersion = '1.3.10';
+$appVersion = '1.4.0';
 ?>
 <!DOCTYPE html>
 <html lang="en">

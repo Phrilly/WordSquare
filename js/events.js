@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'tetris') return 'Tetris';
     if (mode === 'mfd') return 'My First Dictionary (MFD)';
     if (mode === 'boggle') return 'Boggle';
+    if (mode === 'sloggle') return 'Sloggle (Slow Boggle)';
     if (mode === 'topup') return 'Top Up';
     return 'Classic';
   };
@@ -45,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'boggle') {
       return 'Boggle uses three timed 5x5 word-path boards with cumulative scoring.';
     }
+    if (mode === 'sloggle') {
+      return 'Sloggle is Slow Boggle: three 5-minute 5x5 word-path boards with cumulative scoring and its own high scores.';
+    }
     if (mode === 'topup') {
       return 'Top Up mode is active: click completed 5-letter words to clear them. Each 3- or 4-letter path and each 5-letter word scores once per game; reverse spellings count as the same 5-letter word.';
     }
@@ -54,7 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const getScheduleDebugInfo = () => {
     const now = new Date();
     const utcDate = now.toISOString().slice(0, 10);
+    const scheduleV3CutoverMs = Date.UTC(2026, 10, 2, 0, 0, 0); // 2026-11-02
     const scheduleV2CutoverMs = Date.UTC(2026, 8, 17, 0, 0, 0); // 2026-09-17
+
+    if (now.getTime() >= scheduleV3CutoverMs) {
+      const isoWeekday = ((now.getUTCDay() + 6) % 7) + 1; // 1 = Monday ... 7 = Sunday
+      const v3Modes = { 1: 'lookahead', 2: 'bomb', 3: 'boggle', 4: 'scrabble', 5: 'topup', 6: 'tetris', 7: 'sloggle' };
+
+      return { utcDate, daysSinceEpoch: null, cycleDay: isoWeekday, computedMode: v3Modes[isoWeekday] };
+    }
 
     if (now.getTime() >= scheduleV2CutoverMs) {
       const isoWeekday = ((now.getUTCDay() + 6) % 7) + 1; // 1 = Monday ... 7 = Sunday
@@ -98,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
     const helpVersion = configuredVersion !== '' ? configuredVersion : 'unknown';
     const helpChanges = [
+      '1.4.0 adds Sloggle (Slow Boggle, 5 minutes per round) on Sundays with its own high scores. Boggle moves to Wednesday, Classic is retired, Lookahead moves to Monday and Bomb to Tuesday. The new schedule starts on 2026-11-02.',
       '1.3.10 reads the on-screen keyboard from the outer WordPress page (the game runs inside an iframe) and shows the debug strip when ?debug=1 is on either address.',
       '1.3.9 adds a diagnostic strip for the TRY IT panel (add ?debug=1 to the page address).',
       '1.3.8 adds a fallback so the TRY IT panel is pinned above the keyboard whenever scrolling cannot reveal it.',
@@ -130,15 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Letters stay on the board unless removed by a mode mechanic (for example, Tetris clears or bombs).</li>
       </ul>
 
-      <h3>Daily Schedule (Mon-Sun, from 2026-09-17)</h3>
+      <h3>Daily Schedule (Mon-Sun, from 2026-11-02)</h3>
       <ul>
-        <li>Monday: Classic</li>
-        <li>Tuesday: Lookahead</li>
-        <li>Wednesday: Bomb</li>
+        <li>Monday: Lookahead</li>
+        <li>Tuesday: Bomb</li>
+        <li>Wednesday: Boggle</li>
         <li>Thursday: Scrabble</li>
         <li>Friday: Top Up</li>
         <li>Saturday: Tetris</li>
-        <li>Sunday: Boggle</li>
+        <li>Sunday: Sloggle (Slow Boggle, 5 minutes per round)</li>
       </ul>
 
       <h3>Scoring Notes</h3>
