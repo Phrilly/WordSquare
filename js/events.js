@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
     const helpVersion = configuredVersion !== '' ? configuredVersion : 'unknown';
     const helpChanges = [
+      '1.5.0 marks first goes on the high score tables: a 1 marker for every score that was a player\'s first attempt of the day at that game, and a trophy for the best first-go score. First goes are tracked per device (clearing browser data resets it), and a name that already has a score for that game today is never marked again.',
       '1.4.1 makes Yesterday\'s Champion wait for you: view yesterday\'s high score table (scores only), close it, then press the arrow to play today\'s game.',
       '1.4.0 adds Sloggle (Slow Boggle, 5 minutes per round) on Sundays with its own high scores. Boggle moves to Wednesday, Classic is retired, Lookahead moves to Monday and Bomb to Tuesday. The new schedule starts on 2026-10-26.',
       '1.3.10 reads the on-screen keyboard from the outer WordPress page (the game runs inside an iframe) and shows the debug strip when ?debug=1 is on either address.',

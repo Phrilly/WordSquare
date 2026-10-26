@@ -69,6 +69,8 @@ function renderYesterdaysScores(data) {
     return;
   }
 
+  const markers = typeof window.WSFirstGo !== 'undefined' ? window.WSFirstGo.markersFor(data.scores) : [];
+
   data.scores.forEach((entry, index) => {
     const item = document.createElement('li');
     const initials = String(entry.initials || '---').substring(0, 3);
@@ -78,12 +80,22 @@ function renderYesterdaysScores(data) {
     const name = document.createElement('span');
     name.className = 'winner-scores-name';
     name.textContent = initials;
+    const marker = document.createElement('span');
+    marker.className = 'winner-scores-marker';
+    marker.textContent = markers[index] || '';
     const score = document.createElement('span');
     score.className = 'winner-scores-value';
     score.textContent = String(Number(entry.score) || 0);
-    item.append(rank, name, score);
+    item.append(rank, name, marker, score);
     list.appendChild(item);
   });
+
+  if (markers.some(marker => marker !== '')) {
+    const legend = document.createElement('li');
+    legend.className = 'winner-scores-empty winner-scores-legend';
+    legend.textContent = window.WSFirstGo.legend;
+    list.appendChild(legend);
+  }
 }
 
 /**
@@ -379,6 +391,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (openingScreen && openingGrid) {
     openingGrid.innerHTML = '';
     let highscores = (hsData && Array.isArray(hsData.highscores)) ? hsData.highscores : [];
+    const openingMarkers = typeof window.WSFirstGo !== 'undefined' ? window.WSFirstGo.markersFor(highscores) : [];
     
     if (highscores.length > 0) {
       for (let r = 0; r < 8; r++) {
@@ -399,6 +412,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         let sep = document.createElement('div');
         sep.className = 'grid-cell';
+        if (scoreData && openingMarkers[r]) {
+          sep.classList.add('first-go-cell');
+          sep.textContent = openingMarkers[r];
+        }
         openingGrid.appendChild(sep);
         
         let scoreStr = scoreData && scoreData.score != null ? String(scoreData.score).padStart(3, ' ') : '   ';

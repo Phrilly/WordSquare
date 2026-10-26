@@ -107,6 +107,7 @@ $variantConfig = [
     </section>
   </main>
   <script>window.BOGGLE_CONFIG = <?= json_encode($variantConfig, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;</script>
+  <script src="<?= htmlspecialchars(autoVer('js/first-go.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
   <script src="<?= htmlspecialchars(autoVer('js/boggle.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 </body>
 </html>

@@ -151,6 +151,29 @@
   margin-left: auto;
 }
 
+.lb-first-go {
+  min-width: 1.4em;
+  margin-left: 6px;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.grid-cell.first-go-cell {
+  font-size: 55%;
+}
+
+.leaderboard-list li.lb-first-go-legend {
+  justify-content: center;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--highlight);
+  cursor: default;
+  border: none;
+  background: transparent;
+}
+
 .leaderboard-list li.is-top-score .lb-row-container {
   background: linear-gradient(180deg, rgba(255, 215, 0, 0.16), rgba(255, 170, 0, 0.06));
   border: 1px solid rgba(255, 215, 0, 0.35);

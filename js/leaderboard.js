@@ -113,7 +113,8 @@ async function submitHighscore() {
         session_id: typeof sessionId !== 'undefined' ? sessionId : '',
         score: typeof currentScore !== 'undefined' ? currentScore : 0, 
         grid: gridString,
-        word_events: getSubmittedWordEvents()
+        word_events: getSubmittedWordEvents(),
+        first_go: typeof window.WSFirstGo !== 'undefined' && window.WSFirstGo.isCurrentAttemptFirst()
     };
     
     // NOTE: the DL/DW layout is deliberately not sent. validate.php derives it
@@ -213,6 +214,10 @@ async function loadLeaderboard() {
         if (viewWinningBtn) viewWinningBtn.style.display = 'none';
       }
 
+      const firstGoMarkers = typeof window.WSFirstGo !== 'undefined'
+        ? window.WSFirstGo.markersFor(data.highscores)
+        : [];
+
       data.highscores.forEach((entry, index) => {
         let initials = (entry.initials || '---').padEnd(3, '-').substring(0, 3);
         let initialsHtml = '';
@@ -228,10 +233,13 @@ async function loadLeaderboard() {
             <div style="display:flex; align-items:center;">
               <div class="lb-rank">${index + 1}.</div>
               <div class="lb-initials-group">${initialsHtml}</div>
+              <span class="lb-first-go" title="First go of the day"></span>
             </div>
             <div class="lb-score-tile">${entry.score}</div>
           </div>
         `;
+        li.querySelector('.lb-first-go').textContent = firstGoMarkers[index] || '';
+        if (firstGoMarkers[index]) li.classList.add('has-first-go');
         li.addEventListener('click', () => {
           showBoardViewer(
             index === 0 ? "👑 #1 BOARD 👑" : `BOARD BY ${initials}`,
@@ -244,6 +252,13 @@ async function loadLeaderboard() {
         });
         listEl.appendChild(li);
       });
+
+      if (firstGoMarkers.some(marker => marker !== '')) {
+        const legend = document.createElement('li');
+        legend.className = 'lb-first-go-legend';
+        legend.textContent = window.WSFirstGo.legend;
+        listEl.appendChild(legend);
+      }
     } else {
       const viewWinningBtn = document.getElementById('view-winning-btn');
       if (viewWinningBtn) viewWinningBtn.style.display = 'none';

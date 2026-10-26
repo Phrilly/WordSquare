@@ -327,6 +327,17 @@
   font-weight: bold;
 }
 
+.winner-scores-marker {
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.winner-scores-list .winner-scores-legend {
+  background: transparent;
+  font-size: 12px;
+  color: var(--highlight);
+}
+
 .winner-scores-list .winner-scores-empty {
   justify-content: center;
 }

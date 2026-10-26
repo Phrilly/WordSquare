@@ -569,7 +569,7 @@ function createRoundScoreTiles(entry) {
   return group;
 }
 
-function createLeaderboardRow(entry, index, isInteractive = true, showRounds = false) {
+function createLeaderboardRow(entry, index, isInteractive = true, showRounds = false, marker = '') {
   const item = document.createElement('li');
   item.classList.add('boggle-score-entry');
   if (index === 0) item.classList.add('is-top-score');
@@ -595,6 +595,13 @@ function createLeaderboardRow(entry, index, isInteractive = true, showRounds = f
   score.className = 'lb-score-tile';
   score.textContent = String(entry.score);
   row.append(rank, initialsGroup);
+  if (marker !== '') {
+    const markerEl = document.createElement('span');
+    markerEl.className = 'lb-first-go';
+    markerEl.title = 'First go of the day';
+    markerEl.textContent = marker;
+    row.append(markerEl);
+  }
   if (showRounds) {
     row.classList.add('has-rounds');
     row.append(createRoundScoreTiles(entry));
@@ -623,7 +630,15 @@ function renderLeaderboard(scores, target, isInteractive = true, showRounds = fa
     target.replaceChildren(item);
     return;
   }
-  target.replaceChildren(...scores.map((entry, index) => createLeaderboardRow(entry, index, isInteractive, showRounds)));
+  const markers = window.WSFirstGo ? window.WSFirstGo.markersFor(scores) : [];
+  const rows = scores.map((entry, index) => createLeaderboardRow(entry, index, isInteractive, showRounds, markers[index] || ''));
+  if (markers.some(marker => marker !== '')) {
+    const legend = document.createElement('li');
+    legend.className = 'lb-first-go-legend';
+    legend.textContent = window.WSFirstGo.legend;
+    rows.push(legend);
+  }
+  target.replaceChildren(...rows);
 }
 
 async function getLeaderboardScores() {
@@ -663,7 +678,7 @@ async function saveLeaderboardScore(score, initials) {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'save_boggle_highscore', variant: BOGGLE_VARIANT.id, initials, score, words: state.roundWords.flat(), round_scores: state.roundScores })
+    body: JSON.stringify({ action: 'save_boggle_highscore', variant: BOGGLE_VARIANT.id, initials, score, words: state.roundWords.flat(), round_scores: state.roundScores, first_go: Boolean(window.WSFirstGo && window.WSFirstGo.isCurrentAttemptFirst()) })
   });
   if (!response.ok) throw new Error('Unable to save Boggle score.');
 
@@ -1121,6 +1136,7 @@ function startRound(round) {
 }
 
 function startMatch() {
+  if (window.WSFirstGo) window.WSFirstGo.beginAttempt(BOGGLE_VARIANT.id);
   state.roundScores = [];
   state.roundWords = [];
   state.maxRoundScores = [];

@@ -139,7 +139,7 @@ if ($isBombDay) {
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 
 // Single source of truth for the version shown in the footer and the help screen.
-$appVersion = '1.4.1';
+$appVersion = '1.5.0';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -441,6 +441,7 @@ $appVersion = '1.4.1';
   <div class="version-tag">Version <?= htmlspecialchars($appVersion, ENT_QUOTES, 'UTF-8') ?></div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
+  <script src="<?= autoVer('js/first-go.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>
   <script src="<?= autoVer('js/render.js') ?>" defer></script>
   <script src="<?= autoVer('js/gameplay.js') ?>" defer></script>

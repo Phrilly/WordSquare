@@ -172,6 +172,7 @@ function autoVer($url) {
   <div class="version-tag">Version Dynamic Auto-Versioning</div>
 
   <script src="<?= autoVer('js/state.js') ?>" defer></script>
+  <script src="<?= autoVer('js/first-go.js') ?>" defer></script>
   <script src="<?= autoVer('js/utils.js') ?>" defer></script>
   <script src="<?= autoVer('js/render.js') ?>" defer></script>
   <script src="<?= autoVer('js/gameplay.js') ?>" defer></script>
