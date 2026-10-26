@@ -248,6 +248,89 @@
   text-align: center;
 }
 
+.winner-score {
+  margin: 8px 0 20px;
+  color: #fff;
+  font-size: 20px;
+  text-align: center;
+}
+
+.winner-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.winner-actions[hidden],
+.winner-scores-panel[hidden],
+.winner-overlay [hidden] {
+  display: none;
+}
+
+.winner-play-arrow {
+  min-width: 96px;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.winner-scores-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(92vw, 360px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.winner-scores-title {
+  color: var(--highlight);
+  margin: 0 0 14px;
+  font-size: 22px;
+  text-align: center;
+}
+
+.winner-scores-list {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  width: 100%;
+}
+
+.winner-scores-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 20px;
+}
+
+.winner-scores-list li:first-child {
+  color: #FFD700;
+}
+
+.winner-scores-rank {
+  width: 2em;
+}
+
+.winner-scores-name {
+  flex: 1;
+  letter-spacing: 0.15em;
+  font-weight: bold;
+}
+
+.winner-scores-value {
+  font-weight: bold;
+}
+
+.winner-scores-list .winner-scores-empty {
+  justify-content: center;
+}
+
 .help-fab {
   position: fixed;
   right: 16px;

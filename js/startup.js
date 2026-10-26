@@ -23,23 +23,145 @@ function triggerMiniWinnerBurst() {
   document.body.appendChild(fragment);
 }
 
-function showWinnerOverlay(initials) {
+const WINNER_MODE_NAMES = {
+  classic: 'Classic',
+  bomb: 'Bomb',
+  scrabble: 'Scrabble',
+  lookahead: 'Lookahead',
+  topup: 'Top Up',
+  tetris: 'Tetris',
+  boggle: 'Boggle',
+  sloggle: 'Sloggle'
+};
+
+/**
+ * Fetch yesterday's top scores. Only initials and scores are returned, so the
+ * table has no per-game detail to click through to.
+ */
+async function fetchYesterdaysScores() {
+  const response = await fetch('validate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_yesterdays_scores' })
+  });
+  if (!response.ok) throw new Error('Unable to load yesterday\'s scores.');
+  const data = await response.json();
+  return {
+    mode: typeof data.mode === 'string' ? data.mode : '',
+    scores: Array.isArray(data.scores) ? data.scores : []
+  };
+}
+
+function renderYesterdaysScores(data) {
+  const title = document.getElementById('winner-scores-title');
+  const list = document.getElementById('winner-scores-list');
+  if (!title || !list) return;
+
+  const modeName = WINNER_MODE_NAMES[data.mode] || '';
+  title.textContent = modeName ? 'YESTERDAY\'S ' + modeName.toUpperCase() + ' SCORES' : 'YESTERDAY\'S SCORES';
+  list.replaceChildren();
+
+  if (data.scores.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'winner-scores-empty';
+    empty.textContent = 'No scores.';
+    list.appendChild(empty);
+    return;
+  }
+
+  data.scores.forEach((entry, index) => {
+    const item = document.createElement('li');
+    const initials = String(entry.initials || '---').substring(0, 3);
+    const rank = document.createElement('span');
+    rank.className = 'winner-scores-rank';
+    rank.textContent = (index + 1) + '.';
+    const name = document.createElement('span');
+    name.className = 'winner-scores-name';
+    name.textContent = initials;
+    const score = document.createElement('span');
+    score.className = 'winner-scores-value';
+    score.textContent = String(Number(entry.score) || 0);
+    item.append(rank, name, score);
+    list.appendChild(item);
+  });
+}
+
+/**
+ * Show yesterday's champion and wait. The player can open yesterday's high
+ * score table, close it again, and press the arrow to go on to today's game.
+ */
+function showWinnerOverlay(initials, score) {
   const overlay = document.getElementById('winner-overlay');
   const initialsBox = document.getElementById('winner-initials');
-  
-  if (!overlay || !initialsBox) return;
+  const scoreBox = document.getElementById('winner-score');
+  const actions = document.getElementById('winner-actions');
+  const scoresBtn = document.getElementById('winner-scores-btn');
+  const playBtn = document.getElementById('winner-play-btn');
+  const panel = document.getElementById('winner-scores-panel');
+  const closeBtn = document.getElementById('winner-scores-close');
+  const title = overlay ? overlay.querySelector('.winner-title') : null;
+
+  if (!overlay || !initialsBox || !actions || !scoresBtn || !playBtn || !panel || !closeBtn || !title) return;
+
   initialsBox.textContent = initials;
+  if (scoreBox) {
+    scoreBox.textContent = Number.isFinite(Number(score)) && score !== null ? 'Score: ' + Number(score) : '';
+  }
+
+  const showMain = () => {
+    panel.hidden = true;
+    title.hidden = false;
+    initialsBox.hidden = false;
+    if (scoreBox) scoreBox.hidden = false;
+    actions.hidden = false;
+  };
+
+  const showTable = () => {
+    title.hidden = true;
+    initialsBox.hidden = true;
+    if (scoreBox) scoreBox.hidden = true;
+    actions.hidden = true;
+    panel.hidden = false;
+  };
+
+  scoresBtn.onclick = async () => {
+    const list = document.getElementById('winner-scores-list');
+    const heading = document.getElementById('winner-scores-title');
+    if (heading) heading.textContent = 'YESTERDAY\'S SCORES';
+    if (list) {
+      const loading = document.createElement('li');
+      loading.className = 'winner-scores-empty';
+      loading.textContent = 'Loading...';
+      list.replaceChildren(loading);
+    }
+    showTable();
+    try {
+      renderYesterdaysScores(await fetchYesterdaysScores());
+    } catch (err) {
+      console.error('Could not load yesterday\'s scores', err);
+      if (list) {
+        const failed = document.createElement('li');
+        failed.className = 'winner-scores-empty';
+        failed.textContent = 'Unable to load scores.';
+        list.replaceChildren(failed);
+      }
+    }
+  };
+
+  closeBtn.onclick = showMain;
+
+  playBtn.onclick = () => {
+    overlay.classList.remove('active');
+    setTimeout(() => { overlay.style.display = 'none'; }, 500);
+  };
+
+  showMain();
   overlay.style.display = 'flex';
-  
+
   // Force a browser reflow to guarantee CSS transitions fire
-  void overlay.offsetWidth; 
+  void overlay.offsetWidth;
   overlay.classList.add('active');
   triggerMiniWinnerBurst();
-  
-  setTimeout(() => {
-    overlay.classList.remove('active');
-    setTimeout(() => { overlay.style.display = 'none'; }, 500); 
-  }, BURST_DURATION - 500);
 }
 
 function updateInitialTiles(value) {
@@ -248,7 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (winnerData && winnerData.winner_initials) {
-    showWinnerOverlay(winnerData.winner_initials);
+    showWinnerOverlay(winnerData.winner_initials, winnerData.score);
   }
 
   // 7. Build the Opening Screen safely

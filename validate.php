@@ -980,6 +980,48 @@ if (isset($input['action'])) {
         }
     }
 
+    if ($action === 'get_yesterdays_scores') {
+        try {
+            $yesterdayUtc = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-1 day');
+            $expectedMode = getModeForDate($yesterdayUtc);
+            $dayStart = new DateTimeImmutable($yesterdayUtc->format('Y-m-d') . ' 00:00:00', new DateTimeZone('UTC'));
+            $dayEnd = $dayStart->modify('+1 day');
+
+            // Only the fields every game shares are exposed: no grids or word lists.
+            $stmt = $pdo->prepare("
+                SELECT initials, score
+                FROM daily_scores
+                WHERE created_at >= :day_start
+                  AND created_at < :day_end
+                  AND mode = :mode
+                ORDER BY score DESC, created_at ASC, id ASC
+                LIMIT 8
+            ");
+            $stmt->execute([
+                ':day_start' => $dayStart->format('Y-m-d H:i:s'),
+                ':day_end' => $dayEnd->format('Y-m-d H:i:s'),
+                ':mode' => $expectedMode,
+            ]);
+
+            $scores = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $scores[] = [
+                    'initials' => (string)($row['initials'] ?? ''),
+                    'score' => (int)($row['score'] ?? 0),
+                ];
+            }
+
+            jsonResponse([
+                'mode' => $expectedMode,
+                'date' => $dayStart->format('Y-m-d'),
+                'scores' => $scores,
+            ]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_yesterdays_scores failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to load yesterday\'s scores.'], 500);
+        }
+    }
+
     if ($action === 'get_recent_winners') {
         try {
             $todayUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));

@@ -1165,7 +1165,45 @@ async function showOpeningLeaderboard(initialScores = null) {
   }
 }
 
-function showArrivalCelebration(winner) {
+async function showYesterdaysScores(winner) {
+  state.scoreScreen = 'opening';
+  el.summary.classList.remove('is-celebration', 'is-word-list', 'is-score-entry', 'is-possible-words-expanded');
+  el.summary.classList.add('is-leaderboard');
+  el.summary.replaceChildren();
+
+  const title = document.createElement('h2');
+  title.textContent = 'YESTERDAY\'S SCORES';
+  const scores = document.createElement('ul');
+  scores.className = 'leaderboard-list';
+  scores.textContent = 'Loading...';
+  const closeButton = document.createElement('button');
+  closeButton.className = 'arcade-btn';
+  closeButton.type = 'button';
+  closeButton.textContent = 'CLOSE';
+  closeButton.addEventListener('click', () => showArrivalCelebration(winner, false));
+  el.summary.append(title, scores, closeButton);
+
+  try {
+    const response = await fetch('validate.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_yesterdays_scores' })
+    });
+    if (!response.ok) throw new Error('Unable to load yesterday\'s scores.');
+    const data = await response.json();
+    const rows = Array.isArray(data.scores) ? data.scores : [];
+    const modeName = typeof data.mode === 'string' && data.mode !== ''
+      ? data.mode.charAt(0).toUpperCase() + data.mode.slice(1)
+      : '';
+    if (modeName) title.textContent = `YESTERDAY'S ${modeName.toUpperCase()} SCORES`;
+    renderLeaderboard(rows, scores, false);
+    if (rows.length === 0) scores.firstChild.textContent = 'No scores.';
+  } catch (error) {
+    scores.textContent = 'Unable to load scores.';
+  }
+}
+
+function showArrivalCelebration(winner, withBurst = true) {
   const initials = String(winner.initials || '---').padEnd(3, '-').slice(0, 3);
   state.scoreScreen = 'opening';
   el.previewPanel.hidden = true;
@@ -1183,13 +1221,19 @@ function showArrivalCelebration(winner) {
   champion.textContent = initials;
   const score = document.createElement('p');
   score.textContent = `Score: ${winner.score}`;
+  const scoresButton = document.createElement('button');
+  scoresButton.className = 'arcade-btn';
+  scoresButton.type = 'button';
+  scoresButton.textContent = 'YESTERDAY\'S HIGH SCORES';
+  scoresButton.addEventListener('click', () => showYesterdaysScores(winner));
   const continueButton = document.createElement('button');
   continueButton.className = 'arcade-btn';
   continueButton.type = 'button';
-  continueButton.textContent = 'VIEW TODAY\'S SCORES';
-  continueButton.addEventListener('click', showOpeningLeaderboard);
-  el.summary.append(title, champion, score, continueButton);
-  triggerHighScoreBurst();
+  continueButton.textContent = '\u25B6';
+  continueButton.setAttribute('aria-label', 'Continue to today\'s scores');
+  continueButton.addEventListener('click', () => showOpeningLeaderboard());
+  el.summary.append(title, champion, score, scoresButton, continueButton);
+  if (withBurst) triggerHighScoreBurst();
 }
 
 async function showStartScreen() {
