@@ -20,6 +20,8 @@ require_once __DIR__ . '/scrabble.php';
 // The server owns the daily double-letter / double-word layout. It is published
 // to the client so the board that is rendered is the board that gets scored.
 $dailyScrabbleLayout = generateScrabbleSpecialSquares(scrabbleDailySeed());
+$scrabbleDate = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+$scrabbleShortWordsEnabled = scrabbleShortWordsEnabled($scrabbleDate);
 
 // VARIANT SCHEDULER: 7-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
@@ -139,7 +141,7 @@ if ($isBombDay) {
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 
 // Single source of truth for the version shown in the footer and the help screen.
-$appVersion = '1.5.1';
+$appVersion = '1.5.2';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -175,6 +177,7 @@ $appVersion = '1.5.1';
         isBombDay: <?= json_encode($isBombDay) ?>,
         isLookaheadDay: <?= json_encode($isLookaheadDay) ?>,
       isScrabbleDay: <?= json_encode($isScrabbleDay) ?>,
+      scrabbleShortWordsEnabled: <?= json_encode($scrabbleShortWordsEnabled) ?>,
       isCommonDay: <?= json_encode($isCommonDay) ?>,
       isTetrisDay: <?= json_encode($isTetrisDay) ?>,
       isTopUpDay: <?= json_encode($isTopUpDay) ?>,
@@ -248,6 +251,9 @@ $appVersion = '1.5.1';
 
   <div id="opening-screen" class="opening-screen" style="display:none;">
     <h1 id="opening-title" style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;"><?= htmlspecialchars($leaderboardHeading, ENT_QUOTES, 'UTF-8') ?></h1>
+    <?php if ($isScrabbleDay && scrabbleScoringChangeNoticeEnabled($scrabbleDate)): ?>
+    <p class="scrabble-change-notice"><strong>NEW SCRABBLE SCORING</strong><br>3- and 4-letter words now score too. On the same tiles, only the longer word scores: PARTS scores, not PART.</p>
+    <?php endif; ?>
     <div class="grid-container opening-grid" id="opening-grid">
       </div>
     <?php if ($isTopUpDay): ?>

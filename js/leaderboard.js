@@ -66,17 +66,18 @@ function showBoardViewer(titleText, score, initials, gridChars, themeClass, word
           const bValid = findValidWordsLocalArray(normalizedChars);
           const mode = typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'classic';
 
-          // Scrabble only ever scores 5-letter words, so the reconstructed
-          // highlighting and word lists must ignore shorter matches. Without
-          // this the board viewer paints and lists 3- and 4-letter words that
-          // never earned a single point.
-          const scoringWords = (mode === 'scrabble')
-              ? bValid.filter(word => word.length === 5)
-              : bValid;
+          const scrabblePaths = mode === 'scrabble'
+              ? findScrabbleScoringPaths(normalizedChars, window.GAME_CONFIG.scrabbleShortWordsEnabled)
+              : null;
+          const scoringWords = scrabblePaths ? scrabblePaths.map(item => item.word) : bValid;
 
           const groupedData = buildGroupedWordData(scoringWords);
         
-          applyColorsToSpecificGrid(groupedData.rawScoringWords, normalizedChars, bg);
+          if (scrabblePaths) {
+              applyColorsToScrabblePaths(scrabblePaths, bg);
+          } else {
+              applyColorsToSpecificGrid(groupedData.rawScoringWords, normalizedChars, bg);
+          }
           if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
       }
   }

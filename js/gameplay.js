@@ -389,7 +389,7 @@ function handleHoverEnter(index, cellEl) {
     if (w.length > maxLen) maxLen = w.length;
   });
   const hoverEvent = new CustomEvent('ws:applyHover', {
-      detail: { cellEl: cellEl, maxLen: maxLen, newWords: newWords },
+      detail: { cellEl: cellEl, maxLen: maxLen, newWords: newWords, index: index, previewCells: tempCells },
       cancelable: true
   });
   if (!document.dispatchEvent(hoverEvent)) return;

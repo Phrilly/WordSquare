@@ -419,6 +419,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         openingGrid.appendChild(sep);
         
         let scoreStr = scoreData && scoreData.score != null ? String(scoreData.score).padStart(3, ' ') : '   ';
+        if (scoreStr.length > 3) {
+          const scoreCell = document.createElement('div');
+          scoreCell.className = 'grid-cell filled wide-score';
+          scoreCell.textContent = scoreStr;
+          openingGrid.appendChild(scoreCell);
+          continue;
+        }
         for (let i = 0; i < 3; i++) {
           let c = document.createElement('div');
           c.className = 'grid-cell' + (scoreData && scoreStr[i] !== ' ' ? ' filled' : '');

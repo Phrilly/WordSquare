@@ -57,15 +57,16 @@ Classic is retired from the daily rotation (still reachable with `?mode=classic`
 - No extra scoring modifiers beyond Classic.
 
 ### Scrabble
-- Only 5-letter words score.
-- 3-letter and 4-letter words do not score in Scrabble mode.
-- Score is the sum of Scrabble letter values along each valid 5-letter word path.
+- From 19 November 2026 (UTC), 3-, 4- and 5-letter words score. Before then, only 5-letter words score.
+- If a word is part of a longer word on the same tiles, only the longer word scores: PARTS scores, not PART.
+- A shorter word can still score when it appears separately or crosses a longer word.
+- Score is the sum of Scrabble letter values along each scoring word path.
 - Wildcard tiles (?) are worth 0 points.
 - Double-letter (DL) squares double the value of letters placed on them.
-- Double-word (DW) squares double the entire word score when a 5-letter word passes through them.
+- Double-word (DW) squares double the entire word score when a scoring word passes through them.
 - Special square configuration: 50% chance of 4 DL squares, 50% chance of 2 DL + 1 DW squares.
 - All special squares (DL and DW) are separated by at least one square horizontally and vertically.
-- If the same canonical word appears in multiple paths, the best-scoring path is used.
+- A word and its reverse count together once, using the highest-scoring path.
 
 ### MFD (My First Dictionary) - Retired
 - MFD is retired: it is no longer part of the daily rotation and is not played.
@@ -109,7 +110,7 @@ Classic is retired from the daily rotation (still reachable with `?mode=classic`
 ## Validation Notes
 - All words are validated against the server dictionary.
 - Boggle is the exception: it validates against its own client-side dictionary (`data/dict_en_v17.txt`), not the server dictionary.
-- Scrabble uses a dedicated 5-letter scoring pass with letter-value math.
+- Scrabble uses a dedicated scoring pass with letter-value math.
 - Tetris stores and ranks by its live gameplay score.
 
 MFD (My First Dictionary) is retired and no longer played; see HELP_MFD.md for historic details.

@@ -35,13 +35,12 @@ foreach ($phpLines as $index => $phpLine) {
         continue;
     }
 
-    // Independent invariant: the breakdown must add up to the total, and every
-    // reported word must be a five-letter word.
+    // Independent invariant: the breakdown must add up to the total.
     [$label, $score, $eventList] = array_pad(explode('|', $phpLine, 3), 3, '');
     $total = 0;
     foreach (array_filter(explode(';', $eventList)) as $event) {
         [$word, $points] = array_pad(explode(':', $event, 2), 2, '0');
-        if (strlen($word) !== 5) {
+        if (strlen($word) < 3 || strlen($word) > 5 || ($label === 'legacy' && strlen($word) !== 5)) {
             $failures++;
             echo 'BAD WORD LENGTH in ' . $label . ': ' . $word . PHP_EOL;
         }

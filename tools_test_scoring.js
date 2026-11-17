@@ -1,16 +1,10 @@
-// Scoring harness: mirrors the live ws:calculateScore handler in
-// js/gameplay-scrabble.js and prints "label|score|word:points;..." so it can be
-// diffed against the shared PHP scorer.
-
-const SCRABBLE_VALUES = {
-    A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3,
-    N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
-};
+// Exercise the live Scrabble scorer and compare its output with the PHP fixtures.
+const fs = require('fs');
+const vm = require('vm');
 
 const dictionary = new Set([
-    // 5-letter words that should score
     'HELLO', 'WORLD', 'QUIET', 'PANEL', 'START', 'PARTS', 'STRAP',
-    // 3- and 4-letter words that must never score in Scrabble
+    'PAR', 'PART',
     'HEL', 'ELL', 'HELL', 'WOR', 'WORD', 'ORLD', 'QUI', 'UIE',
     'PAN', 'PANE', 'ANEL', 'STA', 'TAR', 'ART', 'STAR', 'TART',
 ]);
@@ -21,100 +15,96 @@ const cases = [
     ['double-word', 'HELLOWORLDQUIETPANELSTART', [], [1]],
     ['wildcard', 'hELLOWORLDQUIETPANELSTART', [], []],
     ['reverse-pair', 'PARTSZZZZZZZZZZZZZZZSTRAP', [], []],
+    ['reverse-pair-dl', 'PARTSZZZZZZZZZZZZZZZSTRAP', [0], []],
     ['same-word-twice', 'STARTTZZZZAZZZZRZZZZTZZZZ', [], []],
-    ['dl-and-dw', 'HELLOWORLDQUIETPANELSTART', [0, 1], [2]]
+    ['dl-and-dw', 'HELLOWORLDQUIETPANELSTART', [0, 1], [2]],
+    ['overlap', 'PARTS--------------------', [], []],
+    ['overlap-dl', 'PARTS--------------------', [0], []],
+    ['overlap-dw', 'PARTS--------------------', [], [1]],
+    ['overlap-wildcard', 'pARTS--------------------', [], []],
+    ['short-three', 'PAR----------------------', [], []],
+    ['short-four', 'PART---------------------', [], []],
+    ['invalid-extension', 'PARTZ--------------------', [], []],
+    ['separate-path', 'PARTS-----PART-----------', [], []],
+    ['crossing-path', 'PARTS-R----T-------------', [], []],
+    ['legacy', 'PARTS--------------------', [], [], false]
 ];
 
-const lines = [];
+const handlers = {};
+const context = {
+    document: { addEventListener: (name, callback) => { handlers[name] = callback; } },
+    window: { GAME_CONFIG: { isScrabbleDay: true, scrabbleShortWordsEnabled: true } },
+    gameDictionary: dictionary,
+    cells: [],
+    wildcardState: [],
+    currentScore: 0,
+    scoreEl: null,
+    gridEl: null,
+    explodedWords: new Set(),
+    buildGroupedWordData: words => ({ display: { 3: [], 4: [], 5: [] }, rawScoringWords: words }),
+};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync('js/gameplay-scrabble.js', 'utf8'), context);
 
-for (const [label, gridString, dl, dw] of cases) {
-    const cells = [];
-    const wildcardState = [];
-
-    for (const rawChar of gridString) {
-        if (/^[A-Z]$/.test(rawChar)) {
-            cells.push(rawChar);
-            wildcardState.push(false);
-        } else if (/^[a-z]$/.test(rawChar)) {
-            cells.push(rawChar.toUpperCase());
-            wildcardState.push(true);
-        } else {
-            cells.push('');
-            wildcardState.push(false);
-        }
-    }
-
-    const SPECIAL_SQUARES = { dl: dl, dw: dw };
-    let foundPaths = [];
-    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1]];
-
-    for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-            for (const [dr, dc] of dirs) {
-                let path = [];
-                let word = '';
-                for (let step = 0; step < 5; step++) {
-                    const nr = r + (dr * step);
-                    const nc = c + (dc * step);
-                    if (nr < 0 || nr >= 5 || nc < 0 || nc >= 5) break;
-
-                    const idx = nr * 5 + nc;
-                    const letter = cells[idx];
-                    if (!letter) break;
-
-                    path.push(idx);
-                    word += letter;
-
-                    // STRICT 5-LETTER QUALIFICATION
-                    if (word.length === 5 && dictionary.has(word)) {
-                        foundPaths.push({ word: word, path: [...path] });
-                    }
-                }
-            }
-        }
-    }
-
-    let bestScoreForWord = {};
-
-    foundPaths.forEach(item => {
-        const rev = item.word.split('').reverse().join('');
-        const key = item.word < rev ? item.word : rev;
-
-        let pathScore = 0;
-        let hasDW = false;
-
-        item.path.forEach(idx => {
-            const letter = cells[idx].toUpperCase();
-            const isWildcardTile = wildcardState[idx];
-            let val = isWildcardTile ? 0 : (SCRABBLE_VALUES[letter] || 0);
-            if (!isWildcardTile && SPECIAL_SQUARES.dl.includes(idx)) {
-                val *= 2;
-            }
-            pathScore += val;
-
-            if (SPECIAL_SQUARES.dw.includes(idx)) {
-                hasDW = true;
-            }
-        });
-
-        if (hasDW) {
-            pathScore *= 2;
-        }
-
-        if (!bestScoreForWord[key] || pathScore > bestScoreForWord[key].score) {
-            bestScoreForWord[key] = { score: pathScore, word: item.word };
-        }
-    });
-
-    let currentScore = 0;
-    Object.values(bestScoreForWord).forEach(entry => { currentScore += entry.score; });
-
-    const events = Object.values(bestScoreForWord).map(entry => ({
-        word: entry.word,
-        points: entry.score
-    }));
-
-    lines.push(label + '|' + currentScore + '|' + events.map(e => e.word + ':' + e.points).join(';'));
+for (const [label, grid, dl, dw, includeShortWords = true] of cases) {
+    context.window.GAME_CONFIG.scrabbleShortWordsEnabled = includeShortWords;
+    context.cells = Array.from(grid, char => /^[a-z]$/i.test(char) ? char.toUpperCase() : '');
+    context.wildcardState = Array.from(grid, char => /^[a-z]$/.test(char));
+    context.dl = dl;
+    context.dw = dw;
+    vm.runInContext('SPECIAL_SQUARES = { dl, dw };', context);
+    let prevented = false;
+    handlers['ws:calculateScore']({ preventDefault: () => { prevented = true; } });
+    if (!prevented) throw new Error('Scrabble scorer did not handle ' + label);
+    const events = vm.runInContext('scrabbleScoreEvents', context);
+    console.log(label + '|' + context.currentScore + '|' + events.map(event => event.word + ':' + event.points).join(';'));
 }
 
-console.log(lines.join('\n'));
+for (const enabled of [false, true]) {
+    context.window.GAME_CONFIG.scrabbleShortWordsEnabled = enabled;
+    let prevented = false;
+    const classes = [];
+    handlers['ws:applyHover']({
+        preventDefault: () => { prevented = true; },
+        detail: {
+            index: 2,
+            previewCells: Array.from('PAR----------------------', char => char === '-' ? '' : char),
+            cellEl: { classList: { add: name => classes.push(name) } }
+        }
+    });
+    if (!prevented || classes.join(',') !== (enabled ? 'hover-3' : '')) {
+        throw new Error('Incorrect short-word hover behavior for enabled=' + enabled);
+    }
+}
+
+context.window.GAME_CONFIG.scrabbleShortWordsEnabled = true;
+const classes = Array.from({ length: 25 }, () => new Set());
+context.previewClasses = classes;
+context.testContainer = {
+    querySelectorAll: () => classes.map(set => ({
+        classList: {
+            add: name => set.add(name),
+            remove: (...names) => names.forEach(name => set.delete(name))
+        }
+    }))
+};
+context.testCells = Array.from('PARTS-R----T-------------', char => char === '-' ? '' : char);
+vm.runInContext('applyColorsToScrabblePaths(findScrabbleScoringPaths(testCells, true), testContainer)', context);
+if (![0, 1, 2, 3, 4].every(index => classes[index].has('word-5'))
+    || ![6, 11].every(index => classes[index].has('word-3'))
+    || classes[5].size !== 0) {
+    throw new Error('Scrabble highlighting did not preserve the crossing scoring path.');
+}
+
+const hoverClasses = [];
+handlers['ws:applyHover']({
+    preventDefault: () => {},
+    detail: {
+        index: 4,
+        previewCells: Array.from('PARTS--------------------', char => char === '-' ? '' : char),
+        cellEl: { classList: { add: name => hoverClasses.push(name) } }
+    }
+});
+if (hoverClasses.join(',') !== 'hover-5') {
+    throw new Error('Scrabble hover did not preview the longer scoring word.');
+}

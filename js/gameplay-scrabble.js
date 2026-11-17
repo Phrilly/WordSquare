@@ -1,5 +1,5 @@
 // ================================
-// SCRABBLE VARIANT (5-LETTER ONLY)
+// SCRABBLE VARIANT
 // ================================
 
 let scrabblePot = [];
@@ -8,7 +8,7 @@ let currentPotIndex = 0;
 let selectedTrayIndex = -1;
 let scrabbleLastMove = null;
 
-// Per-word breakdown of the live board: one entry per scoring 5-letter word,
+// Per-word breakdown of the live board: one entry per scoring word/reverse pair,
 // valued with Scrabble letter values plus DL/DW multipliers. This mirrors the
 // server generated breakdown and is what the leaderboard tiles display.
 let scrabbleScoreEvents = [];
@@ -403,14 +403,14 @@ document.addEventListener('ws:getHoverLetter', (e) => {
     e.detail.letter = scrabbleTray[selectedTrayIndex] || '';
 });
 
-// Suppress 3 and 4 letter hover previews on Scrabble Day
 document.addEventListener('ws:applyHover', (e) => {
     if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
-    e.preventDefault(); 
-    
-    const maxLen = e.detail.maxLen;
-    if (maxLen === 5) {
-        e.detail.cellEl.classList.add('hover-5');
+    e.preventDefault();
+
+    const paths = findScrabbleScoringPaths(e.detail.previewCells, window.GAME_CONFIG.scrabbleShortWordsEnabled);
+    const maxLen = paths.reduce((max, item) => item.path.includes(e.detail.index) ? Math.max(max, item.word.length) : max, 0);
+    if (maxLen >= 3) {
+        e.detail.cellEl.classList.add('hover-' + maxLen);
     }
 });
 
@@ -501,13 +501,10 @@ document.addEventListener('ws:tileUndone', (e) => {
     renderScrabbleTray();
 });
 
-document.addEventListener('ws:calculateScore', (e) => {
-    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
-
-    e.preventDefault();
-
+function findScrabbleScoringPaths(gridCells, includeShortWords) {
     let foundPaths = [];
     const dirs = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [-1,1], [1,-1]];
+    const minimumLength = includeShortWords ? 3 : 5;
     
     for (let r=0; r<5; r++) {
         for (let c=0; c<5; c++) {
@@ -520,21 +517,48 @@ document.addEventListener('ws:calculateScore', (e) => {
                     if (nr<0 || nr>=5 || nc<0 || nc>=5) break;
                     
                     let idx = nr * 5 + nc;
-                    let letter = cells[idx];
-                    if (!letter) break;
+                    let letter = gridCells[idx];
+                    if (!letter || letter === '-') break;
                     
                     path.push(idx);
                     word += letter;
 
-                    // STRICT 5-LETTER QUALIFICATION
-                    if (word.length === 5 && gameDictionary.has(word)) {
+                    if (word.length >= minimumLength && gameDictionary.has(word)) {
                         foundPaths.push({ word: word, path: [...path] });
                     }
                 }
             }
         }
     }
-    
+    const coveredPaths = new Set();
+    foundPaths.forEach(item => {
+        for (let length = 3; length < item.path.length; length++) {
+            for (let offset = 0; offset <= item.path.length - length; offset++) {
+                const segment = item.path.slice(offset, offset + length);
+                coveredPaths.add(segment.join(','));
+                coveredPaths.add(segment.reverse().join(','));
+            }
+        }
+    });
+    return foundPaths.filter(item => !coveredPaths.has(item.path.join(',')));
+}
+
+function applyColorsToScrabblePaths(paths, containerElement) {
+    const cellEls = containerElement.querySelectorAll('.grid-cell:not(.alpha-cell)');
+    cellEls.forEach(cell => cell.classList.remove('word-3', 'word-4', 'word-5'));
+    [...paths].sort((a, b) => a.word.length - b.word.length).forEach(item => {
+        item.path.forEach(index => {
+            cellEls[index].classList.remove('word-3', 'word-4', 'word-5');
+            cellEls[index].classList.add('word-' + item.word.length);
+        });
+    });
+}
+
+document.addEventListener('ws:calculateScore', (e) => {
+    if (!window.GAME_CONFIG || !window.GAME_CONFIG.isScrabbleDay) return;
+
+    e.preventDefault();
+    const foundPaths = findScrabbleScoringPaths(cells, window.GAME_CONFIG.scrabbleShortWordsEnabled);
     let bestScoreForWord = {};
     let validWordsList = [];
     
@@ -599,7 +623,7 @@ document.addEventListener('ws:calculateScore', (e) => {
     });
 
     if (typeof renderWordListsForBoard === 'function') renderWordListsForBoard(groupedData);
-    if (typeof applyColorsToSpecificGrid === 'function' && gridEl) {
-        applyColorsToSpecificGrid(groupedData.rawScoringWords, cells, gridEl);
+    if (gridEl) {
+        applyColorsToScrabblePaths(foundPaths, gridEl);
     }
 });

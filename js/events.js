@@ -32,7 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return 'Bomb mode is active: hidden bomb cells burn the current queued letter when triggered.';
     }
     if (mode === 'scrabble') {
-      return 'Scrabble mode is active: only 5-letter words score, using letter values and double-letter squares.';
+      return window.GAME_CONFIG && window.GAME_CONFIG.scrabbleShortWordsEnabled
+        ? 'Scrabble mode is active: 3-, 4- and 5-letter words score using letter values and special squares.'
+        : 'Scrabble mode is active: only 5-letter words score, using letter values and special squares.';
     }
     if (mode === 'lookahead') {
       return 'Lookahead mode is active: you can see additional upcoming queue letters.';
@@ -110,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
     const helpVersion = configuredVersion !== '' ? configuredVersion : 'unknown';
     const helpChanges = [
+      '1.5.2 adds Scrabble scoring for 3- and 4-letter words from 2026-11-19 UTC.',
       '1.5.1 gives the Yesterday\'s Champion screen a quieter, more polished look with understated buttons.',
       '1.5.0 marks first goes on the high score tables: a 1 marker for every score that was a player\'s first attempt of the day at that game, and a trophy for the best first-go score. First goes are tracked per device (clearing browser data resets it), and a name that already has a score for that game today is never marked again.',
       '1.4.1 makes Yesterday\'s Champion wait for you: view yesterday\'s high score table (scores only), close it, then press the arrow to play today\'s game.',
@@ -160,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <h3>Scoring Notes</h3>
       <ul>
         <li>Classic/Bomb/Lookahead: 3-letter = 1, 4-letter = 5, 5-letter = 20.</li>
-        <li>Scrabble: only 5-letter words score; 3-letter and 4-letter words do not score.</li>
+        <li>Scrabble: ${window.GAME_CONFIG && window.GAME_CONFIG.scrabbleShortWordsEnabled ? '3-, 4- and 5-letter words score.' : 'Only 5-letter words score until 2026-11-19 UTC.'}</li>
         <li>Scrabble: wildcard tiles score 0; DL squares double letter value and DW squares double whole-word value.</li>
         <li>Tetris: 4-letter clears = 5 and 5-letter clears = 20, with gravity after clears.</li>
       </ul>
@@ -179,10 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3>Scrabble Notes</h3>
       <ul>
-        <li>Only 5-letter words are considered for scoring.</li>
+        <li>From 2026-11-19 UTC, 3-, 4- and 5-letter words score. If a word is part of a longer word on the same tiles, only the longer word scores: PARTS scores, not PART.</li>
+        <li>A shorter word can still score when it appears separately or crosses a longer word.</li>
         <li>Word score is based on Scrabble letter values across the word path.</li>
         <li>Special squares are daily-randomized: 50% chance of 4 DL, or 50% chance of 2 DL + 1 DW.</li>
-        <li>If the same canonical word appears in multiple paths, the highest scoring path is used.</li>
+        <li>A word and its reverse count together once, using the highest-scoring path.</li>
       </ul>
 
       <h3>MFD Notes (Retired)</h3>

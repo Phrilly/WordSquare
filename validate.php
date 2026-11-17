@@ -400,9 +400,11 @@ function calculateClassicGridScore(string $gridString, PDO $pdo, string $mode = 
 /**
  * Score a Scrabble grid and return the authoritative per-word breakdown.
  *
- * Only five-letter words score. Each word is valued with Scrabble letter
+ * From 2026-11-19 UTC, three- to five-letter words score; earlier games score
+ * only five-letter words. Each word is valued with Scrabble letter
  * values; a double-letter square doubles that one letter and a double-word
  * square doubles the finished word. Wildcard tiles are worth 0.
+ * A path contained in a longer valid word path does not score.
  *
  * A word and its reverse are a single scoring entry, so only the highest
  * scoring path of each pair is counted, and only once.
@@ -419,7 +421,7 @@ function calculateScrabbleScoreWithEvents(string $gridString, PDO $pdo, array $d
         return fetchValidWords($candidateWords, $pdo);
     };
 
-    return calculateScrabbleScoreWithResolver($gridString, $resolveValidWords, $dlIndices, $dwIndices);
+    return calculateScrabbleScoreWithResolver($gridString, $resolveValidWords, $dlIndices, $dwIndices, scrabbleShortWordsEnabled());
 }
 
 function calculateScrabbleGridScore(string $gridString, PDO $pdo, array $dlIndices = [], array $dwIndices = []): int

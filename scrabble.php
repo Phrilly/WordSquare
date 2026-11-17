@@ -93,6 +93,22 @@ function scrabbleDailySeed(?DateTimeImmutable $date = null, int $dailyOffset = 0
     return ($sum + $dailyOffset) * 12345;
 }
 
+function scrabbleShortWordsEnabled(?DateTimeImmutable $date = null): bool
+{
+    $utc = new DateTimeZone('UTC');
+    $date = ($date ?? new DateTimeImmutable('now', $utc))->setTimezone($utc);
+
+    return $date >= new DateTimeImmutable('2026-11-19 00:00:00', $utc);
+}
+
+function scrabbleScoringChangeNoticeEnabled(?DateTimeImmutable $date = null): bool
+{
+    $utc = new DateTimeZone('UTC');
+    $date = ($date ?? new DateTimeImmutable('now', $utc))->setTimezone($utc);
+
+    return $date->format('Y-m-d') === '2026-11-19';
+}
+
 /**
  * Standard Scrabble letter values.
  *
@@ -294,7 +310,8 @@ function scrabbleParseGridWithWildcards(string $gridString): array
  * table and the test harness can drive it from an in-memory list.
  *
  * Rules enforced here:
- *   - only five-letter words score (3 and 4 letter words are ignored);
+ *   - words of three to five letters score when short-word scoring is enabled;
+ *   - a word path contained in a longer valid word path does not score;
  *   - wildcard tiles contribute 0 points;
  *   - a double-letter square doubles that one letter;
  *   - a double-word square doubles the finished word;
@@ -305,7 +322,7 @@ function scrabbleParseGridWithWildcards(string $gridString): array
  * @param list<int> $dwIndices
  * @return array{score: int, events: list<array{word: string, points: int}>}
  */
-function calculateScrabbleScoreWithResolver(string $gridString, Closure $resolveValidWords, array $dlIndices = [], array $dwIndices = []): array
+function calculateScrabbleScoreWithResolver(string $gridString, Closure $resolveValidWords, array $dlIndices = [], array $dwIndices = [], bool $includeShortWords = true): array
 {
     $cells = scrabbleParseGridWithWildcards($gridString);
     $emptyResult = ['score' => 0, 'events' => []];
@@ -348,8 +365,7 @@ function calculateScrabbleScoreWithResolver(string $gridString, Closure $resolve
                     $path[] = $index;
                     $word .= $letter;
 
-                    // STRICT 5-LETTER QUALIFICATION
-                    if (strlen($word) === 5) {
+                    if (strlen($word) >= ($includeShortWords ? 3 : 5)) {
                         $candidateWords[] = $word;
                         $foundPaths[] = ['word' => $word, 'path' => $path];
                     }
@@ -378,10 +394,25 @@ function calculateScrabbleScoreWithResolver(string $gridString, Closure $resolve
         return $emptyResult;
     }
 
+    $coveredPaths = [];
+    foreach ($foundPaths as $item) {
+        if (!isset($validWords[$item['word']])) {
+            continue;
+        }
+        $pathLength = count($item['path']);
+        for ($length = 3; $length < $pathLength; $length++) {
+            for ($offset = 0; $offset <= $pathLength - $length; $offset++) {
+                $segment = array_slice($item['path'], $offset, $length);
+                $coveredPaths[implode(',', $segment)] = true;
+                $coveredPaths[implode(',', array_reverse($segment))] = true;
+            }
+        }
+    }
+
     $bestScoreForWord = [];
 
     foreach ($foundPaths as $item) {
-        if (!isset($validWords[$item['word']])) {
+        if (!isset($validWords[$item['word']]) || isset($coveredPaths[implode(',', $item['path'])])) {
             continue;
         }
 
