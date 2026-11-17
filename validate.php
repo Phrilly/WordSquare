@@ -421,7 +421,21 @@ function calculateScrabbleScoreWithEvents(string $gridString, PDO $pdo, array $d
         return fetchValidWords($candidateWords, $pdo);
     };
 
-    return calculateScrabbleScoreWithResolver($gridString, $resolveValidWords, $dlIndices, $dwIndices, scrabbleShortWordsEnabled());
+    // Honours the loopback-only debug cookie set by index.php so a developer
+    // previewing the upcoming short-word scoring gets consistent scoring from
+    // this authoritative scorer too, not just the client-side preview.
+    $debugOverrideActive = scrabbleShortWordsDebugOverrideActive(
+        $_SERVER['REMOTE_ADDR'] ?? null,
+        $_COOKIE[SCRABBLE_SHORT_WORDS_DEBUG_COOKIE] ?? null
+    );
+
+    return calculateScrabbleScoreWithResolver(
+        $gridString,
+        $resolveValidWords,
+        $dlIndices,
+        $dwIndices,
+        resolveScrabbleShortWordsEnabled($debugOverrideActive)
+    );
 }
 
 function calculateScrabbleGridScore(string $gridString, PDO $pdo, array $dlIndices = [], array $dwIndices = []): int

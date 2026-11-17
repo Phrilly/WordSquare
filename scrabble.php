@@ -109,6 +109,40 @@ function scrabbleScoringChangeNoticeEnabled(?DateTimeImmutable $date = null): bo
     return $date->format('Y-m-d') === '2026-11-19';
 }
 
+/** Name of the cookie that remembers the loopback-only short-word debug override. */
+const SCRABBLE_SHORT_WORDS_DEBUG_COOKIE = 'wsq_force_scrabble_short_words';
+
+/**
+ * True only for requests originating from the local machine itself. The
+ * short-word scoring debug override is restricted to this so it can never be
+ * used over the network to change scoring for real players.
+ */
+function isScrabbleDebugLoopbackAddress(?string $remoteAddr): bool
+{
+    return $remoteAddr === '127.0.0.1' || $remoteAddr === '::1';
+}
+
+/**
+ * Pure decision of whether the loopback-only "preview the upcoming
+ * short-word Scrabble scoring early" debug override is active for this
+ * request. Callers pass in $_SERVER['REMOTE_ADDR'] and the debug cookie value
+ * directly so this file stays free of direct superglobal access.
+ */
+function scrabbleShortWordsDebugOverrideActive(?string $remoteAddr, ?string $debugCookieValue): bool
+{
+    return isScrabbleDebugLoopbackAddress($remoteAddr) && $debugCookieValue === '1';
+}
+
+/**
+ * Resolve whether short-word Scrabble scoring applies to this request: the
+ * loopback debug override wins when active, otherwise the real rollout date
+ * decides via scrabbleShortWordsEnabled().
+ */
+function resolveScrabbleShortWordsEnabled(bool $debugOverrideActive, ?DateTimeImmutable $date = null): bool
+{
+    return $debugOverrideActive || scrabbleShortWordsEnabled($date);
+}
+
 /**
  * Standard Scrabble letter values.
  *

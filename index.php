@@ -21,7 +21,30 @@ require_once __DIR__ . '/scrabble.php';
 // to the client so the board that is rendered is the board that gets scored.
 $dailyScrabbleLayout = generateScrabbleSpecialSquares(scrabbleDailySeed());
 $scrabbleDate = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-$scrabbleShortWordsEnabled = scrabbleShortWordsEnabled($scrabbleDate);
+
+// Loopback-only debug switch: visiting with ?forceShortWords=1 previews the
+// upcoming short-word Scrabble scoring before its rollout date; ?forceShortWords=0
+// turns it back off. The choice is remembered in a cookie so it also applies to
+// the separate validate.php scoring request, which never sees the query string.
+$remoteAddr = $_SERVER['REMOTE_ADDR'] ?? null;
+$forceShortWordsRequest = $_GET['forceShortWords'] ?? null;
+if (isScrabbleDebugLoopbackAddress($remoteAddr)
+    && ($forceShortWordsRequest === '1' || $forceShortWordsRequest === '0')
+    && !headers_sent()) {
+    setcookie(SCRABBLE_SHORT_WORDS_DEBUG_COOKIE, $forceShortWordsRequest, [
+        'expires' => $forceShortWordsRequest === '1' ? (time() + 604800) : (time() - 3600),
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    $_COOKIE[SCRABBLE_SHORT_WORDS_DEBUG_COOKIE] = $forceShortWordsRequest;
+}
+
+$scrabbleDebugOverrideActive = scrabbleShortWordsDebugOverrideActive(
+    $remoteAddr,
+    $_COOKIE[SCRABBLE_SHORT_WORDS_DEBUG_COOKIE] ?? null
+);
+$scrabbleShortWordsEnabled = resolveScrabbleShortWordsEnabled($scrabbleDebugOverrideActive, $scrabbleDate);
 
 // VARIANT SCHEDULER: 7-Day Cycle Calculation
 $epochTimestamp = strtotime('2026-05-21 00:00:00 UTC'); 
@@ -251,8 +274,8 @@ $appVersion = '1.5.2';
 
   <div id="opening-screen" class="opening-screen" style="display:none;">
     <h1 id="opening-title" style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;"><?= htmlspecialchars($leaderboardHeading, ENT_QUOTES, 'UTF-8') ?></h1>
-    <?php if ($isScrabbleDay && scrabbleScoringChangeNoticeEnabled($scrabbleDate)): ?>
-    <p class="scrabble-change-notice"><strong>NEW SCRABBLE SCORING</strong><br>3- and 4-letter words now score too. On the same tiles, only the longer word scores: PARTS scores, not PART.</p>
+    <?php if ($isScrabbleDay && (scrabbleScoringChangeNoticeEnabled($scrabbleDate) || $scrabbleDebugOverrideActive)): ?>
+    <p class="scrabble-change-notice"><strong>NEW SCRABBLE SCORING<?= $scrabbleDebugOverrideActive ? ' (DEBUG PREVIEW)' : '' ?></strong><br>3- and 4-letter words now score too. On the same tiles, only the longer word scores: PARTS scores, not PART.</p>
     <?php endif; ?>
     <div class="grid-container opening-grid" id="opening-grid">
       </div>
