@@ -12,7 +12,6 @@ const BOGGLE_VARIANT = Object.prototype.hasOwnProperty.call(BOGGLE_VARIANTS, BOG
   ? BOGGLE_VARIANTS[BOGGLE_REQUESTED_VARIANT]
   : BOGGLE_VARIANTS.boggle;
 const BOGGLE_SECONDS = BOGGLE_VARIANT.seconds;
-const BOGGLE_LONG_PRESS_MS = 500;
 const BOGGLE_SUMMARY_INPUT_DELAY_MS = 2400;
 const BOGGLE_DRAG_SAFE_ZONE_RATIO = 0.6;
 const BOGGLE_DIAGONAL_INTENT_RATIO = 0.55;
@@ -47,7 +46,7 @@ const BOGGLE_UK_SPELLING_MAP = {
 };
 const state = {
   tiles: [], path: [], words: new Map(), round: 1, roundScores: [], roundWords: [], maxRoundScores: [], maxRoundWords: [], seconds: BOGGLE_SECONDS,
-  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, ignoreNextMouseClick: false, longPressTimer: null, suppressNextTouchClick: false, scoreScreen: 'opening'
+  dictionary: new Set(), locked: true, timer: null, desktopPathDrawing: false, selectionComplete: false, selectionFeedback: null, submissionTimer: null, ignoreNextMouseClick: false, scoreScreen: 'opening'
 };
 const el = {
   grid: document.getElementById('boggle-grid'),
@@ -273,6 +272,7 @@ function message(text, invalid = false) {
 }
 
 let renderedTilesKey = '';
+const touchSelections = [];
 
 function createTileButton(index) {
   const button = document.createElement('button');
@@ -281,17 +281,6 @@ function createTileButton(index) {
   button.dataset.index = String(index);
   button.addEventListener('pointerdown', event => {
     if (state.locked) return;
-    if (event.pointerType === 'touch') {
-      state.suppressNextTouchClick = false;
-      cancelLongPress();
-      state.longPressTimer = window.setTimeout(() => {
-        state.longPressTimer = null;
-        if (state.locked || state.path.length === 0) return;
-        state.suppressNextTouchClick = true;
-        clearCurrentSelection('Word selection cleared.');
-      }, BOGGLE_LONG_PRESS_MS);
-      return;
-    }
     if (event.pointerType !== 'mouse') return;
     event.preventDefault();
     state.ignoreNextMouseClick = true;
@@ -307,27 +296,74 @@ function createTileButton(index) {
     select(index);
     message('Path started. Move across adjacent tiles, then click the final tile.');
   });
-  button.addEventListener('pointerup', cancelLongPress);
-  button.addEventListener('pointercancel', cancelLongPress);
-  button.addEventListener('pointerleave', cancelLongPress);
   button.addEventListener('contextmenu', event => event.preventDefault());
   button.addEventListener('click', event => {
-    if (state.suppressNextTouchClick) {
-      state.suppressNextTouchClick = false;
-      return;
-    }
+    if (event.pointerType === 'touch' || event.sourceCapabilities?.firesTouchEvents) return;
     if (event.detail !== 0 && state.ignoreNextMouseClick) {
       state.ignoreNextMouseClick = false;
       return;
     }
-    if (clearRejectedSelection()) return;
-    if (state.path.at(-1) === index && state.path.length > 0) {
-      completeSelection();
-      return;
-    }
-    select(index);
+    activateTile(index);
   });
   return button;
+}
+
+function activateTile(index) {
+  if (state.locked || clearRejectedSelection()) return;
+  if (state.path.at(-1) === index && state.path.length > 0) {
+    completeSelection();
+    return;
+  }
+  select(index);
+}
+
+function touchTileAt(clientX, clientY) {
+  const buttons = [...el.grid.querySelectorAll('.boggle-tile')];
+  if (buttons.length === 0) return null;
+
+  const first = buttons[0].getBoundingClientRect();
+  const last = buttons.at(-1).getBoundingClientRect();
+  if (clientX < first.left || clientX > last.right || clientY < first.top || clientY > last.bottom) return null;
+
+  let closest = null;
+  let closestDistance = Infinity;
+  buttons.forEach(button => {
+    const rect = button.getBoundingClientRect();
+    const dx = Math.max(rect.left - clientX, 0, clientX - rect.right);
+    const dy = Math.max(rect.top - clientY, 0, clientY - rect.bottom);
+    const distance = (dx * dx) + (dy * dy);
+    if (distance < closestDistance) {
+      closest = button;
+      closestDistance = distance;
+    }
+  });
+  return closest;
+}
+
+function resetTouchSelections() {
+  touchSelections.forEach(touch => touch.button.classList.remove('is-touch-pressed'));
+  touchSelections.length = 0;
+}
+
+function finishTouchSelection(event, cancelled) {
+  const touch = touchSelections.find(item => item.pointerId === event.pointerId);
+  if (!touch || touch.result !== 'pending') return;
+
+  touch.result = !cancelled && touchTileAt(event.clientX, event.clientY) === touch.button
+    ? 'selected'
+    : 'cancelled';
+  if (!touchSelections.some(item => item !== touch && item.button === touch.button && item.result === 'pending')) {
+    touch.button.classList.remove('is-touch-pressed');
+  }
+
+  // Process overlapping touches in the order they started, even if released out of order.
+  while (touchSelections.length > 0 && touchSelections[0].result !== 'pending') {
+    const completed = touchSelections.shift();
+    if (completed.result !== 'selected' || state.locked) continue;
+    if (state.selectionComplete) submit();
+    clearRejectedSelection();
+    activateTile(completed.index);
+  }
 }
 
 function render() {
@@ -447,18 +483,21 @@ function completeSelection() {
   state.selectionComplete = true;
   render();
   message('Word selection complete.');
-  window.setTimeout(() => {
-    if (state.selectionComplete) submit();
+  cancelSubmission();
+  state.submissionTimer = window.setTimeout(() => {
+    state.submissionTimer = null;
+    if (state.selectionComplete && !state.locked) submit();
   }, 120);
 }
 
-function cancelLongPress() {
-  if (state.longPressTimer === null) return;
-  window.clearTimeout(state.longPressTimer);
-  state.longPressTimer = null;
+function cancelSubmission() {
+  if (state.submissionTimer === null) return;
+  window.clearTimeout(state.submissionTimer);
+  state.submissionTimer = null;
 }
 
 function clearCurrentSelection(text) {
+  cancelSubmission();
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
   state.selectionFeedback = null;
@@ -475,6 +514,7 @@ function clearRejectedSelection() {
 }
 
 function submit() {
+  cancelSubmission();
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
   const candidate = word();
@@ -487,13 +527,13 @@ function submit() {
   if (state.words.has(candidate)) {
     state.selectionFeedback = 'duplicate';
     render();
-    message('Already found this round. Click any tile to clear it.', true);
+    message('Already found this round. Tap a tile to start again, or click to clear.', true);
     return;
   }
   if (!state.dictionary.has(candidate)) {
     state.selectionFeedback = 'invalid';
     render();
-    message('Not in the British English dictionary. Click any tile to clear it.', true);
+    message('Not in the British English dictionary. Tap a tile to start again, or click to clear.', true);
     return;
   }
 
@@ -957,7 +997,8 @@ function openScoreEntry(score) {
 function finishRound() {
   if (state.locked) return;
 
-  cancelLongPress();
+  resetTouchSelections();
+  cancelSubmission();
   state.locked = true;
   clearInterval(state.timer);
   state.path = [];
@@ -1089,7 +1130,8 @@ function showSummary(done) {
 }
 
 function startRound(round) {
-  cancelLongPress();
+  resetTouchSelections();
+  cancelSubmission();
   clearInterval(state.timer);
   state.round = round;
   state.seconds = BOGGLE_SECONDS;
@@ -1108,7 +1150,6 @@ function startRound(round) {
   state.locked = false;
   state.selectionComplete = false;
   state.selectionFeedback = null;
-  state.suppressNextTouchClick = false;
   el.previewPanel.hidden = false;
   el.foundPanel.hidden = false;
   el.help.hidden = true;
@@ -1267,6 +1308,8 @@ async function showStartScreen() {
 
 function viewHighScores() {
   if (!state.locked) {
+    resetTouchSelections();
+    cancelSubmission();
     clearInterval(state.timer);
     state.locked = true;
     state.path = [];
@@ -1305,6 +1348,8 @@ async function loadDictionary() {
 }
 
 el.backspace.addEventListener('click', () => {
+  resetTouchSelections();
+  cancelSubmission();
   state.desktopPathDrawing = false;
   state.selectionComplete = false;
   state.selectionFeedback = null;
@@ -1313,14 +1358,38 @@ el.backspace.addEventListener('click', () => {
   render();
 });
 el.clear.addEventListener('click', () => {
+  resetTouchSelections();
   clearCurrentSelection('Word cleared.');
 });
 el.timer.addEventListener('click', viewHighScores);
 el.helpButton.addEventListener('click', () => {
+  resetTouchSelections();
   el.help.hidden = false;
 });
 el.closeHelp.addEventListener('click', () => {
   el.help.hidden = true;
+});
+el.grid.addEventListener('pointerdown', event => {
+  if (event.pointerType !== 'touch' || state.locked || !el.help.hidden || !el.summary.hidden) return;
+  if (!(event.target instanceof Element) || (event.target !== el.grid && !event.target.closest('.boggle-tile'))) return;
+  const button = touchTileAt(event.clientX, event.clientY);
+  if (!button) return;
+
+  const index = Number.parseInt(button.dataset.index ?? '', 10);
+  if (!Number.isInteger(index)) return;
+  event.preventDefault();
+  el.grid.setPointerCapture(event.pointerId);
+  touchSelections.push({ pointerId: event.pointerId, index, button, result: 'pending' });
+  button.classList.add('is-touch-pressed');
+});
+el.grid.addEventListener('pointerup', event => {
+  if (event.pointerType === 'touch') finishTouchSelection(event, false);
+});
+el.grid.addEventListener('pointercancel', event => {
+  if (event.pointerType === 'touch') finishTouchSelection(event, true);
+});
+el.grid.addEventListener('lostpointercapture', event => {
+  if (event.pointerType === 'touch') finishTouchSelection(event, true);
 });
 el.grid.addEventListener('pointermove', event => {
   if (event.pointerType !== 'mouse' || !state.desktopPathDrawing || state.locked) return;
@@ -1337,13 +1406,13 @@ el.grid.addEventListener('pointermove', event => {
   select(index);
 });
 window.addEventListener('blur', () => {
-  cancelLongPress();
+  resetTouchSelections();
   state.desktopPathDrawing = false;
 });
 window.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || state.locked || state.path.length === 0 || !el.help.hidden) return;
   event.preventDefault();
-  cancelLongPress();
+  resetTouchSelections();
   clearCurrentSelection('Word selection cleared.');
 });
 loadDictionary();

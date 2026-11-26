@@ -130,3 +130,12 @@
 [26-Oct-2026 01:13:49 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
 [26-Oct-2026 01:13:51 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
 [26-Oct-2026 01:19:23 Europe/Berlin] validate.php DB connection failed: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[17-Nov-2026 14:12:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_dict","mode":"scrabble"}
+[17-Nov-2026 14:12:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_yesterdays_winner"}
+[17-Nov-2026 14:12:06 Europe/Berlin] validate.php get_yesterdays_winner failed: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'word_square.daily_scores' doesn't exist
+[17-Nov-2026 14:12:06 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"scrabble"}
+[17-Nov-2026 14:12:06 Europe/Berlin] validate.php highscores.first_go column missing; using older query.
+[17-Nov-2026 14:12:06 Europe/Berlin] validate.php get_highscores failed: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'word_events_json' in 'field list'
+[17-Nov-2026 14:12:11 Europe/Berlin] --- DIAGNOSTIC INBOUND PAYLOAD ---: {"action":"get_highscores","mode":"scrabble"}
+[17-Nov-2026 14:12:11 Europe/Berlin] validate.php highscores.first_go column missing; using older query.
+[17-Nov-2026 14:12:11 Europe/Berlin] validate.php get_highscores failed: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'word_events_json' in 'field list'
