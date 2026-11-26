@@ -89,7 +89,7 @@ Classic is retired from the daily rotation (still reachable with `?mode=classic`
 
 ### Boggle
 - Boggle uses the client-side `data/dict_en_v17.txt` dictionary (151,801 words), filtered to 4-25 letters with proper nouns and offensive entries removed.
-- Boggle uses a fixed 5x5 weighted-letter board for each of three two-minute rounds.
+- Boggle uses a fixed 5x5 weighted-letter board for each of three three-minute rounds.
 - All players receive the same three boards for the UTC day; Play Again repeats them for fair comparison.
 - Form words by joining horizontally, vertically, or diagonally adjacent tiles without reusing a tile.
 - Words must contain at least four letters.
@@ -99,6 +99,7 @@ Classic is retired from the daily rotation (still reachable with `?mode=classic`
 - A green outline marks the first tile of an active desktop path; a gold outline marks the final tile before submission.
 - Backspace removes one tile. Press Escape on desktop or use X to clear the full selected path.
 - Invalid dictionary words receive red outlines. Duplicate words receive yellow outlines. Tap a tile to start a new word, or click a tile to clear a rejected path.
+- Round summaries show your word count and today's best score for that round from completed, saved games. The final summary also shows your total word count across all rounds.
 - SCORES ends an unsaved match and opens the daily high-score table.
 
 ### Top Up

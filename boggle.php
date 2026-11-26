@@ -11,8 +11,8 @@ function autoVer(string $url): string
 $isSloggle = isset($boggleVariant) && $boggleVariant === 'sloggle';
 $variantId = $isSloggle ? 'sloggle' : 'boggle';
 $variantName = $isSloggle ? 'Sloggle' : 'Boggle';
-$roundMinutes = $isSloggle ? 5 : 2;
-$roundWords = $isSloggle ? 'five-minute' : 'two-minute';
+$roundMinutes = $isSloggle ? 5 : 3;
+$roundWords = $isSloggle ? 'five-minute' : 'three-minute';
 $variantConfig = [
     'variant' => $variantId,
     'name' => $variantName,

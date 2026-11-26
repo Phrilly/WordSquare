@@ -190,6 +190,82 @@ function fetchBoggleHighscoreRows(PDO $pdo, string $variant = 'boggle'): array
 }
 
 /**
+ * Recover round word counts from the ordered, flattened word list.
+ *
+ * @param list<int> $roundScores
+ * @return list<int>|null
+ */
+function boggleRoundWordCounts(mixed $storedWords, array $roundScores): ?array
+{
+    if (!is_string($storedWords)) {
+        return null;
+    }
+
+    $words = json_decode($storedWords);
+    if (!is_array($words)) {
+        return null;
+    }
+    try {
+        $words = normaliseBoggleWords($words);
+    } catch (InvalidArgumentException $e) {
+        return null;
+    }
+
+    $counts = [];
+    $wordIndex = 0;
+    foreach ($roundScores as $roundScore) {
+        $roundTotal = 0;
+        $count = 0;
+        while ($roundTotal < $roundScore && $wordIndex < count($words)) {
+            $roundTotal += getBoggleWordPoints($words[$wordIndex]);
+            $wordIndex++;
+            $count++;
+        }
+        if ($roundTotal !== $roundScore) {
+            return null;
+        }
+        $counts[] = $count;
+    }
+
+    return $wordIndex === count($words) ? $counts : null;
+}
+
+/**
+ * @return list<array{initials: string, score: int, word_count: int|null}|null>
+ */
+function fetchBoggleRoundBests(PDO $pdo, string $variant): array
+{
+    $table = boggleTableForVariant($variant);
+    $statement = $pdo->prepare("
+        SELECT initials, score, words_json, round_scores
+        FROM {$table}
+        WHERE DATE(created_at) = CURDATE()
+        ORDER BY created_at ASC, id ASC
+    ");
+    $statement->execute();
+    $bests = [null, null, null];
+    while ($row = $statement->fetch()) {
+        $roundScores = decodeBoggleRoundScores($row['round_scores'] ?? null);
+        if ($roundScores === null || array_sum($roundScores) !== (int)$row['score']) {
+            continue;
+        }
+
+        $counts = boggleRoundWordCounts($row['words_json'] ?? null, $roundScores);
+        foreach ($roundScores as $index => $score) {
+            if ($bests[$index] !== null && $score <= $bests[$index]['score']) {
+                continue;
+            }
+            $bests[$index] = [
+                'initials' => (string)$row['initials'],
+                'score' => $score,
+                'word_count' => $counts[$index] ?? null,
+            ];
+        }
+    }
+    return $bests;
+}
+
+/**
  * @param list<int>|null $roundScores
  */
 function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $wordsJson, ?array $roundScores, string $variant = 'boggle', bool $firstGo = false): void
@@ -706,6 +782,19 @@ if (isset($input['action'])) {
         } catch (PDOException $e) {
             error_log('validate.php get_dict failed: ' . $e->getMessage());
             jsonResponse(['error' => 'Database query failed.'], 500);
+        }
+    }
+
+    if ($action === 'get_boggle_round_bests') {
+        $variant = normaliseBoggleVariant($input['variant'] ?? null);
+        if ($variant === null) {
+            jsonResponse(['error' => 'Invalid Boggle variant.'], 400);
+        }
+        try {
+            jsonResponse(['round_bests' => fetchBoggleRoundBests($pdo, $variant)]);
+        } catch (PDOException $e) {
+            error_log('validate.php get_boggle_round_bests failed: ' . $e->getMessage());
+            jsonResponse(['error' => 'Failed to load Boggle round bests.'], 500);
         }
     }
 

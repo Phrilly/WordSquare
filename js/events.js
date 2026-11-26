@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3>Boggle Notes</h3>
       <ul>
-        <li>Boggle is played over three two-minute rounds on fixed daily 5x5 boards.</li>
+        <li>Boggle is played over three three-minute rounds on fixed daily 5x5 boards.</li>
         <li>Words use adjacent horizontal, vertical, or diagonal tiles without reusing a tile.</li>
         <li>Words must have at least four letters. Scores are 1 / 2 / 3 / 5 / 11 for lengths 4 / 5 / 6 / 7 / 8+.</li>
         <li>Every player receives the same three boards for the UTC day; Play Again repeats them.</li>

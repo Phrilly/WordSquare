@@ -112,10 +112,10 @@ html { overflow-y:auto; }
 .sloggle-banner-sub { color:#fff; font:700 clamp(10px,3vw,13px)/1.2 'Courier New',Courier,monospace; letter-spacing:.14em; }
 .boggle-page.is-embedded .sloggle-banner { flex:0 0 auto; }
 .boggle-champion { color:#e8c860; font-size:clamp(32px,11vw,54px); font-weight:bold; letter-spacing:.12em; }
-.boggle-summary.is-word-list { overflow:hidden; }
+.boggle-summary.is-word-list { justify-content:flex-start; overflow-y:auto; }
 .boggle-summary.is-word-list h2, .boggle-summary.is-word-list p, .boggle-summary.is-word-list button { flex:0 0 auto; }
 .boggle-summary.is-word-list > div { flex:0 0 auto; }
-.boggle-summary.is-word-list .boggle-score-words { display:grid; grid-template-columns:1fr; flex:1 1 0; width:100%; max-width:440px; min-height:0; margin:2px 0; padding:0 4px; overflow-y:scroll; overscroll-behavior-y:contain; scrollbar-gutter:stable; touch-action:pan-y; list-style:none; }
+.boggle-summary.is-word-list .boggle-score-words { display:grid; grid-template-columns:1fr; flex:1 1 0; width:100%; max-width:440px; min-height:44px; margin:2px 0; padding:0 4px; overflow-y:scroll; overscroll-behavior-y:contain; scrollbar-gutter:stable; touch-action:pan-y; list-style:none; }
 .boggle-summary.is-word-list .boggle-score-words:empty { display:none; }
 .boggle-summary.is-word-list .found-word-row { justify-content:center; }
 .boggle-summary.is-word-list .boggle-score-words > li:not(.found-word-row) { padding:12px; text-align:center; }

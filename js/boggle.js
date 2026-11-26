@@ -2,7 +2,7 @@ const BOGGLE_SIZE = 5;
 const BOGGLE_ROUNDS = 3;
 // Sloggle (Slow Boggle) shares this engine. boggle.php / sloggle.php publish which variant to run.
 const BOGGLE_VARIANTS = {
-  boggle: { id: 'boggle', name: 'Boggle', seconds: 120, minutesText: 'Two minutes', scoresTitle: 'TODAY\'S HIGH SCORES', seedSuffix: '' },
+  boggle: { id: 'boggle', name: 'Boggle', seconds: 180, minutesText: 'Three minutes', scoresTitle: 'TODAY\'S HIGH SCORES', seedSuffix: '' },
   sloggle: { id: 'sloggle', name: 'Sloggle', seconds: 300, minutesText: 'Five minutes', scoresTitle: 'TODAY\'S SLOGGLE HIGH SCORES', seedSuffix: ':sloggle' }
 };
 const BOGGLE_REQUESTED_VARIANT = window.BOGGLE_CONFIG && typeof window.BOGGLE_CONFIG.variant === 'string'
@@ -693,6 +693,42 @@ async function getLeaderboardScores() {
   return Array.isArray(data.highscores) ? data.highscores : [];
 }
 
+function totalWordCount() {
+  return state.roundWords.reduce((count, words) => count + words.length, 0);
+}
+
+async function showRoundBest(round, target) {
+  target.textContent = 'Best saved round: loading...';
+  try {
+    const response = await fetch('validate.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_boggle_round_bests', variant: BOGGLE_VARIANT.id })
+    });
+    if (!response.ok) throw new Error('Unable to load round bests.');
+    const data = await response.json();
+    if (!Array.isArray(data.round_bests) || data.round_bests.length !== BOGGLE_ROUNDS) {
+      throw new Error('Invalid round bests response.');
+    }
+
+    const best = data.round_bests[round - 1];
+    if (best === null) {
+      target.textContent = 'No saved round scores yet.';
+      return;
+    }
+    if (!best || typeof best.initials !== 'string' || !Number.isInteger(best.score) || best.score < 0
+      || (best.word_count !== null && (!Number.isInteger(best.word_count) || best.word_count < 0))) {
+      throw new Error('Invalid round best entry.');
+    }
+    const wordCount = best.word_count === null ? 'word count unavailable'
+      : `${best.word_count} ${best.word_count === 1 ? 'word' : 'words'}`;
+    target.textContent = `Best saved round: ${best.initials} — ${best.score} ${best.score === 1 ? 'point' : 'points'}, ${wordCount}`;
+  } catch (error) {
+    console.error('Boggle round best load failed:', error);
+    target.textContent = 'Best saved round unavailable.';
+  }
+}
+
 async function getYesterdaysDailyWinner() {
   const response = await fetch('validate.php', {
     method: 'POST',
@@ -782,7 +818,13 @@ async function showLeaderboard(isTopScore = false) {
   playAgain.type = 'button';
   playAgain.textContent = 'PLAY AGAIN';
   playAgain.addEventListener('click', startMatch);
-  el.summary.append(title, scores, playAgain);
+  el.summary.append(title);
+  if (state.roundWords.length === BOGGLE_ROUNDS) {
+    const yourWords = document.createElement('p');
+    yourWords.textContent = `Your words: ${totalWordCount()}`;
+    el.summary.append(yourWords);
+  }
+  el.summary.append(scores, playAgain);
 
   if (isTopScore) triggerHighScoreBurst();
 
@@ -805,7 +847,8 @@ function showLeaderboardWords(entry) {
   const title = document.createElement('h2');
   title.textContent = `WORDS BY ${initials}`;
   const score = document.createElement('p');
-  score.textContent = `Score: ${entry.score}`;
+  const wordCount = words.length > 0 || Number(entry.score) === 0 ? String(words.length) : 'unavailable';
+  score.textContent = `Score: ${entry.score} | Words: ${wordCount}`;
   const wordList = document.createElement('ul');
   wordList.className = 'boggle-score-words';
 
@@ -828,7 +871,13 @@ function showLeaderboardWords(entry) {
     }
     showLeaderboard();
   });
-  const children = [title, score, wordList];
+  const children = [title, score];
+  if (state.scoreScreen === 'postgame' && state.roundWords.length === BOGGLE_ROUNDS) {
+    const yourWords = document.createElement('p');
+    yourWords.textContent = `Your words: ${totalWordCount()}`;
+    children.push(yourWords);
+  }
+  children.push(wordList);
 
   // Combine every round's board so the comparison matches entry.words, which is saved pre-flattened across all rounds.
   const allPossibleWords = state.maxRoundWords.flat();
@@ -876,7 +925,8 @@ function openScoreEntry(score) {
   const finalRoundPossibleWords = state.maxRoundWords[BOGGLE_ROUNDS - 1] ?? [];
   const roundResults = state.roundScores.map((roundScore, index) => {
     const roundMaximum = state.maxRoundScores[index];
-    return `Round ${index + 1}: ${roundScore}${Number.isInteger(roundMaximum) ? `/${roundMaximum}` : ''}`;
+    const wordCount = state.roundWords[index]?.length ?? 0;
+    return `Round ${index + 1}: ${roundScore}${Number.isInteger(roundMaximum) ? `/${roundMaximum}` : ''} (${wordCount} ${wordCount === 1 ? 'word' : 'words'})`;
   }).join(' | ');
   const maximumSummary = gameMaximum === null
     ? ''
@@ -888,6 +938,8 @@ function openScoreEntry(score) {
     <div style="font-size:20px; margin-bottom:25px;">
       Final Score: <strong id="final-score-display" style="color:var(--highlight)">${score}</strong>
     </div>
+    <p>Your words: ${totalWordCount()}</p>
+    <p id="boggle-final-round-best"></p>
     <div id="daily-save-section">
       <div class="initials-wrapper">
         <input type="text" id="hidden-initials" class="hidden-initials-input" maxlength="3" autocomplete="off">
@@ -900,11 +952,10 @@ function openScoreEntry(score) {
   `;
 
   const saveSection = document.getElementById('daily-save-section');
+  showRoundBest(BOGGLE_ROUNDS, document.getElementById('boggle-final-round-best'));
 
   const yourWordsTitle = document.createElement('p');
-  yourWordsTitle.textContent = finalRoundPlayerWords.length > 0
-    ? `ROUND ${BOGGLE_ROUNDS} — YOUR WORDS (${finalRoundPlayerWords.length})`
-    : `ROUND ${BOGGLE_ROUNDS} — NO WORDS FOUND`;
+  yourWordsTitle.textContent = `ROUND ${BOGGLE_ROUNDS} — YOUR WORDS (${finalRoundPlayerWords.length})`;
   const yourWordsList = document.createElement('ul');
   yourWordsList.className = 'boggle-score-words';
   renderWordTiles(yourWordsList, finalRoundPlayerWords);
@@ -1076,13 +1127,13 @@ function showSummary(done) {
 
   const cumulative = document.createElement('p');
   const cumulativeStrong = document.createElement('strong');
-  cumulativeStrong.textContent = `Cumulative score: ${totalScore}`;
+  cumulativeStrong.textContent = `Cumulative score: ${totalScore} | Words: ${totalWordCount()}`;
   cumulative.appendChild(cumulativeStrong);
 
+  const bestRound = document.createElement('p');
+
   const playerWordsTitle = document.createElement('p');
-  playerWordsTitle.textContent = playerWords.length > 0
-    ? `YOUR WORDS (${playerWords.length})`
-    : 'NO WORDS FOUND';
+  playerWordsTitle.textContent = `YOUR WORDS (${playerWords.length})`;
   const playerWordsList = document.createElement('ul');
   playerWordsList.className = 'boggle-score-words';
   renderWordTiles(playerWordsList, playerWords);
@@ -1093,7 +1144,7 @@ function showSummary(done) {
   startButton.textContent = `START ROUND ${nextRound}`;
   startButton.addEventListener('click', () => startRound(nextRound));
 
-  const children = [title, roundScore, cumulative, playerWordsTitle, playerWordsList];
+  const children = [title, roundScore, cumulative, bestRound, playerWordsTitle, playerWordsList];
 
   if (boardWords.length > 0) {
     const toggleButton = document.createElement('button');
@@ -1127,6 +1178,7 @@ function showSummary(done) {
 
   children.push(startButton);
   el.summary.replaceChildren(...children);
+  showRoundBest(state.round, bestRound);
 }
 
 function startRound(round) {
