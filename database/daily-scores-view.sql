@@ -5,6 +5,8 @@
 -- A read-only common shape for daily winner and recent-winner queries. Detail
 -- fields stay in their source tables because main games store a final grid and
 -- word events, while Boggle and Sloggle store a multi-round word list.
+-- The legacy first_go columns are not authoritative; leaderboard responses
+-- derive first submissions from the saved rows instead.
 CREATE OR REPLACE VIEW daily_scores AS
     SELECT id, initials, score, mode, first_go, created_at
     FROM highscores

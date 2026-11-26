@@ -119,6 +119,11 @@ html { overflow-y:auto; }
 .boggle-summary.is-word-list .boggle-score-words:empty { display:none; }
 .boggle-summary.is-word-list .found-word-row { justify-content:center; }
 .boggle-summary.is-word-list .boggle-score-words > li:not(.found-word-row) { padding:12px; text-align:center; }
+.boggle-summary.is-word-list:not(.is-leaderboard) { padding:8px; }
+.boggle-summary.is-word-list:not(.is-leaderboard) h2 { margin:0 0 3px; font-size:clamp(18px,5.5vw,25px); }
+.boggle-summary.is-word-list:not(.is-leaderboard) p { margin:2px 0; font-size:14px; line-height:1.15; }
+.boggle-summary.is-word-list:not(.is-leaderboard) .boggle-score-words { min-height:0; }
+.boggle-summary.is-word-list:not(.is-leaderboard) button { min-height:44px; margin:4px auto 0; }
 .boggle-help-modal { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; box-sizing:border-box; padding:46px 20px 20px; border-radius:12px; background-color:rgba(22,47,78,.96); color:#fff; font-family:'Courier New',Courier,monospace; text-align:left; overflow-y:scroll; overscroll-behavior-y:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
 .boggle-help-modal[hidden] { display:none; }
 .boggle-help-modal h2 { margin:0 0 12px; color:var(--highlight); font-size:clamp(22px,7vw,34px); text-align:center; }
@@ -167,4 +172,12 @@ html { overflow-y:auto; }
   .boggle-summary.is-word-list.is-possible-words-expanded button,
   .boggle-summary.is-score-entry.is-possible-words-expanded button { margin-top:8px; }
   .boggle-summary.is-score-entry.is-possible-words-expanded #daily-save-section { display:none; }
+}
+@media (max-width:340px), (max-height:540px), (max-width:500px) and (max-height:620px) {
+  .boggle-summary.is-word-list:not(.is-leaderboard) {
+    position:fixed;
+    inset:10px;
+    z-index:100;
+    padding:12px 10px max(12px, env(safe-area-inset-bottom));
+  }
 }

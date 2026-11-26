@@ -9,6 +9,7 @@
 - Words can be formed in rows, columns, and diagonals (both directions).
 - Letters stay on the board after placement unless removed by a mode mechanic (for example, Tetris clears or bombs).
 - Daily games are ranked on mode-specific leaderboards.
+- Each three-letter name's first saved score per game per UTC day is marked with a 1; the highest marked score on the leaderboard gets a trophy. Names are shared across devices and players using the same name.
 
 ## Daily Variant Schedule (from 2026-10-26)
 - Monday: Lookahead

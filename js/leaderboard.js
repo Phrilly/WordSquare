@@ -114,8 +114,7 @@ async function submitHighscore() {
         session_id: typeof sessionId !== 'undefined' ? sessionId : '',
         score: typeof currentScore !== 'undefined' ? currentScore : 0, 
         grid: gridString,
-        word_events: getSubmittedWordEvents(),
-        first_go: typeof window.WSFirstGo !== 'undefined' && window.WSFirstGo.isCurrentAttemptFirst()
+        word_events: getSubmittedWordEvents()
     };
     
     // NOTE: the DL/DW layout is deliberately not sent. validate.php derives it
@@ -234,7 +233,7 @@ async function loadLeaderboard() {
             <div style="display:flex; align-items:center;">
               <div class="lb-rank">${index + 1}.</div>
               <div class="lb-initials-group">${initialsHtml}</div>
-              <span class="lb-first-go" title="First go of the day"></span>
+              <span class="lb-first-go" title="First submission of the day"></span>
             </div>
             <div class="lb-score-tile">${entry.score}</div>
           </div>

@@ -151,42 +151,80 @@ function boggleTableForVariant(string $variant): string
 }
 
 /**
- * Falls back to the legacy query so Boggle keeps working before the round_scores migration is applied.
+ * Determine first submissions against all saved scores, not just the top eight.
+ * The id breaks ties when two submissions have the same timestamp.
  *
+ * @return list<array<string, mixed>>
+ */
+function fetchFirstGoLeaderboard(PDO $pdo, string $table, DateTimeImmutable $day, ?string $mode, string $columns): array
+{
+    $allowedColumns = [
+        's.initials, s.score',
+        's.id, s.initials, s.score, s.grid, s.word_events_json, s.created_at',
+        's.id, s.initials, s.score, s.words_json, s.round_scores',
+        's.id, s.initials, s.score, s.words_json',
+    ];
+    if (!in_array($table, ['highscores', 'boggle_highscores', 'sloggle_highscores'], true)
+        || ($table === 'highscores') !== ($mode !== null)
+        || !in_array($columns, $allowedColumns, true)) {
+        throw new InvalidArgumentException('Invalid leaderboard source.');
+    }
+
+    $start = $day->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0);
+    $end = $start->modify('+1 day');
+    $modeCondition = $mode === null ? '' : ' AND s.mode = :mode';
+    $earlierModeCondition = $mode === null ? '' : ' AND earlier.mode = s.mode';
+    $stmt = $pdo->prepare("
+        SELECT {$columns},
+            CASE WHEN NOT EXISTS (
+                SELECT 1 FROM {$table} earlier
+                WHERE earlier.initials = s.initials
+                  {$earlierModeCondition}
+                  AND earlier.created_at >= :earlier_start
+                  AND earlier.created_at < :earlier_end
+                  AND (earlier.created_at < s.created_at
+                       OR (earlier.created_at = s.created_at AND earlier.id < s.id))
+            ) THEN 1 ELSE 0 END AS first_go
+        FROM {$table} s
+        WHERE s.created_at >= :day_start AND s.created_at < :day_end
+          {$modeCondition}
+        ORDER BY s.score DESC, s.created_at ASC, s.id ASC
+        LIMIT 8
+    ");
+    $params = [
+        ':earlier_start' => $start->format('Y-m-d H:i:s'),
+        ':earlier_end' => $end->format('Y-m-d H:i:s'),
+        ':day_start' => $start->format('Y-m-d H:i:s'),
+        ':day_end' => $end->format('Y-m-d H:i:s'),
+    ];
+    if ($mode !== null) {
+        $params[':mode'] = $mode;
+    }
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    foreach ($rows as &$row) {
+        $row['first_go'] = (int)$row['first_go'] === 1;
+    }
+    unset($row);
+    return $rows;
+}
+
+/**
  * @return list<array<string, mixed>>
  */
 function fetchBoggleHighscoreRows(PDO $pdo, string $variant = 'boggle'): array
 {
     $table = boggleTableForVariant($variant);
-    $baseSql = "
-        FROM {$table}
-        WHERE DATE(created_at) = CURDATE()
-        ORDER BY score DESC, created_at ASC, id ASC
-        LIMIT 8
-    ";
-    // Newest schema first, so each migration (round_scores, first_go) can be applied independently.
-    $columnSets = [
-        'id, initials, score, words_json, round_scores, first_go',
-        'id, initials, score, words_json, round_scores',
-        'id, initials, score, words_json',
-    ];
-    foreach ($columnSets as $index => $columns) {
-        try {
-            $rows = $pdo->query('SELECT ' . $columns . $baseSql)->fetchAll();
-            foreach ($rows as &$row) {
-                $row['first_go'] = (int)($row['first_go'] ?? 0) === 1;
-            }
-            unset($row);
-            return $rows;
-        } catch (PDOException $e) {
-            if (!isMissingColumnError($e) || $index === count($columnSets) - 1) {
-                throw $e;
-            }
-            error_log('validate.php boggle score columns missing; using older query.');
+    $today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
+    try {
+        return fetchFirstGoLeaderboard($pdo, $table, $today, null, 's.id, s.initials, s.score, s.words_json, s.round_scores');
+    } catch (PDOException $e) {
+        if (!isMissingColumnError($e)) {
+            throw $e;
         }
+        error_log('validate.php boggle round_scores column missing; using older query.');
+        return fetchFirstGoLeaderboard($pdo, $table, $today, null, 's.id, s.initials, s.score, s.words_json');
     }
-
-    return [];
 }
 
 /**
@@ -268,16 +306,12 @@ function fetchBoggleRoundBests(PDO $pdo, string $variant): array
 /**
  * @param list<int>|null $roundScores
  */
-function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $wordsJson, ?array $roundScores, string $variant = 'boggle', bool $firstGo = false): void
+function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $wordsJson, ?array $roundScores, string $variant = 'boggle'): void
 {
     $table = boggleTableForVariant($variant);
     $roundScoresJson = $roundScores === null ? null : json_encode($roundScores, JSON_THROW_ON_ERROR);
 
     $attempts = [
-        [
-            'sql' => "INSERT INTO {$table} (initials, score, words_json, round_scores, first_go) VALUES (:initials, :score, :words_json, :round_scores, :first_go)",
-            'params' => [':initials' => $initials, ':score' => $score, ':words_json' => $wordsJson, ':round_scores' => $roundScoresJson, ':first_go' => $firstGo ? 1 : 0],
-        ],
         [
             'sql' => "INSERT INTO {$table} (initials, score, words_json, round_scores) VALUES (:initials, :score, :words_json, :round_scores)",
             'params' => [':initials' => $initials, ':score' => $score, ':words_json' => $wordsJson, ':round_scores' => $roundScoresJson],
@@ -299,38 +333,6 @@ function insertBoggleHighscore(PDO $pdo, string $initials, int $score, string $w
             error_log('validate.php boggle score columns missing; saving with fewer columns.');
         }
     }
-}
-
-/**
- * A first go is only honoured when the browser claims it AND no score has been
- * saved today under the same initials in the same game. This stops someone
- * clearing browser data and re-entering their name for a second marker.
- *
- * @param string $table  A fixed table name chosen by the server, never request data.
- * @param string|null $mode  Restricts the highscores table to one game; null for the Boggle tables.
- */
-function isFirstGoAllowed(PDO $pdo, string $table, string $initials, ?string $mode, bool $claimedFirstGo): bool
-{
-    if (!$claimedFirstGo) {
-        return false;
-    }
-
-    $todayUtc = new DateTimeImmutable('today', new DateTimeZone('UTC'));
-    $sql = "SELECT COUNT(*) FROM {$table} WHERE created_at >= :day_start AND created_at < :day_end AND initials = :initials";
-    $params = [
-        ':day_start' => $todayUtc->format('Y-m-d H:i:s'),
-        ':day_end' => $todayUtc->modify('+1 day')->format('Y-m-d H:i:s'),
-        ':initials' => $initials,
-    ];
-    if ($mode !== null) {
-        $sql .= ' AND mode = :mode';
-        $params[':mode'] = $mode;
-    }
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-
-    return (int)$stmt->fetchColumn() === 0;
 }
 
 function normaliseGridString(?string $grid): string
@@ -728,6 +730,7 @@ try {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]
     );
+    $pdo->exec("SET time_zone = '+00:00'");
 } catch (PDOException $e) {
     error_log('validate.php DB connection failed: ' . $e->getMessage());
     jsonResponse(['error' => 'Database connection failed.'], 500);
@@ -847,7 +850,7 @@ if (isset($input['action'])) {
         $roundScores = normaliseBoggleRoundScores($input['round_scores'] ?? null, $score);
 
         try {
-            insertBoggleHighscore($pdo, $initials, $score, $wordsJson, $roundScores, $variant, isFirstGoAllowed($pdo, boggleTableForVariant($variant), $initials, null, ($input['first_go'] ?? false) === true));
+            insertBoggleHighscore($pdo, $initials, $score, $wordsJson, $roundScores, $variant);
             $newId = (int)$pdo->lastInsertId();
 
             $scoreTable = boggleTableForVariant($variant);
@@ -993,35 +996,8 @@ if (isset($input['action'])) {
         }
 
         try {
-            $firstGo = isFirstGoAllowed($pdo, 'highscores', $initials, $mode, ($input['first_go'] ?? false) === true);
-        } catch (PDOException $e) {
-            error_log('validate.php first-go check failed: ' . $e->getMessage());
-            jsonResponse(['error' => 'Failed to save score.'], 500);
-        }
-        $insertAttempts = [
-            [
-                'sql' => 'INSERT INTO highscores (initials, mode, score, grid, word_events_json, first_go) VALUES (:initials, :mode, :score, :grid, :word_events_json, :first_go)',
-                'params' => [':initials' => $initials, ':mode' => $mode, ':score' => $score, ':grid' => $grid, ':word_events_json' => $wordEventsJson, ':first_go' => $firstGo ? 1 : 0],
-            ],
-            [
-                'sql' => 'INSERT INTO highscores (initials, mode, score, grid, word_events_json) VALUES (:initials, :mode, :score, :grid, :word_events_json)',
-                'params' => [':initials' => $initials, ':mode' => $mode, ':score' => $score, ':grid' => $grid, ':word_events_json' => $wordEventsJson],
-            ],
-        ];
-
-        try {
-            foreach ($insertAttempts as $attemptIndex => $insertAttempt) {
-                try {
-                    $pdo->prepare($insertAttempt['sql'])->execute($insertAttempt['params']);
-                    break;
-                } catch (PDOException $insertError) {
-                    // Before the first_go migration is applied, fall back to the old column list.
-                    if (!isMissingColumnError($insertError) || $attemptIndex === count($insertAttempts) - 1) {
-                        throw $insertError;
-                    }
-                    error_log('validate.php highscores.first_go column missing; saving without it.');
-                }
-            }
+            $pdo->prepare('INSERT INTO highscores (initials, mode, score, grid, word_events_json) VALUES (:initials, :mode, :score, :grid, :word_events_json)')
+                ->execute([':initials' => $initials, ':mode' => $mode, ':score' => $score, ':grid' => $grid, ':word_events_json' => $wordEventsJson]);
             $newId = (int)$pdo->lastInsertId();
 
             $todayUtc = new DateTimeImmutable('today', new DateTimeZone('UTC'));
@@ -1098,41 +1074,10 @@ if (isset($input['action'])) {
 
         try {
             $todayUtc = new DateTimeImmutable('today', new DateTimeZone('UTC'));
-            $tomorrowUtc = $todayUtc->modify('+1 day');
-            $selectColumns = [
-                'id, initials, score, grid, word_events_json, first_go, created_at',
-                'id, initials, score, grid, word_events_json, created_at',
-            ];
-            $scores = [];
-            foreach ($selectColumns as $columnIndex => $columns) {
-                try {
-                    $stmt = $pdo->prepare("
-                        SELECT {$columns}
-                        FROM highscores
-                        WHERE created_at >= :day_start
-                          AND created_at < :day_end
-                          AND mode = :mode
-                        ORDER BY score DESC, created_at ASC, id ASC
-                        LIMIT 8
-                    ");
-                    $stmt->execute([
-                        ':day_start' => $todayUtc->format('Y-m-d H:i:s'),
-                        ':day_end' => $tomorrowUtc->format('Y-m-d H:i:s'),
-                        ':mode' => $mode,
-                    ]);
-                    $scores = $stmt->fetchAll();
-                    break;
-                } catch (PDOException $columnError) {
-                    if (!isMissingColumnError($columnError) || $columnIndex === count($selectColumns) - 1) {
-                        throw $columnError;
-                    }
-                    error_log('validate.php highscores.first_go column missing; using older query.');
-                }
-            }
+            $scores = fetchFirstGoLeaderboard($pdo, 'highscores', $todayUtc, $mode, 's.id, s.initials, s.score, s.grid, s.word_events_json, s.created_at');
             foreach ($scores as &$scoreRow) {
                 $events = json_decode((string)($scoreRow['word_events_json'] ?? '[]'), true);
                 $scoreRow['word_events'] = is_array($events) ? $events : [];
-                $scoreRow['first_go'] = (int)($scoreRow['first_go'] ?? 0) === 1;
                 unset($scoreRow['word_events_json']);
             }
             unset($scoreRow);
@@ -1174,37 +1119,9 @@ if (isset($input['action'])) {
             $yesterdayUtc = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-1 day');
             $expectedMode = getModeForDate($yesterdayUtc);
             $dayStart = new DateTimeImmutable($yesterdayUtc->format('Y-m-d') . ' 00:00:00', new DateTimeZone('UTC'));
-            $dayEnd = $dayStart->modify('+1 day');
-
-            // Only the fields every game shares are exposed: no grids or word lists.
-            // first_go comes from the view; before the view is updated, fall back without it.
-            $selectColumns = ['initials, score, first_go', 'initials, score'];
-            $rows = [];
-            foreach ($selectColumns as $columnIndex => $columns) {
-                try {
-                    $stmt = $pdo->prepare("
-                        SELECT {$columns}
-                        FROM daily_scores
-                        WHERE created_at >= :day_start
-                          AND created_at < :day_end
-                          AND mode = :mode
-                        ORDER BY score DESC, created_at ASC, id ASC
-                        LIMIT 8
-                    ");
-                    $stmt->execute([
-                        ':day_start' => $dayStart->format('Y-m-d H:i:s'),
-                        ':day_end' => $dayEnd->format('Y-m-d H:i:s'),
-                        ':mode' => $expectedMode,
-                    ]);
-                    $rows = $stmt->fetchAll();
-                    break;
-                } catch (PDOException $columnError) {
-                    if (!isMissingColumnError($columnError) || $columnIndex === count($selectColumns) - 1) {
-                        throw $columnError;
-                    }
-                    error_log('validate.php daily_scores.first_go column missing; using older query.');
-                }
-            }
+            $isBoggle = in_array($expectedMode, ['boggle', 'sloggle'], true);
+            $table = $isBoggle ? boggleTableForVariant($expectedMode) : 'highscores';
+            $rows = fetchFirstGoLeaderboard($pdo, $table, $dayStart, $isBoggle ? null : $expectedMode, 's.initials, s.score');
 
             $scores = [];
             foreach ($rows as $row) {

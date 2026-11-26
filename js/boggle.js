@@ -638,7 +638,7 @@ function createLeaderboardRow(entry, index, isInteractive = true, showRounds = f
   if (marker !== '') {
     const markerEl = document.createElement('span');
     markerEl.className = 'lb-first-go';
-    markerEl.title = 'First go of the day';
+    markerEl.title = 'First submission of the day';
     markerEl.textContent = marker;
     row.append(markerEl);
   }
@@ -698,7 +698,7 @@ function totalWordCount() {
 }
 
 async function showRoundBest(round, target) {
-  target.textContent = 'Best saved round: loading...';
+  target.textContent = 'Best round: loading...';
   try {
     const response = await fetch('validate.php', {
       method: 'POST',
@@ -713,19 +713,19 @@ async function showRoundBest(round, target) {
 
     const best = data.round_bests[round - 1];
     if (best === null) {
-      target.textContent = 'No saved round scores yet.';
+      target.textContent = 'Best round: no saved scores yet.';
       return;
     }
     if (!best || typeof best.initials !== 'string' || !Number.isInteger(best.score) || best.score < 0
       || (best.word_count !== null && (!Number.isInteger(best.word_count) || best.word_count < 0))) {
       throw new Error('Invalid round best entry.');
     }
-    const wordCount = best.word_count === null ? 'word count unavailable'
-      : `${best.word_count} ${best.word_count === 1 ? 'word' : 'words'}`;
-    target.textContent = `Best saved round: ${best.initials} — ${best.score} ${best.score === 1 ? 'point' : 'points'}, ${wordCount}`;
+    const wordCount = best.word_count === null ? ' (word count unavailable)'
+      : ` from ${best.word_count} ${best.word_count === 1 ? 'word' : 'words'}`;
+    target.textContent = `Best round: ${best.initials}, ${best.score}${wordCount}`;
   } catch (error) {
     console.error('Boggle round best load failed:', error);
-    target.textContent = 'Best saved round unavailable.';
+    target.textContent = 'Best round unavailable.';
   }
 }
 
@@ -754,7 +754,7 @@ async function saveLeaderboardScore(score, initials) {
   const response = await fetch('validate.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'save_boggle_highscore', variant: BOGGLE_VARIANT.id, initials, score, words: state.roundWords.flat(), round_scores: state.roundScores, first_go: Boolean(window.WSFirstGo && window.WSFirstGo.isCurrentAttemptFirst()) })
+    body: JSON.stringify({ action: 'save_boggle_highscore', variant: BOGGLE_VARIANT.id, initials, score, words: state.roundWords.flat(), round_scores: state.roundScores })
   });
   if (!response.ok) throw new Error('Unable to save Boggle score.');
 
@@ -1127,7 +1127,8 @@ function showSummary(done) {
 
   const cumulative = document.createElement('p');
   const cumulativeStrong = document.createElement('strong');
-  cumulativeStrong.textContent = `Cumulative score: ${totalScore} | Words: ${totalWordCount()}`;
+  const wordCount = totalWordCount();
+  cumulativeStrong.textContent = `Total: ${totalScore} from ${wordCount} ${wordCount === 1 ? 'word' : 'words'}`;
   cumulative.appendChild(cumulativeStrong);
 
   const bestRound = document.createElement('p');
@@ -1229,7 +1230,6 @@ function startRound(round) {
 }
 
 function startMatch() {
-  if (window.WSFirstGo) window.WSFirstGo.beginAttempt(BOGGLE_VARIANT.id);
   state.roundScores = [];
   state.roundWords = [];
   state.maxRoundScores = [];

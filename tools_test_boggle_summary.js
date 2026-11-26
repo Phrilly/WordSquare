@@ -29,18 +29,22 @@ async function run() {
   assert.equal(context.totalWordCount(), 3, 'Count words in each round, including repeats across rounds');
   const target = {};
   await context.showRoundBest(1, target);
-  assert.equal(target.textContent, 'Best saved round: AAA — 12 points, 7 words');
+  assert.equal(target.textContent, 'Best round: AAA, 12 from 7 words');
   assert.equal(request.body.variant, 'sloggle');
   assert.equal(request.body.action, 'get_boggle_round_bests');
 
   await context.showRoundBest(2, target);
-  assert.equal(target.textContent, 'No saved round scores yet.');
+  assert.equal(target.textContent, 'Best round: no saved scores yet.');
   await context.showRoundBest(3, target);
-  assert.equal(target.textContent, 'Best saved round: BBB — 5 points, word count unavailable');
+  assert.equal(target.textContent, 'Best round: BBB, 5 (word count unavailable)');
+
+  response = { round_bests: [{ initials: 'ONE', score: 1, word_count: 1 }, null, null] };
+  await context.showRoundBest(1, target);
+  assert.equal(target.textContent, 'Best round: ONE, 1 from 1 word');
 
   response = { round_bests: [] };
   await context.showRoundBest(1, target);
-  assert.equal(target.textContent, 'Best saved round unavailable.');
+  assert.equal(target.textContent, 'Best round unavailable.');
   assert.equal(errors.length, 1, 'Invalid responses must be logged');
   console.log('Boggle summary tests passed.');
 }
