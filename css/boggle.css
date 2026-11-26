@@ -34,9 +34,13 @@ html { overflow-y:auto; }
 .boggle-preview-tile, .boggle-tile { display:flex; align-items:center; justify-content:center; font:700 clamp(22px,calc(var(--game-size) * 0.085),38px) Arial,sans-serif; }
 .boggle-preview-tile { width:44px; height:44px; border-radius:6px; background:#fdf6e3; color:#1a1a1a; }
 #boggle-status { min-height:20px; margin:8px 0 0; text-align:center; font:700 13px Arial,sans-serif; }
-.boggle-grid { margin:16px 0; touch-action:manipulation; }
+.boggle-swipe-hint { display:none; margin:3px 0 0; text-align:center; font:12px/1.2 Arial,sans-serif; color:#dce7f7; }
+@media (any-pointer:coarse) {
+  .boggle-swipe-hint { display:block; }
+}
+.boggle-grid { margin:16px 0; touch-action:pan-y pinch-zoom; }
 .boggle-summary button:disabled { opacity:.35; filter:grayscale(1); cursor:not-allowed; pointer-events:none; }
-.boggle-tile { width:100%; border:0; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-tap-highlight-color:transparent; }
+.boggle-tile { width:100%; border:0; cursor:pointer; touch-action:pan-y pinch-zoom; user-select:none; -webkit-tap-highlight-color:transparent; }
 .boggle-tile.is-selected { background:var(--highlight); outline:3px solid #fff; transform:scale(.94); }
 .boggle-tile.is-first-selected { outline-color:#78dc7f; box-shadow:0 0 0 4px rgba(120,220,127,.75); }
 .boggle-tile.is-last-selected { outline-color:#FFD700; box-shadow:0 0 0 4px rgba(255,215,0,.75); }

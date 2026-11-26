@@ -99,7 +99,8 @@ Classic is retired from the daily rotation (still reachable with `?mode=classic`
 - Mobile: tap the final selected tile again to submit.
 - A green outline marks the first tile of an active desktop path; a gold outline marks the final tile before submission.
 - Backspace removes one tile. Press Escape on desktop or use X to clear the full selected path.
-- Invalid dictionary words receive red outlines. Duplicate words receive yellow outlines. Tap a tile to start a new word, or click a tile to clear a rejected path.
+- Invalid dictionary words receive red outlines. Duplicate words receive yellow outlines. Tap a highlighted tile to clear the rejected path; on mobile, tapping an unhighlighted tile starts a new word.
+- On mobile, swipe right across the board to clear the current selection. The X button also clears it.
 - Round summaries show your word count and today's best score for that round from completed, saved games. The final summary also shows your total word count across all rounds.
 - SCORES ends an unsaved match and opens the daily high-score table.
 

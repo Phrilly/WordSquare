@@ -13,6 +13,8 @@ const BOGGLE_VARIANT = Object.prototype.hasOwnProperty.call(BOGGLE_VARIANTS, BOG
   : BOGGLE_VARIANTS.boggle;
 const BOGGLE_SECONDS = BOGGLE_VARIANT.seconds;
 const BOGGLE_SUMMARY_INPUT_DELAY_MS = 2400;
+const BOGGLE_CLEAR_SWIPE_DISTANCE = 40;
+const BOGGLE_CLEAR_SWIPE_DIRECTION_RATIO = 1.5;
 const BOGGLE_DRAG_SAFE_ZONE_RATIO = 0.6;
 const BOGGLE_DIAGONAL_INTENT_RATIO = 0.55;
 const BOGGLE_BAG = 'AAAAAAAAAAAAAAEEEEEEEEEEEEEEEEEEEEIIIIIIIIIIIIOOOOOOOOOOUUUUUUUUUSSSSSSSSSSTTTTTTTTTTNNNNNNNNRRRRRRRRHHHHHHDDDDDDLLLLLLCCCCCCMMMMMMPPPPFFGGGGYYWWVVBBKKXJQZ';
@@ -349,9 +351,16 @@ function finishTouchSelection(event, cancelled) {
   const touch = touchSelections.find(item => item.pointerId === event.pointerId);
   if (!touch || touch.result !== 'pending') return;
 
-  touch.result = !cancelled && touchTileAt(event.clientX, event.clientY) === touch.button
-    ? 'selected'
-    : 'cancelled';
+  const dx = event.clientX - touch.startX;
+  const dy = event.clientY - touch.startY;
+  const swipedRight = dx >= BOGGLE_CLEAR_SWIPE_DISTANCE && dx > Math.abs(dy) * BOGGLE_CLEAR_SWIPE_DIRECTION_RATIO;
+  if (!cancelled && swipedRight) {
+    touch.result = 'clear';
+  } else {
+    touch.result = !cancelled && touchTileAt(event.clientX, event.clientY) === touch.button
+      ? 'selected'
+      : 'cancelled';
+  }
   if (!touchSelections.some(item => item !== touch && item.button === touch.button && item.result === 'pending')) {
     touch.button.classList.remove('is-touch-pressed');
   }
@@ -359,8 +368,17 @@ function finishTouchSelection(event, cancelled) {
   // Process overlapping touches in the order they started, even if released out of order.
   while (touchSelections.length > 0 && touchSelections[0].result !== 'pending') {
     const completed = touchSelections.shift();
-    if (completed.result !== 'selected' || state.locked) continue;
+    if (state.locked) continue;
+    if (completed.result === 'clear') {
+      if (state.path.length > 0) clearCurrentSelection('Word selection cleared.');
+      continue;
+    }
+    if (completed.result !== 'selected') continue;
     if (state.selectionComplete) submit();
+    if (state.selectionFeedback && state.path.includes(completed.index)) {
+      clearRejectedSelection();
+      continue;
+    }
     clearRejectedSelection();
     activateTile(completed.index);
   }
@@ -527,13 +545,13 @@ function submit() {
   if (state.words.has(candidate)) {
     state.selectionFeedback = 'duplicate';
     render();
-    message('Already found this round. Tap a tile to start again, or click to clear.', true);
+    message('Already found this round. Tap a highlighted tile to clear.', true);
     return;
   }
   if (!state.dictionary.has(candidate)) {
     state.selectionFeedback = 'invalid';
     render();
-    message('Not in the British English dictionary. Tap a tile to start again, or click to clear.', true);
+    message('Not in the British English dictionary. Tap a highlighted tile to clear.', true);
     return;
   }
 
@@ -1431,7 +1449,7 @@ el.grid.addEventListener('pointerdown', event => {
   if (!Number.isInteger(index)) return;
   event.preventDefault();
   el.grid.setPointerCapture(event.pointerId);
-  touchSelections.push({ pointerId: event.pointerId, index, button, result: 'pending' });
+  touchSelections.push({ pointerId: event.pointerId, index, button, startX: event.clientX, startY: event.clientY, result: 'pending' });
   button.classList.add('is-touch-pressed');
 });
 el.grid.addEventListener('pointerup', event => {

@@ -214,8 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <li>Words use adjacent horizontal, vertical, or diagonal tiles without reusing a tile.</li>
         <li>Words must have at least four letters. Scores are 1 / 2 / 3 / 5 / 11 for lengths 4 / 5 / 6 / 7 / 8+.</li>
         <li>Every player receives the same three boards for the UTC day; Play Again repeats them.</li>
-        <li>On desktop, green marks the path start and gold marks the final clicked tile. Press Escape on desktop, press and hold any board tile on touch devices, or use X to clear a path.</li>
-        <li>Invalid words show red outlines; already-found words show yellow outlines. Click any tile to clear a rejected path.</li>
+        <li>On desktop, green marks the path start and gold marks the final clicked tile. Press Escape on desktop, swipe right across the board on mobile, or use X to clear a path.</li>
+        <li>Invalid words show red outlines; already-found words show yellow outlines. Tap a highlighted tile to clear a rejected path; on mobile, tapping an unhighlighted tile starts a new word.</li>
       </ul>
 
       <h3>Top Up Notes</h3>
