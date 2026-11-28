@@ -23,7 +23,7 @@ $dailyScrabbleLayout = generateScrabbleSpecialSquares(scrabbleDailySeed());
 $scrabbleDate = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
 // Loopback-only debug switch: visiting with ?forceShortWords=1 previews the
-// upcoming short-word Scrabble scoring before its rollout date; ?forceShortWords=0
+// historic short-word Scrabble scoring before the five-letter restoration; ?forceShortWords=0
 // turns it back off. The choice is remembered in a cookie so it also applies to
 // the separate validate.php scoring request, which never sees the query string.
 $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? null;
@@ -164,7 +164,7 @@ if ($isBombDay) {
 $leaderboardHeading = $isCommonDay ? "TODAY'S MFD HIGH SCORES" : ($isTopUpDay ? "TODAY'S TOP UP HIGH SCORES" : "TODAY'S HIGH SCORES");
 
 // Single source of truth for the version shown in the footer and the help screen.
-$appVersion = '1.5.2';
+$appVersion = '1.5.3';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -274,8 +274,10 @@ $appVersion = '1.5.2';
 
   <div id="opening-screen" class="opening-screen" style="display:none;">
     <h1 id="opening-title" style="color:var(--highlight); margin-bottom:20px; font-size:clamp(24px, 5vw, 36px); text-align:center;"><?= htmlspecialchars($leaderboardHeading, ENT_QUOTES, 'UTF-8') ?></h1>
-    <?php if ($isScrabbleDay && (scrabbleScoringChangeNoticeEnabled($scrabbleDate) || $scrabbleDebugOverrideActive)): ?>
-    <p class="scrabble-change-notice"><strong>NEW SCRABBLE SCORING<?= $scrabbleDebugOverrideActive ? ' (DEBUG PREVIEW)' : '' ?></strong><br>3- and 4-letter words now score too. On the same tiles, only the longer word scores: PARTS scores, not PART.</p>
+    <?php if ($isScrabbleDay && scrabbleScoringChangeNoticeEnabled($scrabbleDate)): ?>
+    <p class="scrabble-change-notice"><strong>SCRABBLE RULES REVISED</strong><br>Only 5-letter words score again. 3- and 4-letter words no longer score.</p>
+    <?php elseif ($isScrabbleDay && $scrabbleDebugOverrideActive && $scrabbleShortWordsEnabled): ?>
+    <p class="scrabble-change-notice"><strong>SCRABBLE SCORING (DEBUG PREVIEW)</strong><br>3- and 4-letter words also score. On the same tiles, only the longer word scores.</p>
     <?php endif; ?>
     <div class="grid-container opening-grid" id="opening-grid">
       </div>

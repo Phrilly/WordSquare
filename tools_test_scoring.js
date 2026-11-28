@@ -27,7 +27,12 @@ const cases = [
     ['invalid-extension', 'PARTZ--------------------', [], []],
     ['separate-path', 'PARTS-----PART-----------', [], []],
     ['crossing-path', 'PARTS-R----T-------------', [], []],
-    ['legacy', 'PARTS--------------------', [], [], false]
+    ['legacy', 'PARTS--------------------', [], [], false],
+    ['restored-three', 'PAR----------------------', [], [], false],
+    ['restored-four', 'PART---------------------', [], [], false],
+    ['restored-crossing', 'PARTS-R----T-------------', [], [], false],
+    ['restored-dl-dw', 'PARTS--------------------', [0], [1], false],
+    ['restored-wildcard', 'pARTS--------------------', [0], [1], false]
 ];
 
 const handlers = {};

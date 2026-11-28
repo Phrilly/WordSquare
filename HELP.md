@@ -1,8 +1,8 @@
 # WordSquare Help
 
 ## Help Version
-- Help Version: 1.3.4
-- Change Log: 1.3.4 marks MFD (My First Dictionary) as retired - it is no longer part of the daily rotation and is not played.
+- Help Version: 1.5.3
+- Change Log: 1.5.3 restores five-letter-only Scrabble scoring from 3 December 2026 UTC.
 
 ## Core Rules
 - The board is always 5x5.
@@ -58,9 +58,9 @@ Classic is retired from the daily rotation (still reachable with `?mode=classic`
 - No extra scoring modifiers beyond Classic.
 
 ### Scrabble
-- From 19 November 2026 (UTC), 3-, 4- and 5-letter words score. Before then, only 5-letter words score.
-- If a word is part of a longer word on the same tiles, only the longer word scores: PARTS scores, not PART.
-- A shorter word can still score when it appears separately or crosses a longer word.
+- From 3 December 2026 (UTC), only 5-letter words score again; 3- and 4-letter words do not score.
+- From 19 November to 2 December 2026 (UTC), 3-, 4- and 5-letter words scored; before then, only 5-letter words scored.
+- During the short-word period, a word contained in a longer word on the same tiles did not score, but a separate or crossing shorter word could score.
 - Score is the sum of Scrabble letter values along each scoring word path.
 - Wildcard tiles (?) are worth 0 points.
 - Double-letter (DL) squares double the value of letters placed on them.

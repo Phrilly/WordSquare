@@ -44,6 +44,11 @@ $cases = [
     ['separate-path', 'PARTS-----PART-----------', [], []],
     ['crossing-path', 'PARTS-R----T-------------', [], []],
     ['legacy', 'PARTS--------------------', [], [], false],
+    ['restored-three', 'PAR----------------------', [], [], false],
+    ['restored-four', 'PART---------------------', [], [], false],
+    ['restored-crossing', 'PARTS-R----T-------------', [], [], false],
+    ['restored-dl-dw', 'PARTS--------------------', [0], [1], false],
+    ['restored-wildcard', 'pARTS--------------------', [0], [1], false],
 ];
 
 $expected = [
@@ -58,18 +63,60 @@ $expected = [
     'separate-path' => ['PARTS' => 7, 'PART' => 6],
     'crossing-path' => ['PARTS' => 7, 'ART' => 3],
     'legacy' => ['PARTS' => 7],
+    'restored-three' => [],
+    'restored-four' => [],
+    'restored-crossing' => ['PARTS' => 7],
+    'restored-dl-dw' => ['PARTS' => 20],
+    'restored-wildcard' => ['PARTS' => 8],
 ];
 
 $utc = new DateTimeZone('UTC');
 if (scrabbleShortWordsEnabled(new DateTimeImmutable('2026-11-18 23:59:59', $utc))
-    || !scrabbleShortWordsEnabled(new DateTimeImmutable('2026-11-19 00:00:00', $utc))) {
+    || !scrabbleShortWordsEnabled(new DateTimeImmutable('2026-11-19 00:00:00', $utc))
+    || !scrabbleShortWordsEnabled(new DateTimeImmutable('2026-12-02 23:59:59', $utc))
+    || scrabbleShortWordsEnabled(new DateTimeImmutable('2026-12-03 00:00:00', $utc))
+    || scrabbleShortWordsEnabled(new DateTimeImmutable('2026-12-03 01:00:00+01:00'))) {
     throw new RuntimeException('Scrabble rollout boundary is incorrect.');
 }
-if (scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-11-18 23:59:59', $utc))
-    || !scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-11-19 00:00:00', $utc))
-    || !scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-11-19 23:59:59', $utc))
-    || scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-11-20 00:00:00', $utc))) {
+if (resolveScrabbleShortWordsEnabled(true, new DateTimeImmutable('2026-12-03 00:00:00', $utc))
+    || !resolveScrabbleShortWordsEnabled(true, new DateTimeImmutable('2026-12-02 23:59:59', $utc))) {
+    throw new RuntimeException('Scrabble debug override did not respect the restoration.');
+}
+if (scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-12-02 23:59:59', $utc))
+    || !scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-12-03 00:00:00', $utc))
+    || !scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-12-03 23:59:59', $utc))
+    || scrabbleScoringChangeNoticeEnabled(new DateTimeImmutable('2026-12-04 00:00:00', $utc))) {
     throw new RuntimeException('Scrabble notice dates are incorrect.');
+}
+
+$indexSource = file_get_contents(__DIR__ . '/index.php');
+if ($indexSource === false) {
+    throw new RuntimeException('Could not read the Scrabble opening notice.');
+}
+$noticeStart = strpos($indexSource, '<?php if ($isScrabbleDay && scrabbleScoringChangeNoticeEnabled($scrabbleDate)): ?>');
+$noticeEnd = $noticeStart === false ? false : strpos($indexSource, '<?php endif; ?>', $noticeStart);
+if ($noticeStart === false || $noticeEnd === false) {
+    throw new RuntimeException('Could not locate the Scrabble opening notice.');
+}
+$noticeTemplate = substr($indexSource, $noticeStart, $noticeEnd - $noticeStart + strlen('<?php endif; ?>'));
+$renderNotice = static function (DateTimeImmutable $scrabbleDate, bool $isScrabbleDay, bool $scrabbleDebugOverrideActive) use ($noticeTemplate): string {
+    $scrabbleShortWordsEnabled = resolveScrabbleShortWordsEnabled($scrabbleDebugOverrideActive, $scrabbleDate);
+    ob_start();
+    eval('?>' . $noticeTemplate);
+    $html = ob_get_clean();
+    if ($html === false) {
+        throw new RuntimeException('Could not render the Scrabble opening notice.');
+    }
+    return $html;
+};
+$firstDayNotice = $renderNotice(new DateTimeImmutable('2026-12-03 12:00:00', $utc), true, true);
+if (!str_contains($firstDayNotice, 'SCRABBLE RULES REVISED')
+    || !str_contains($firstDayNotice, 'Only 5-letter words score again')
+    || str_contains($firstDayNotice, 'DEBUG PREVIEW')
+    || trim($renderNotice(new DateTimeImmutable('2026-12-03 12:00:00', $utc), false, false)) !== ''
+    || trim($renderNotice(new DateTimeImmutable('2026-12-04 00:00:00', $utc), true, true)) !== ''
+    || trim($renderNotice(new DateTimeImmutable('2026-12-02 23:59:59', $utc), true, false)) !== '') {
+    throw new RuntimeException('Scrabble opening notice is incorrect.');
 }
 
 $lines = [];

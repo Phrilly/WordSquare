@@ -93,12 +93,15 @@ function scrabbleDailySeed(?DateTimeImmutable $date = null, int $dailyOffset = 0
     return ($sum + $dailyOffset) * 12345;
 }
 
+const SCRABBLE_FIVE_LETTER_RESTORE_DATE = '2026-12-03 00:00:00';
+
 function scrabbleShortWordsEnabled(?DateTimeImmutable $date = null): bool
 {
     $utc = new DateTimeZone('UTC');
     $date = ($date ?? new DateTimeImmutable('now', $utc))->setTimezone($utc);
 
-    return $date >= new DateTimeImmutable('2026-11-19 00:00:00', $utc);
+    return $date >= new DateTimeImmutable('2026-11-19 00:00:00', $utc)
+        && $date < new DateTimeImmutable(SCRABBLE_FIVE_LETTER_RESTORE_DATE, $utc);
 }
 
 function scrabbleScoringChangeNoticeEnabled(?DateTimeImmutable $date = null): bool
@@ -106,7 +109,7 @@ function scrabbleScoringChangeNoticeEnabled(?DateTimeImmutable $date = null): bo
     $utc = new DateTimeZone('UTC');
     $date = ($date ?? new DateTimeImmutable('now', $utc))->setTimezone($utc);
 
-    return $date->format('Y-m-d') === '2026-11-19';
+    return $date->format('Y-m-d') === '2026-12-03';
 }
 
 /** Name of the cookie that remembers the loopback-only short-word debug override. */
@@ -135,11 +138,16 @@ function scrabbleShortWordsDebugOverrideActive(?string $remoteAddr, ?string $deb
 
 /**
  * Resolve whether short-word Scrabble scoring applies to this request: the
- * loopback debug override wins when active, otherwise the real rollout date
- * decides via scrabbleShortWordsEnabled().
+ * The old loopback preview cannot override the return to five-letter scoring.
  */
 function resolveScrabbleShortWordsEnabled(bool $debugOverrideActive, ?DateTimeImmutable $date = null): bool
 {
+    $utc = new DateTimeZone('UTC');
+    $date = ($date ?? new DateTimeImmutable('now', $utc))->setTimezone($utc);
+    if ($date >= new DateTimeImmutable(SCRABBLE_FIVE_LETTER_RESTORE_DATE, $utc)) {
+        return false;
+    }
+
     return $debugOverrideActive || scrabbleShortWordsEnabled($date);
 }
 

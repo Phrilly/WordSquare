@@ -40,7 +40,8 @@ foreach ($phpLines as $index => $phpLine) {
     $total = 0;
     foreach (array_filter(explode(';', $eventList)) as $event) {
         [$word, $points] = array_pad(explode(':', $event, 2), 2, '0');
-        if (strlen($word) < 3 || strlen($word) > 5 || ($label === 'legacy' && strlen($word) !== 5)) {
+        if (strlen($word) < 3 || strlen($word) > 5
+            || (($label === 'legacy' || str_starts_with($label, 'restored-')) && strlen($word) !== 5)) {
             $failures++;
             echo 'BAD WORD LENGTH in ' . $label . ': ' . $word . PHP_EOL;
         }

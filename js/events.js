@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
     const helpVersion = configuredVersion !== '' ? configuredVersion : 'unknown';
     const helpChanges = [
+      '1.5.3 restores five-letter-only Scrabble scoring from 2026-12-03 UTC.',
       '1.5.2 adds Scrabble scoring for 3- and 4-letter words from 2026-11-19 UTC.',
       '1.5.1 gives the Yesterday\'s Champion screen a quieter, more polished look with understated buttons.',
       'First submissions: each three-letter name gets a 1 marker for its first saved score per game per UTC day; the best marked score gets a trophy. This is based on the name, not the device, so shared names share the marker.',
@@ -163,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <h3>Scoring Notes</h3>
       <ul>
         <li>Classic/Bomb/Lookahead: 3-letter = 1, 4-letter = 5, 5-letter = 20.</li>
-        <li>Scrabble: ${window.GAME_CONFIG && window.GAME_CONFIG.scrabbleShortWordsEnabled ? '3-, 4- and 5-letter words score.' : 'Only 5-letter words score until 2026-11-19 UTC.'}</li>
+        <li>Scrabble: ${window.GAME_CONFIG && window.GAME_CONFIG.scrabbleShortWordsEnabled ? '3-, 4- and 5-letter words score.' : 'Only 5-letter words score.'}</li>
         <li>Scrabble: wildcard tiles score 0; DL squares double letter value and DW squares double whole-word value.</li>
         <li>Tetris: 4-letter clears = 5 and 5-letter clears = 20, with gravity after clears.</li>
       </ul>
@@ -182,8 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3>Scrabble Notes</h3>
       <ul>
-        <li>From 2026-11-19 UTC, 3-, 4- and 5-letter words score. If a word is part of a longer word on the same tiles, only the longer word scores: PARTS scores, not PART.</li>
-        <li>A shorter word can still score when it appears separately or crosses a longer word.</li>
+        <li>${window.GAME_CONFIG && window.GAME_CONFIG.scrabbleShortWordsEnabled ? '3-, 4- and 5-letter words score until 2026-12-03 UTC. A shorter word contained in a longer word on the same tiles does not score, but separate or crossing words can.' : 'Only 5-letter words score. The rules returned to five-letter-only scoring on 2026-12-03 UTC.'}</li>
         <li>Word score is based on Scrabble letter values across the word path.</li>
         <li>Special squares are daily-randomized: 50% chance of 4 DL, or 50% chance of 2 DL + 1 DW.</li>
         <li>A word and its reverse count together once, using the highest-scoring path.</li>
